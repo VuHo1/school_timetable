@@ -1,0 +1,56 @@
+name: Deploy React Frontend to IIS
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: npm run build
+
+      - name: Stop IIS Website (optional)
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            powershell -Command "Import-Module WebAdministration; Stop-Website -Name 'hast-web'"
+
+      - name: Clean old dist (except config)
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            powershell -Command "Get-ChildItem 'C:/inetpub/wwwroot/publish' -Recurse | Where-Object { $_.Name -notlike 'web.config' } | Remove-Item -Force -Recurse"
+
+      - name: Upload new build to VPS
+        run: |
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" scp -o StrictHostKeyChecking=no -r dist/* ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:"C:/inetpub/wwwroot/publish-web"
+
+      - name: Start IIS Website
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            powershell -Command "Import-Module WebAdministration; Start-Website -Name 'hast-web'; Write-Host 'Frontend deployed successfully'"
