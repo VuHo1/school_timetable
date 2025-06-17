@@ -31,7 +31,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            powershell -Command "Import-Module WebAdministration; Stop-Website -Name 'hast-web'"
+            powershell -Command "Import-Module WebAdministration; Stop-Website -Name 'hast'"
 
       - name: Clean old dist (except config)
         uses: appleboy/ssh-action@v0.1.10
@@ -53,4 +53,4 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            powershell -Command "Import-Module WebAdministration; Start-Website -Name 'hast-web'; Write-Host 'Frontend deployed successfully'"
+            powershell -Command "Import-Module WebAdministration; Start-Website -Name 'hast'; Write-Host 'Frontend deployed successfully'"
