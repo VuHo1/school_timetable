@@ -1,20 +1,27 @@
 import { useAuth } from '../context/AuthContext';
 import styled from 'styled-components';
-import { useState } from 'react';
-import { fetchUserProfile, updateAvatar, updateUserInfo, changePassword } from '../api';
+import { useState, useEffect } from 'react';
+import { fetchUserProfile, updateAvatar, updateUserInfo, changePassword, fetchCodeList } from '../api';
 import { memo } from 'react';
-
+import { useToast } from '../components/ToastProvider';
+import { Eye, EyeOff } from 'lucide-react';
 const ProfileContainer = styled.div`
-  max-width: 600px;
+  max-width: 400px;
   margin: 0 auto;
   padding: 20px;
 `;
 
+const Card = styled.div`
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+`;
+
 const Header = styled.div`
-  background-color: #1E90FF;
+  background-color: #d83333;
   color: white;
-  padding: 20px;
-  border-radius: 8px 8px 0 0;
+  padding: 15px;
   text-align: center;
   position: relative;
 `;
@@ -24,33 +31,74 @@ const Avatar = styled.img`
   height: 100px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid white;
-  margin-top: -50px;
   position: relative;
   z-index: 1;
+  cursor: pointer;
 `;
 
 const Username = styled.h2`
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
 `;
 
 const InfoSection = styled.div`
-  background: white;
   padding: 20px;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-top: -20px;
 `;
 
 const InfoItem = styled.div`
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   font-size: 16px;
   display: flex;
-  justify-content: space-between;
-  strong {
-    margin-right: 10px;
+  align-items: center;
+  position: relative;
+`;
+
+const Label = styled.div`
+  min-width: 100px;
+  margin-right: 10px;
+  text-align: start;
+  font-weight: bold;
+  font-size: 15px;
+`;
+
+const PasswordInputWrapper = styled.div`
+  flex: 1;
+  position: relative;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  padding-right: 30px; /* Space for the eye icon */
+`;
+
+const EyeIcon = styled.span`
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1px;
+  color: #323437;
+  &:hover {
+    color: #8c9eb0;
   }
+`;
+
+const Select = styled.select`
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  justify-content: end;
 `;
 
 const EditButton = styled.button`
@@ -60,32 +108,26 @@ const EditButton = styled.button`
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  margin-right: 10px;
   &:hover {
     background-color: #0056b3;
   }
 `;
-
-const FormGroup = styled.div`
-  margin-bottom: 15px;
-  input, select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-`;
-
-const SaveButton = styled.button`
-  padding: 10px 20px;
-  background-color: #1E90FF;
-  color: white;
+const ForgotButton = styled.button`
+  padding: 8px 16px;
+  background-color: white;
+  color: black;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  margin-right: 10px;
   &:hover {
-    background-color: #0056b3;
+    background-color: #d1d5d9;
   }
 `;
+
+
+
 
 function Profile() {
     const { user, setUser } = useAuth();
@@ -95,41 +137,58 @@ function Profile() {
     const [fullName, setFullName] = useState(user?.full_name || '');
     const [phone, setPhone] = useState(user?.phone || '');
     const [gender, setGender] = useState(user?.gender || '');
-    const [dob, setDob] = useState(user?.dob ? new Date(user.dob).toISOString().split('T')[0] : '');
+    const [dob, setDob] = useState(user?.dob ? user.dob.split('T')[0] : '');
+    const [genderOptions, setGenderOptions] = useState([]);
 
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const toast = useToast(); // Access the toast context
 
     const avatarUrl = user?.avatar || '';
     const cacheBustUrl = `${avatarUrl}?t=${new Date().getTime()}`;
 
-
+    useEffect(() => {
+        const fetchGenderOptions = async () => {
+            try {
+                const token = localStorage.getItem('authToken');
+                const codes = await fetchCodeList(token);
+                const genderCodes = codes.filter(code => code.code_name === 'GENDER');
+                setGenderOptions(genderCodes);
+            } catch (error) {
+                console.error('Error fetching gender options:', error);
+            }
+        };
+        fetchGenderOptions();
+    }, []);
 
     if (!user) {
         return <div>Unable to load profile. Please try logging in again.</div>;
     }
 
-    const handleAvatarUpload = async (e) => {
-        e.preventDefault();
-        if (!avatarFile) return;
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setAvatarFile(file);
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await updateAvatar(token, file);
+                const updatedUser = await fetchUserProfile(token);
+                if (setUser && updatedUser) {
+                    setUser(prevUser => ({ ...prevUser, ...updatedUser }));
 
-        try {
-            const token = localStorage.getItem('authToken');
-            console.log('Avatar upload token:', token);
-            const response = await updateAvatar(token, avatarFile);
-            console.log('Avatar upload response:', response);
-            const updatedUser = await fetchUserProfile(token);
-            console.log('Fetched updated user:', updatedUser);
-            if (setUser && updatedUser) {
-                setUser(prevUser => ({ ...prevUser, ...updatedUser }));
-            } else {
-                window.location.reload();
+                } else {
+                    toast.showToast('Cập nhật avatar thành công!', 'success', 2000);
+
+                }
+            } catch (error) {
+                console.error('Avatar upload error:', error);
+                setAvatarFile(null);
             }
-            alert('Avatar updated successfully!');
-        } catch (error) {
-            console.error('Avatar upload error:', error);
-            alert('An error occurred while updating avatar: ' + (error.message || 'Unknown error'));
         }
     };
 
@@ -138,7 +197,6 @@ function Profile() {
         const currentDate = new Date();
         const inputDate = new Date(dob);
         if (inputDate > currentDate) {
-            alert('Ngày sinh không thể là ngày tương lai!');
             return;
         }
         const updateData = {
@@ -149,129 +207,164 @@ function Profile() {
         };
         try {
             const token = localStorage.getItem('authToken');
-            console.log('Update info token:', token, 'Data:', updateData);
-            const data = await updateUserInfo(token, updateData); // data là JSON từ API
-            console.log('Update info response (parsed):', data);
+            const data = await updateUserInfo(token, updateData);
             if (!data.success) throw new Error(data.description || 'Update failed');
             const updatedUser = await fetchUserProfile(token);
             if (setUser && updatedUser) {
                 setUser(prevUser => ({ ...prevUser, ...updatedUser }));
-                console.log('Updated user info:', updatedUser);
             } else {
-                window.location.reload();
+                setTimeout(() => window.location.reload(), 2000);
             }
             setIsEditProfile(false);
-            alert('Profile updated successfully!');
+            toast.showToast('Cập nhật thông tin thành công!', 'success');
         } catch (error) {
             console.error('Update info error:', error);
-            alert('An error occurred while updating profile: ' + (error.message || 'Unknown error'));
+            toast.showToast(error.message || 'Cập nhật thông tin thất bại', 'error');
         }
     };
 
     const handleChangePassword = async (e) => {
         e.preventDefault();
-        if (newPassword !== confirmPassword) {
-            alert('New password and confirmation do not match!');
-            return;
-        }
-
         const passwordData = { old_password: oldPassword, new_password: newPassword, confirm_new_password: confirmPassword };
         try {
             const token = localStorage.getItem('authToken');
-            console.log('Change password token:', token, 'Data:', passwordData);
             const response = await changePassword(token, passwordData);
-            console.log('Change password response:', response);
-            setOldPassword('');
-            setNewPassword('');
-            setConfirmPassword('');
-            setIsChangePassword(false);
-            alert('Password changed successfully!');
+            if (response.success) {
+                setOldPassword('');
+                setNewPassword('');
+                setConfirmPassword('');
+                setIsChangePassword(false);
+                toast.showToast(response.description || 'Đổi mật khẩu thành công!', 'success');
+            } else {
+                toast.showToast(response.description || 'Đổi mật khẩu thất bại', 'error');
+            }
         } catch (error) {
             console.error('Change password error:', error);
-            alert('An error occurred while changing password: ' + (error.message || 'Unknown error'));
+            toast.showToast('Lỗi kết nối hoặc máy chủ', 'error');
         }
     };
 
     return (
         <ProfileContainer>
-            <Header>
-                <Username>{user.user_name}</Username>
-                {user.avatar && <Avatar src={cacheBustUrl} alt="User Avatar" />}
-                <form onSubmit={handleAvatarUpload} style={{ marginTop: '10px' }}>
-                    <FormGroup>
-                        <input type="file" accept="image/*" onChange={(e) => setAvatarFile(e.target.files[0])} />
-                    </FormGroup>
-                    <SaveButton type="submit">Upload Avatar</SaveButton>
-                </form>
-            </Header>
-            <InfoSection>
-                {!isEditProfile && !isChangePassword && (
-                    <>
-                        <InfoItem>
-                            <strong>Họ và Tên:</strong> {user.full_name || 'N/A'}
-                        </InfoItem>
-                        <InfoItem>
-                            <strong>Phone:</strong> {user.phone || 'N/A'}
-                        </InfoItem>
-                        <InfoItem>
-                            <strong>Giới Tính:</strong> {user.gender || 'N/A'}
-                        </InfoItem>
-                        <InfoItem>
-                            <strong>Ngày sinh:</strong> {user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : 'N/A'}
-                        </InfoItem>
-                        <InfoItem>
-                            <strong>Vai Trò:</strong> {user.role_name || 'N/A'}
-                        </InfoItem>
-                        <EditButton onClick={() => setIsEditProfile(true)}>Sửa hồ sơ</EditButton>
-                        <EditButton onClick={() => setIsChangePassword(true)} style={{ marginLeft: '10px' }}>Đổi mật khẩu</EditButton>
-                    </>
-                )}
-                {isEditProfile && (
-                    <form onSubmit={handleUpdateInfo}>
-                        <FormGroup>
-                            <strong>Họ và Tên:</strong>
-                            <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-                        </FormGroup>
-                        <FormGroup>
-                            <strong>Phone:</strong>
-                            <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
-                        </FormGroup>
-                        <FormGroup>
-                            <strong>Giới Tính:</strong>
-                            <select value={gender} onChange={(e) => setGender(e.target.value)}>
-                                <option value="">Chọn giới tính</option>
-                                <option value="1">Nam</option>
-                                <option value="2">Nữ</option>
-                                <option value="3">Khác</option>
-                            </select>
-                        </FormGroup>
-                        <FormGroup>
-                            <strong>Ngày sinh:</strong>
-                            <input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
-                        </FormGroup>
-                        <SaveButton type="submit">Lưu</SaveButton>
-                        <EditButton onClick={() => setIsEditProfile(false)} style={{ marginLeft: '10px' }}>Hủy</EditButton>
-                    </form>
-                )}
-                {isChangePassword && (
-                    <form onSubmit={handleChangePassword}>
-                        <FormGroup>
-                            <strong>Mật khẩu cũ:</strong>
-                            <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} />
-                        </FormGroup>
-                        <FormGroup>
-                            <strong>Mật khẩu mới:</strong>
-                            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-                        </FormGroup>
-                        <FormGroup>
-                            <strong>Xác nhận mật khẩu mới:</strong>
-                            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-                        </FormGroup>
-                        <SaveButton type="submit">Thay đổi</SaveButton>
-                        <EditButton onClick={() => setIsChangePassword(false)} style={{ marginLeft: '10px' }}>Hủy</EditButton>
-                    </form>
-                )}
-            </InfoSection>
+            <Card>
+                <Header>
+
+                    {user.avatar && <Avatar src={cacheBustUrl} alt="User Avatar" onClick={() => document.getElementById('avatarInput').click()} />}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        style={{ display: 'none' }}
+                        id="avatarInput"
+                    />
+
+                </Header>
+                <InfoSection>
+                    {!isEditProfile && !isChangePassword && (
+                        <>
+                            <InfoItem>
+                                <Label>Họ và Tên:</Label> {user.full_name || 'N/A'}
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Email:</Label> {user.email || 'N/A'}
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Phone:</Label> {user.phone || 'N/A'}
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Giới Tính:</Label> {user.gender || 'N/A'}
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Ngày sinh:</Label> {user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : 'N/A'}
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Vai Trò:</Label> {user.role_name || 'N/A'}
+                            </InfoItem>
+                            <ButtonContainer>
+                                <EditButton onClick={() => setIsEditProfile(true)}>Sửa hồ sơ</EditButton>
+                                <ForgotButton onClick={() => setIsChangePassword(true)}>Đổi mật khẩu</ForgotButton>
+                            </ButtonContainer>
+                        </>
+                    )}
+                    {isEditProfile && (
+                        <form onSubmit={handleUpdateInfo}>
+                            <InfoItem>
+                                <Label>Họ và Tên:</Label>
+                                <Input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Phone:</Label>
+                                <Input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Giới Tính:</Label>
+                                <Select value={gender} onChange={(e) => setGender(e.target.value)}>
+                                    {genderOptions.map(option => (
+                                        <option key={option.code_id} value={option.code_id}>
+                                            {option.caption}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Ngày sinh:</Label>
+                                <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+                            </InfoItem>
+                            <ButtonContainer>
+                                <EditButton type="submit">Lưu</EditButton>
+                                <ForgotButton onClick={() => setIsEditProfile(false)}>Hủy</ForgotButton>
+                            </ButtonContainer>
+                        </form>
+                    )}
+                    {isChangePassword && (
+                        <form onSubmit={handleChangePassword}>
+                            <InfoItem>
+                                <Label>Mật khẩu cũ:</Label>
+                                <PasswordInputWrapper>
+                                    <Input
+                                        type={showOldPassword ? 'text' : 'password'}
+                                        value={oldPassword}
+                                        onChange={(e) => setOldPassword(e.target.value)}
+                                    />
+                                    <EyeIcon onClick={() => setShowOldPassword(!showOldPassword)}>
+                                        {showOldPassword ? <EyeOff /> : <Eye />}
+                                    </EyeIcon>
+                                </PasswordInputWrapper>
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Mật khẩu mới:</Label>
+                                <PasswordInputWrapper>
+                                    <Input
+                                        type={showNewPassword ? 'text' : 'password'}
+                                        value={newPassword}
+                                        onChange={(e) => setNewPassword(e.target.value)}
+                                    />
+                                    <EyeIcon onClick={() => setShowNewPassword(!showNewPassword)}>
+                                        {showNewPassword ? <EyeOff /> : <Eye />}
+                                    </EyeIcon>
+                                </PasswordInputWrapper>
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Xác nhận mật khẩu mới:</Label>
+                                <PasswordInputWrapper>
+                                    <Input
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                    />
+                                    <EyeIcon onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                        {showConfirmPassword ? <EyeOff /> : <Eye />}
+                                    </EyeIcon>
+                                </PasswordInputWrapper>
+                            </InfoItem>
+                            <ButtonContainer>
+                                <EditButton type="submit">Thay đổi</EditButton>
+                                <ForgotButton onClick={() => setIsChangePassword(false)}>Hủy</ForgotButton>
+                            </ButtonContainer>
+                        </form>
+                    )}
+                </InfoSection>
+            </Card>
         </ProfileContainer>
     );
 }
