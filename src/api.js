@@ -59,7 +59,18 @@ export const changePassword = async (token, data) => {
         },
         body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to change password');
     const result = await response.json();
-    return result.data;
+    return result; // Trả về toàn bộ response (success, description, v.v.)
+};
+export const fetchCodeList = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch code list');
+    const data = await response.json();
+    return data.data_set; // Return the array of code items
 };

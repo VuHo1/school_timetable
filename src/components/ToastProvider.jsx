@@ -5,10 +5,10 @@ const ToastContext = createContext();
 
 const Toast = styled.div`
   position: fixed;
-  top: 20px;
+  top: 80px;
   right: 20px;
   padding: 12px 24px;
-  border-radius: 1px;
+  border-radius: 5px;
   color: white;
   font-size: 18px;
   z-index: 1000;
