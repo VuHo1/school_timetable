@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            powershell -Command "Get-ChildItem 'C:/inetpub/wwwroot/publish' -Recurse | Where-Object { $_.Name -notlike 'web.config' } | Remove-Item -Force -Recurse"
+            powershell -Command "Get-ChildItem 'C:/inetpub/wwwroot/publish-web' -Recurse | Where-Object { $_.Name -notlike 'web.config' } | Remove-Item -Force -Recurse"
 
       - name: Upload new build to VPS
         run: |
