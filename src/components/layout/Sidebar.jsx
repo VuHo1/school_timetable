@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import '../../styles/main.css';
+import { memo } from 'react';
 import UserAvatar from '../UserAvatar';
 
 function StaffLayout() {
@@ -31,4 +32,6 @@ function StaffLayout() {
     );
 }
 
-export default StaffLayout;
+export default memo(StaffLayout, (prevProps, nextProps) => {
+    return JSON.stringify(prevProps) === JSON.stringify(nextProps); // More specific memoization
+});

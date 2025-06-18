@@ -5,17 +5,19 @@ const ToastContext = createContext();
 
 const Toast = styled.div`
   position: fixed;
+  max-width: 25%;
   top: 80px;
-  right: 20px;
+  right: 5px;
   padding: 12px 24px;
   border-radius: 5px;
-  color: white;
+  text-align: left;
   font-size: 18px;
   z-index: 1000;
   opacity: ${(props) => (props.visible ? 1 : 0)};
   transform: translateY(${props => props.visible ? '0' : '-20px'});
   transition: opacity 0.3s, transform 0.3s;
-  background: ${(props) => (props.type === 'success' ? '#28a745' : '#dc3545')};
+  background: ${(props) => (props.type === 'success' ? '#C8E6C9' : '#FFCDD2')};
+  color: ${(props) => (props.type === 'success' ? '#388E3C' : '#D32F2F')};
 `;
 
 export function ToastProvider({ children }) {
@@ -29,7 +31,7 @@ export function ToastProvider({ children }) {
         if (toast.visible) {
             const timer = setTimeout(() => {
                 setToast({ ...toast, visible: false });
-            }, 2000);
+            }, 4000);
             return () => clearTimeout(timer);
         }
     }, [toast]);

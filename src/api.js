@@ -74,3 +74,15 @@ export const fetchCodeList = async (token) => {
     const data = await response.json();
     return data.data_set; // Return the array of code items
 };
+export const fetchGenderList = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/gender`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch gender list');
+    const data = await response.json();
+    return data.data_set || []; // Trả về mảng data_set, dùng [] nếu không có
+};
