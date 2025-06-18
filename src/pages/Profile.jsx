@@ -1,14 +1,16 @@
 import { useAuth } from '../context/AuthContext';
 import styled from 'styled-components';
 import { useState, useEffect } from 'react';
-import { fetchUserProfile, updateAvatar, updateUserInfo, changePassword, fetchCodeList } from '../api';
+import { fetchUserProfile, updateAvatar, updateUserInfo, changePassword, fetchGenderList } from '../api';
 import { memo } from 'react';
 import { useToast } from '../components/ToastProvider';
 import { Eye, EyeOff } from 'lucide-react';
+
 const ProfileContainer = styled.div`
-  max-width: 400px;
+  max-width: 500px;
   margin: 0 auto;
   padding: 20px;
+  
 `;
 
 const Card = styled.div`
@@ -46,15 +48,15 @@ const InfoSection = styled.div`
 `;
 
 const InfoItem = styled.div`
-  margin-bottom: 15px;
-  font-size: 16px;
+  margin-bottom: 20px;
+  font-size: 15px;
   display: flex;
   align-items: center;
   position: relative;
 `;
 
 const Label = styled.div`
-  min-width: 100px;
+  min-width: 180px;
   margin-right: 10px;
   text-align: start;
   font-weight: bold;
@@ -113,6 +115,7 @@ const EditButton = styled.button`
     background-color: #0056b3;
   }
 `;
+
 const ForgotButton = styled.button`
   padding: 8px 16px;
   background-color: white;
@@ -126,9 +129,6 @@ const ForgotButton = styled.button`
   }
 `;
 
-
-
-
 function Profile() {
     const { user, setUser } = useAuth();
     const [isEditProfile, setIsEditProfile] = useState(false);
@@ -136,9 +136,10 @@ function Profile() {
     const [avatarFile, setAvatarFile] = useState(null);
     const [fullName, setFullName] = useState(user?.full_name || '');
     const [phone, setPhone] = useState(user?.phone || '');
-    const [gender, setGender] = useState(user?.gender || '');
+    const [gender, setGender] = useState(''); // Khởi tạo rỗng
     const [dob, setDob] = useState(user?.dob ? user.dob.split('T')[0] : '');
     const [genderOptions, setGenderOptions] = useState([]);
+    const [isGenderOptionsReady, setIsGenderOptionsReady] = useState(false);
 
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
@@ -147,7 +148,7 @@ function Profile() {
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const toast = useToast(); // Access the toast context
+    const toast = useToast();
 
     const avatarUrl = user?.avatar || '';
     const cacheBustUrl = `${avatarUrl}?t=${new Date().getTime()}`;
@@ -156,15 +157,28 @@ function Profile() {
         const fetchGenderOptions = async () => {
             try {
                 const token = localStorage.getItem('authToken');
-                const codes = await fetchCodeList(token);
-                const genderCodes = codes.filter(code => code.code_name === 'GENDER');
+                console.log('Fetching gender options in Profile with token:', token);
+                const response = await fetchGenderList(token); // Lấy response từ API
+                console.log('Raw API response from fetchGenderList:', response); // Debug response
+                const codes = response?.data || response || []; // Xử lý nếu response là object hoặc array
+                const genderCodes = Array.isArray(codes) ? codes.filter(code => code.code_name === 'GENDER') : [];
+                console.log('Processed genderCodes:', genderCodes);
                 setGenderOptions(genderCodes);
+                // Set gender chỉ khi có dữ liệu
+                if (user?.gender && genderCodes.length > 0) {
+                    const initialGender = genderCodes.find(opt => opt.caption === user.gender)?.code_id || '';
+                    setGender(initialGender);
+                }
+                setIsGenderOptionsReady(true);
             } catch (error) {
                 console.error('Error fetching gender options:', error);
+                toast.showToast('Không thể tải dữ liệu giới tính. Vui lòng thử lại.', 'error');
+                setIsGenderOptionsReady(true); // Đặt true để tránh treo, dù không có dữ liệu
+                setGenderOptions([]); // Đặt mảng rỗng nếu lỗi
             }
         };
         fetchGenderOptions();
-    }, []);
+    }, [user]);
 
     if (!user) {
         return <div>Unable to load profile. Please try logging in again.</div>;
@@ -180,10 +194,8 @@ function Profile() {
                 const updatedUser = await fetchUserProfile(token);
                 if (setUser && updatedUser) {
                     setUser(prevUser => ({ ...prevUser, ...updatedUser }));
-
                 } else {
                     toast.showToast('Cập nhật avatar thành công!', 'success', 2000);
-
                 }
             } catch (error) {
                 console.error('Avatar upload error:', error);
@@ -196,7 +208,13 @@ function Profile() {
         e.preventDefault();
         const currentDate = new Date();
         const inputDate = new Date(dob);
+        const phoneRegex = /^0\d{9}$/;
+        if (!phoneRegex.test(phone)) {
+            toast.showToast('Số điện thoại không hợp lệ', 'error');
+            return;
+        }
         if (inputDate > currentDate) {
+            toast.showToast('Ngày sinh không được là ngày tương lai.', 'error');
             return;
         }
         const updateData = {
@@ -248,7 +266,6 @@ function Profile() {
         <ProfileContainer>
             <Card>
                 <Header>
-
                     {user.avatar && <Avatar src={cacheBustUrl} alt="User Avatar" onClick={() => document.getElementById('avatarInput').click()} />}
                     <input
                         type="file"
@@ -257,31 +274,40 @@ function Profile() {
                         style={{ display: 'none' }}
                         id="avatarInput"
                     />
-
                 </Header>
                 <InfoSection>
                     {!isEditProfile && !isChangePassword && (
                         <>
                             <InfoItem>
-                                <Label>Họ và Tên:</Label> {user.full_name || 'N/A'}
+                                <Label>Họ và tên:</Label> {user.full_name || 'N/A'}
                             </InfoItem>
                             <InfoItem>
                                 <Label>Email:</Label> {user.email || 'N/A'}
                             </InfoItem>
                             <InfoItem>
-                                <Label>Phone:</Label> {user.phone || 'N/A'}
+                                <Label>Số điện thoại:</Label> {user.phone || 'N/A'}
                             </InfoItem>
                             <InfoItem>
-                                <Label>Giới Tính:</Label> {user.gender || 'N/A'}
+                                <Label>Giới tính:</Label> {user.gender || 'N/A'}
                             </InfoItem>
                             <InfoItem>
                                 <Label>Ngày sinh:</Label> {user.dob ? new Date(user.dob).toLocaleDateString('vi-VN') : 'N/A'}
                             </InfoItem>
                             <InfoItem>
-                                <Label>Vai Trò:</Label> {user.role_name || 'N/A'}
+                                <Label>Vai trò:</Label> {user.role_name || 'N/A'}
                             </InfoItem>
                             <ButtonContainer>
-                                <EditButton onClick={() => setIsEditProfile(true)}>Sửa hồ sơ</EditButton>
+                                <EditButton onClick={() => {
+                                    if (isGenderOptionsReady) {
+                                        setFullName(user.full_name || '');
+                                        setPhone(user.phone || '');
+                                        setDob(user.dob ? user.dob.split('T')[0] : '');
+                                        setGender(genderOptions.find(opt => opt.caption === user.gender)?.code_id || '');
+                                        setIsEditProfile(true);
+                                    } else {
+                                        console.log('Gender options not ready yet');
+                                    }
+                                }}>Sửa hồ sơ</EditButton>
                                 <ForgotButton onClick={() => setIsChangePassword(true)}>Đổi mật khẩu</ForgotButton>
                             </ButtonContainer>
                         </>
@@ -289,21 +315,25 @@ function Profile() {
                     {isEditProfile && (
                         <form onSubmit={handleUpdateInfo}>
                             <InfoItem>
-                                <Label>Họ và Tên:</Label>
+                                <Label>Họ và tên:</Label>
                                 <Input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} />
                             </InfoItem>
                             <InfoItem>
-                                <Label>Phone:</Label>
+                                <Label>Số điện thoại:</Label>
                                 <Input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} />
                             </InfoItem>
                             <InfoItem>
-                                <Label>Giới Tính:</Label>
+                                <Label>Giới tính:</Label>
                                 <Select value={gender} onChange={(e) => setGender(e.target.value)}>
-                                    {genderOptions.map(option => (
-                                        <option key={option.code_id} value={option.code_id}>
-                                            {option.caption}
-                                        </option>
-                                    ))}
+                                    {genderOptions.length === 0 ? (
+                                        <option value="">Không tải được dữ liệu giới tính</option>
+                                    ) : (
+                                        genderOptions.map(option => (
+                                            <option key={option.code_id} value={option.code_id}>
+                                                {option.caption}
+                                            </option>
+                                        ))
+                                    )}
                                 </Select>
                             </InfoItem>
                             <InfoItem>
@@ -345,7 +375,7 @@ function Profile() {
                                 </PasswordInputWrapper>
                             </InfoItem>
                             <InfoItem>
-                                <Label>Xác nhận mật khẩu mới:</Label>
+                                <Label>Nhập lại mật khẩu mới:</Label>
                                 <PasswordInputWrapper>
                                     <Input
                                         type={showConfirmPassword ? 'text' : 'password'}
@@ -363,7 +393,6 @@ function Profile() {
                             </ButtonContainer>
                         </form>
                     )}
-                    //ccc
                 </InfoSection>
             </Card>
         </ProfileContainer>
