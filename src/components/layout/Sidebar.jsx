@@ -20,6 +20,7 @@ function StaffLayout() {
                 <h2>Staff Menu</h2>
                 <nav>
                     <Link to="/staff/schedule">View Schedule</Link>
+                    <Link to="/staff/class">Quản lý lớp học</Link>
                     <Link to="/profile"><UserAvatar /></Link>
                     <button onClick={handleLogout}>Logout</button>
                 </nav>
