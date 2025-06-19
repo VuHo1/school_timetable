@@ -59,9 +59,8 @@ export const changePassword = async (token, data) => {
         },
         body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error('Failed to change password');
     const result = await response.json();
-    return result.data;
+    return result; // Trả về toàn bộ response (success, description, v.v.)
 };
 
 // Class Management APIs
@@ -71,16 +70,13 @@ export const fetchClasses = async (token, params = {}) => {
     if (params.page) queryParams.append('page', params.page);
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.sort) queryParams.append('sort', params.sort);
-    
     // Add filters
     if (params.filter) {
         Object.keys(params.filter).forEach(key => {
             queryParams.append(`filter[${key}]`, params.filter[key]);
         });
     }
-
     const url = `${API_BASE_URL}/api/class?${queryParams.toString()}`;
-    
     const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -88,12 +84,10 @@ export const fetchClasses = async (token, params = {}) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to fetch classes: ${response.status} ${response.statusText}`);
     }
-    
     const data = await response.json();
     return data; // Trả về toàn bộ response để có thể access data_set và pagination
 };
@@ -199,4 +193,31 @@ export const fetchTimeSlots = async (token) => {
     const data = await response.json();
     console.log('API /api/time-slot response:', data);
     return data.data_set;
+};
+
+// Code list APIs
+export const fetchCodeList = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch code list');
+    const data = await response.json();
+    return data.data_set; // Return the array of code items
+};
+
+export const fetchGenderList = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/gender`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch gender list');
+    const data = await response.json();
+    return data.data_set || []; // Trả về mảng data_set, dùng [] nếu không có
 };
