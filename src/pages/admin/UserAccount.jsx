@@ -14,7 +14,7 @@ import styled from 'styled-components';
 const Container = styled.div`
   padding: 15px;
   background-color: #f5f5f5;
-  min-height: 100vh;
+ 
 `;
 
 const Title = styled.h1`
@@ -32,7 +32,7 @@ const SearchSection = styled.div`
 `;
 
 const SearchInput = styled.input`
-  padding: 6px;
+  padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
   width: 250px;
@@ -40,7 +40,7 @@ const SearchInput = styled.input`
 `;
 
 const SortSelect = styled.select`
-  padding: 6px;
+  padding: 10px;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 12px;
@@ -49,7 +49,7 @@ const SortSelect = styled.select`
 `;
 
 const SearchButton = styled.button`
-  padding: 6px 12px;
+  padding: 10px 12px;
   background-color: #007bff;
   color: white;
   border: none;
@@ -80,7 +80,7 @@ const ClearButton = styled.button`
 `;
 
 const CreateButton = styled.button`
-  padding: 6px 12px;
+  padding: 10px 12px;
   background-color: #28a745;
   color: white;
   border: none;
@@ -109,12 +109,12 @@ const TableHead = styled.thead``;
 const TableHeader = styled.th`
   padding: 8px;
   border: 1px solid #dee2e6;
-  text-align: center;
+  text-align: left;
   background-color: #e9ecef;
-  font-size: 12px;
+  font-size: 14px;
   position: relative;
   cursor: pointer;
-  width: 75px;
+  
 `;
 
 const FilterDropdown = styled.div`
@@ -158,9 +158,11 @@ const TableRow = styled.tr`
 `;
 
 const TableCell = styled.td`
-  padding: 6px;
+  padding: 10px;
   border: 1px solid #dee2e6;
-  font-size: 12px;
+  font-size: 14px;
+  text-align: left;
+
 `;
 
 const ActionButton = styled.button`
@@ -382,6 +384,18 @@ const PageButton = styled.button`
   }
 `;
 
+const formatDateTime = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'N/A';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+};
 export default function UserAccount() {
   const { user } = useAuth();
   const toast = useToast();
@@ -409,7 +423,7 @@ export default function UserAccount() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [roles, setRoles] = useState([]);
-  const limit = 8;
+  const limit = 7;
 
   // Refs for dropdown visibility
   const statusDropdownRef = useRef(null);
@@ -650,17 +664,17 @@ export default function UserAccount() {
 
   return (
     <Container>
-      <Title>Quản Lý Tài Khoản</Title>
+      <Title>Quản lý tài khoản</Title>
 
       <SearchSection>
         <SearchInput
           type="text"
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}
-          placeholder="Tìm kiếm theo Username, Họ tên, SĐT, Email..."
+          placeholder="Tìm kiếm theo tên ,email,số điện thoại..."
         />
         <SearchButton onClick={handleSearch} disabled={loading}>
-          Tìm Kiếm
+          Tìm kiếm
         </SearchButton>
         <SortSelect
           value={`${sortField}:${sortOrder}`}
@@ -676,7 +690,7 @@ export default function UserAccount() {
           <option value="full_name:DESC">Họ tên (Z-A)</option>
         </SortSelect>
         <CreateButton onClick={() => setIsCreateModalOpen(true)} disabled={loading}>
-          Tạo Tài Khoản Mới
+          + Tạo tài khoản
         </CreateButton>
       </SearchSection>
 
@@ -685,6 +699,7 @@ export default function UserAccount() {
           <tr>
             <TableHeader>Tên tài khoản</TableHeader>
             <TableHeader>Họ và tên</TableHeader>
+            <TableHeader>Email</TableHeader>
             <TableHeader
               onMouseEnter={() => setShowGenderDropdown(true)}
               onMouseLeave={() => setShowGenderDropdown(false)}
@@ -760,13 +775,14 @@ export default function UserAccount() {
         <TableBody>
           {loading ? (
             <tr>
-              <TableCell colSpan="6" style={{ textAlign: 'center', padding: '15px' }}>Đang tải...</TableCell>
+              <TableCell colSpan="7" style={{ textAlign: 'center', padding: '15px' }}>Đang tải...</TableCell>
             </tr>
           ) : users.length > 0 ? (
             users.map((user) => (
               <TableRow key={user.id}>
                 <TableCell>{user.user_name}</TableCell>
                 <TableCell>{user.full_name}</TableCell>
+                <TableCell>{user.email || `N/A`}</TableCell>
                 <TableCell>{user.gender}</TableCell>
                 <TableCell>{user.role_name}</TableCell>
                 <TableCell>{user.status}</TableCell>
@@ -790,7 +806,7 @@ export default function UserAccount() {
             ))
           ) : (
             <tr>
-              <TableCell colSpan="6" style={{ textAlign: 'center', padding: '15px' }}>Không có tài khoản nào.</TableCell>
+              <TableCell colSpan="7" style={{ textAlign: 'center', padding: '15px' }}>Không có tài khoản nào.</TableCell>
             </tr>
           )}
         </TableBody>
@@ -927,11 +943,11 @@ export default function UserAccount() {
 
               <DetailItem>
                 <DetailLabel>Ngày tạo:</DetailLabel>
-                <DetailValue>{selectedUser.created_date ? new Date(selectedUser.created_date).toLocaleString() : 'N/A'}</DetailValue>
+                <DetailValue>{formatDateTime(selectedUser.created_date)}</DetailValue>
               </DetailItem>
               <DetailItem>
                 <DetailLabel>Ngày cập nhật:</DetailLabel>
-                <DetailValue>{selectedUser.updated_date ? new Date(selectedUser.updated_date).toLocaleString() : 'N/A'}</DetailValue>
+                <DetailValue>{formatDateTime(selectedUser.updated_date)}</DetailValue>
               </DetailItem>
             </DetailSection>
             <CloseButton onClick={() => setIsDetailModalOpen(false)}>Đóng</CloseButton>
