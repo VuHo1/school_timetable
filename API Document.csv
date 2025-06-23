@@ -1,0 +1,613 @@
+﻿Chức năng,Diễn giải,Endpoint,Method,URL Parameter,Message Payload,Header Parameters,Chú thích,Ví dụ,Yêu cầu,Mẫu
+Xem điểm danh,Xem danh sách điểm danh của giáo viên,/api/attendance,GET,,,Authorization,,,,
+Xem điểm danh,Giáo viên dùng để xem lần điểm danh của họ,/api/attendance/my-attendance,GET,,,Authorization,,,,
+Điểm danh,Dùng để điểm danh,/api/attendance/add,POST,"fileAlias
+scheduleId",,"Authorization
+ Content-Type: multipart/form-data","fileAlias: tên file, user có thể tự nhập hoặc hệ thống tự gen.
+scheduleId: Id của lịch học","/api/attendance/add?fileAlias=A&scheduleId=1
+/api/attendance/add?scheduleId=1","Chỉ được chấp nhận ảnh từ camera, không được chọn từ thư viện.
+Nếu ScheduleId đã có điểm danh trước, khi update ảnh sẽ ghi đè lại thông tin.",
+Điểm danh,Dùng để xóa file điểm danh để có thể điểm danh lại,/api/attendance/remove/{id},DELETE,id,,Authorization,id: Id của file điểm danh,/api/attendance/remove/1,,
+Đăng nhập,Dùng để đăng nhập vào hệ thống,/api/auth/sign-in,POST,,"{
+  ""user_name"": ""string"",
+  ""password"": ""string""
+}",Authorization,"user_name: tên đăng nhập, có thể là email/username
+password: mật khẩu","{
+  ""user_name"": ""tuyendht"",
+  ""password"": ""MyPassword@123""
+}","Đăng nhập thất bại quá 5 lần sẽ bị Block
+Nếu tài khoản bị Block liên hệ quản trị viên để mở lại",
+Đăng nhập,Dùng để đăng nhập vào hệ thống thông qua google,/api/auth/sign-in-google,POST,,"""string""",Authorization,JWT token được truyền từ FE,,"Tìm hiểu để truyền token ở
+https://developers.google.com/identity/gsi/web/guides/overview?hl=vi hoặc
+https://github.com/MomenSherif/react-oauth",
+Đăng xuất,Dùng để đăng xuất trên 1 thiết bị,/api/auth/sign-out,POST,,,Authorization,Chỉ cần truyền token ở Header,,,
+Đăng xuất,Dùng để đăng xuất trên toàn bộ thiết bị,/api/auth/sign-out-all-application,POST,,,Authorization,,,,
+Quên mật khẩu,Dùng để cấp lại mật khẩu khi quên,/api/auth/reset-password,PUT,,"""string""",Authorization,Nhập username/ email của tài khoản,"""tuyendht""","Mật khẩu sẽ được gửi qua email.
+Nếu trong thời hạn không đăng nhập lại hoặc đổi mk thì sẽ expire password và tk bị Block.
+Nếu tài khoản bị Block liên hệ quản trị viên để mở lại",
+Đổi mật khẩu,Dùng để đổi mật khẩu,/api/auth/update-password,PUT,,"{
+  ""old_password"": ""string"",
+  ""new_password"": ""string"",
+  ""confirm_new_password"": ""string""
+}",Authorization,"old_password: mk cũ.
+new_password: mk mới.
+confirm_new_password: nhập lại mk mới","{
+  ""old_password"": ""MyPassword@123"",
+  ""new_password"": ""MyNewPassword@123"",
+  ""confirm_new_password"": ""MyNewPassword@123""
+}",,
+Xem lớp,Xem danh sách lớp,/api/class,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên ClassCode, Grade, RoomName, RoomType
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/class?search=A&filter[room_code]=NONE&sort=class_code&page=1&limit=100,,
+Xem lớp,Xem thông tin của 1 lớp,/api/class/{classCode},GET,classCode,,Authorization,truyền classCode,/api/class/10A01,,
+Xem môn học của lớp,Xem danh sách môn học của 1 lớp,/api/class/class-subject/{classCode},GET,classCode,,Authorization,truyền classCode,/api/class/class-subject/10A01,,
+Xem câú hình lịch học của lớp,Xem câú hình lịch học của 1 lớp,/api/class/class-schedule-config/{classCode},GET,classCode,,Authorization,truyền classCode,/class/class-schedule-config/10A01,,
+Tạo lớp,Dùng để tạo lớp,/api/class/add,POST,,"{
+  ""class_code"": ""string"",
+  ""quantity"": 0,
+  ""grade_level"": [
+    ""string""
+  ]
+}",Authorization,"class_code: code của lớp, ví dụ A B C D, CLC.
+quantity: số lượng lớp cần tạo
+grade_level: gọi API /code-list/GRADELVL và truyền danh sách (có thể truyền 1) code_id","{
+  ""class_code"": ""A"",
+  ""quantity"": 5,
+  ""grade_level"": [
+    ""10"",""11"",""12""
+  ]
+}","Nếu trùng ClassCode và Grade như 10A thì hệ thống tự gen số đuôi ví dụ 10A01, 10A02",
+Assign môn học cho lớp,Dùng để assign môn học cho lớp,/api/class/class-subject/add,POST,,"{
+  ""class_code"": ""string"",
+  ""force_assign"": true,
+  ""subjects"": [
+    {
+      ""subject_code"": ""string"",
+      ""teacher_user_name"": ""string"",
+      ""weekly_slot"": 0,
+      ""continuous_slot"": 0,
+      ""fixed_slot"": [
+        {
+          ""day_of_week"": ""Sunday"",
+          ""slot"": 0
+        }
+      ],
+      ""avoid_slot"": [
+        {
+          ""day_of_week"": ""Sunday"",
+          ""slot"": 0
+        }
+      ]
+    }
+  ]
+}",Authorization,"class_code: class code.
+force_assign: mặc định yêu cầu 1 lớp tối thiểu 1 môn đảm nhiệm bởi gvcn, true thì bỏ qua điều kiện.
+subjects: danh sách môn học assign cho lớp.
+subject_code: gọi API /api/subject/grade/{gradeLevel} để lấy danh sách môn cùng cấp với lớp học.
+teacher_user_name: gọi API /api/subject/{subjectCode}?classCode={classCode} lấy available_teacher danh sách giáo viên có dạy môn đó. Có thể truyền hoặc không.
+weekly_slot,continuous_slot,fixed_slot,avoid_slot: gọi API /api/subject/{subjectCode}?classCode={classCode} để lấy thông tin. Có thể setting riêng cho mỗi lớp. 
+day_of_week: ngày trong tuần tiếng Anh
+slot: gọi API /api/time-slot để lấy time_slot_code","{
+  ""class_code"": ""10A01"",
+  ""force_assign"": true,
+  ""subjects"": [
+    {
+      ""subject_code"": ""10NVAN01"",
+      ""teacher_user_name"": """",
+      ""weekly_slot"": 4,
+      ""continuous_slot"": 2,
+      ""fixed_slot"": [],
+      ""avoid_slot"": []
+    }
+  ]
+}","Khi muốn thêm mới hoặc xóa thì phải truyền toàn bộ danh sách xuống.
+Ví dụ trong DB đã có môn A B C D, truyền A E G thì sẽ cập nhật lại A, thêm E G và xóa B C D",
+Assign môn học cho lớp,Dùng để assign môn học cho lớp,/api/class/class-subject/add-same,POST,,"{
+  ""class_code"": ""string"",
+  ""target_class_code"": [
+    ""string""
+  ]
+}",Authorization,"class_code: class code dùng để lấy setting subject
+target_class_code: danh sách class sẽ áp dụng ","{
+  ""class_code"": ""10A01"",
+  ""target_class_code"": [
+    ""10A02"", ""10A03""
+  ]
+}",,
+Config schedule cho lớp,Dùng để cấu hình lịch học cơ bản cho 1 lớp,/api/class/class-schedule-config/add,POST,,"{
+  ""class_code"": ""string"",
+  ""monday"": ""string"",
+  ""tuesday"": ""string"",
+  ""wednesday"": ""string"",
+  ""thursday"": ""string"",
+  ""friday"": ""string"",
+  ""saturday"": ""string"",
+  ""sunday"": ""string""
+}",Authorization,"class_code: class code
+monday...: thứ trong tuần, truyền dữ liệu slotcode|slotcode| ví dụ 1|2|3, gọi API /api/time-slot để lấy time_slot_code","{
+  ""class_code"": ""10A01"",
+  ""monday"": ""1|2|3"",
+  ""tuesday"": ""1|2|3"",
+  ""wednesday"": ""1|2|3"",
+  ""thursday"": ""1|2|3"",
+  ""friday"": ""1|2|3"",
+  ""saturday"": """",
+  ""sunday"": """"
+}","Mặc định khi tạo lớp đã có setting sẳn dựa theo cài đặt hệ thống, API này chủ yếu dùng để update",
+Config schedule cho lớp,Dùng để cấu hình lịch học cơ bản cho nhiều lớp,/api/class/class-schedule-config/add-same,POST,,"{
+  ""class_code"": ""string"",
+  ""target_class_code"": [
+    ""string""
+  ]
+}",Authorization,tương tự /api/class/class-subject/add-same,"{
+  ""class_code"": ""10A01"",
+  ""target_class_code"": [
+    ""10A02"", ""10A03""
+  ]
+}",,
+Assign giáo viên chủ nhiệm,Dùng để assign gvcn cho lớp,/api/class/update/class-teacher,PUT,,"{
+  ""class_code"": ""string"",
+  ""teacher_user_name"": ""string""
+}",Authorization,"class_code: class code
+teacher_user_name: gọi API /api/teacher/available để lấy danh sách gv chưa có lớp","{
+  ""class_code"": ""10A01"",
+  ""teacher_user_name"": ""teacherA""
+}",,
+Assign phòng học,Dùng để assign phòng học cơ bản cho lớp,/api/class/update/class-room,PUT,,"{
+  ""class_code"": ""string"",
+  ""room_code"": ""string""
+}",Authorization,"class_code: class code
+room_code: gọi API /api/room/available để lấy danh sách phòng chưa có lớp","{
+  ""class_code"": ""10A01"",
+  ""room_code"": ""101""
+}",,
+Xóa lớp,Dúng để xóa lớp (soft delete),/api/class/remove/{classCode},DELETE,classCode,,Authorization,truyền classCode,/api/class/remove/10A01,,
+Xem code list,"Xem danh sách code list, code list là các cấu hình chung cho các dropdown, hệ thống,...",/api/code-list,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên CodeId, CodeName, Caption
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/code-list?filter[status]=Đang hoạt động&sort=code_id&page=1&limit=100,,
+Xem code list,"Xem danh sách code list, code list là các cấu hình chung cho các dropdown, hệ thống,...",/api/code-list/{codeName},GET,codeName,,Authorization,truyền code name,/api/code-list/SYSSTS,Chỉ show các status đang hoạt động,
+Tạo code list,"Dùng để tạo code list, ví dụ như thêm data cho dropdown Gender",/api/code-list/add,POST,,"{
+  ""code_id"": ""string"",
+  ""code_name"": ""string"",
+  ""caption"": ""string""
+}",Authorization,"code_id: code id, cặp codeid và codename phải là duy nhất
+code_name: có thể tạo mới hoặc dùng lại code_name cũ để add thêm vào code_name đó
+caption: chú thích","{
+  ""code_id"": ""4"",
+  ""code_name"": ""GENDER"",
+  ""caption"": ""Non-binary""
+}",,
+Update code list,Dùng để update caption của code list đó,/api/code-list/update,PUT,,"{
+  ""id"": 0,
+  ""caption"": ""string""
+}",Authorization,"id: id của code list
+caption: chú thích mới","{
+  ""id"": 1,
+  ""caption"": ""Khóa""
+}",,
+Xóa code list,Dúng để xóa code list (soft delete),/api/code-list/remove/{id},DELETE,id,,Authorization,id: id của code list,/api/code-list/remove/1,,
+Xem log,Dùng để xem danh sách lỗi của hệ thống trong vòng 7 ngày,/api/log,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên Method, Message, StackTrace
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/log?search=A&filter[method]=AuthenticationController.SignInGoogle&sort=method&page=1&limit=10,,
+Xem phòng học,Dùng để xem danh sách phòng học,/api/room,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên RoomName, RoomCode, RoomType
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 101",/api/room?search=a&filter[room_code]=101&sort=room_code&page=1&limit=100,,
+Xem phòng học,Dùng để xem danh sách phòng học chưa được assign cho lớp,/api/room/available,GET,,,Authorization,,/api/room/available,,
+Xem phòng học,Dùng để thông tin phòng học,/api/room/{roomCode},GET,roomCode,,Authorization,roomCode: room code,/api/room/101,,
+Tạo phòng học,Dùng để tạo phòng học,/api/room/add,POST,,"{
+  ""building_prefix"": ""string"",
+  ""floor"": 0,
+  ""quantity"": 0
+}",Authorization,"building_prefix: mã tòa nhà, có thể không truyền
+floor: tầng, phải lớn hơn 0
+quantity: số lượng cần tạo","{
+  ""building_prefix"": ""A"",
+  ""floor"": 1,
+  ""quantity"": 10
+}","Nếu có mã tòa nhà thì cấu trúc gen sẽ là A-101
+Ví dụ đã có ""101"" trong hệ thống mà tạo mới có mã tòa nhà thì vẫn sẽ tạo ""A-101"" chứ không tăng dần",
+Update phòng học,"Dùng để cập nhật tên phòng, loại phòng",/api/room/update,PUT,,"{
+  ""room_code"": ""string"",
+  ""room_name"": ""string"",
+  ""room_type"": ""string""
+}",Authorization,"room_code: phòng cần update
+room_name: tên mới
+room_type: loại mới, gọi API /api/code-list/ROOMTYPE để lấy loại phòng, dùng code_id
+","{
+  ""room_code"": ""101"",
+  ""room_name"": ""Tên mới nè"",
+  ""room_type"": ""LR""
+}",,
+Xóa phòng học,Dùng để xóa phòng học,/api/room/remove/{roomCode},DELETE,roomCode,,Authorization,,/api/room/remove/1,,
+Xem setting,Dùng để xem các cấu hình của hệ thống,/api/setting/app-setting,GET,,,Authorization,,/api/setting/app-setting,,
+Reload setting,Dùng để reload cấu hình trong trường hợp có cập nhật,/api/setting/app-setting/reload,GET,,,Authorization,,/api/setting/app-setting/reload,,
+Update setting,"Dùng để cập nhật setting, sẽ tự động reload khi success",/api/setting/app-setting/update,POST,,"{
+  ""name"": ""string"",
+  ""value"": ""string""
+}",Authorization,"name: tên setting
+value: dữ liệu mới","{
+  ""name"": ""TASK_SCAN_SECOND"",
+  ""value"": ""1""
+}",,
+Xem schedule setting,Dùng để xem các cấu hình schedule của hệ thống,/api/setting/schedule-config,GET,,,Authorization,,/api/setting/schedule-config,,
+Reload schedule setting,Dùng để reload cấu hình schedule trong trường hợp có cập nhật,/api/setting/schedule-config/reload,GET,,,Authorization,,/api/setting/schedule-config/reload,,
+Update schedule setting,"Dùng để cập nhật schedule setting, sẽ tự động reload khi success",/api/setting/schedule-config/update,POST,,"{
+  ""name"": ""string"",
+  ""value"": ""string""
+}",Authorization,"name: tên setting
+value: dữ liệu mới","{
+  ""name"": ""TASK_SCAN_SECOND"",
+  ""value"": ""1""
+}",,
+Xem môn học ,Xem danh sách môn học,/api/subject,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên SubjectCode, SubjectName, Grade
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/subject?search=a&filter[subject_code]=10SHCN01&sort=room_code&page=1&limit=100,,
+Xem giáo viên môn học ,Xem danh sách gv có thể dạy môn đó,/api/subject/{subjectCode}?{classCode},GET,"subjectCode
+classCode",,Authorization,"subjectCode: mã môn
+classCode: class code, có thể truyền hoặc không, chủ yếu dùng để set field is_home_room_teacher để order giáo viên chủ nhiệm lên đầu gợi ý","/api/subject/10NVAN01?classCode=10A01
+/api/subject/10NVAN01",,
+Xem môn học,Xem danh sách môn học có chung cấp lớp,/api/subject/grade/{gradeLevel},GET,gradeLevel,,Authorization,"gradeLevel: gọi  API /code-list/GRADELVL , sử dụng code_id",/api/subject/grade/10,,
+Tạo môn học,Dùng để tạo môn học mới ,/api/subject/add,POST,,"{
+  ""subject_code"": ""string"",
+  ""grade_level"": [
+    ""string""
+  ],
+  ""is_online_course"": true,
+  ""weekly_slot"": 0,
+  ""continuous_slot"": 0,
+  ""limit"": 0,
+  ""fixed_slot"": [
+    {
+      ""day_of_week"": ""Sunday"",
+      ""slot"": 0
+    }
+  ],
+  ""avoid_slot"": [
+    {
+      ""day_of_week"": ""Sunday"",
+      ""slot"": 0
+    }
+  ]
+}",Authorization,"subject_code: gọi API /api/code-list/SUBJECT để lấy mã môn gốc, có thể thêm một môn hoàn toàn mới bằng /api/code-list/add
+grade_level: gọi API /code-list/GRADELVL , sử dụng code_id
+is_online_course: môn này có phải học online hay không?
+weekly_slot: số tiết phải học trong tuần
+continuous_slot: số tiết liên tiếp tối đa trong 1 buổi học
+limit: giới hạn môn này tại cùng 1 thời điểm, ví dụ chỉ có 3 phòng thí nghiệm, thì set = 3 để tránh thiếu phòng học, 0 là không giới hạn
+fixed_slot: tiết cố định môn này sẽ học, ví dụ chào cờ/sinh hoạt CN thì slot 1 mỗi thứ 2
+avoid_slot: tiết tránh, khi xếp lịnh sẽ không xếp vào tiết này
+day_of_week: ngày trong tuần tiếng Anh
+slot: gọi API /api/time-slot để lấy time_slot_code","{
+  ""subject_code"": ""KTPL"",
+  ""grade_level"": [
+    ""10"", ""11"", ""12""
+  ],
+  ""is_online_course"": false,
+  ""weekly_slot"": 1,
+  ""continuous_slot"": 1,
+  ""limit"": 0,
+  ""fixed_slot"": [],
+  ""avoid_slot"": []
+}",,
+Update môn học,Dùng để update môn học ,/api/subject/update,PUT,,"{
+  ""subject_code"": ""string"",
+  ""is_online_course"": true,
+  ""weekly_slot"": 0,
+  ""continuous_slot"": 0,
+  ""limit"": 0,
+  ""fixed_slot"": [
+    {
+      ""day_of_week"": ""Sunday"",
+      ""slot"": 0
+    }
+  ],
+  ""avoid_slot"": [
+    {
+      ""day_of_week"": ""Sunday"",
+      ""slot"": 0
+    }
+  ],
+  ""also_update_for_class_subject"": ""string""
+}",Authorization,"subject_code: mã môn cần update
+is_online_course: môn này có phải học online hay không?
+weekly_slot: số tiết phải học trong tuần
+continuous_slot: số tiết liên tiếp tối đa trong 1 buổi học
+limit: giới hạn môn này tại cùng 1 thời điểm, ví dụ chỉ có 3 phòng thí nghiệm, thì set = 3 để tránh thiếu phòng học, 0 là không giới hạn
+fixed_slot: tiết cố định môn này sẽ học, ví dụ chào cờ/sinh hoạt CN thì slot 1 mỗi thứ 2
+avoid_slot: tiết tránh, khi xếp lịnh sẽ không xếp vào tiết này
+day_of_week: ngày trong tuần tiếng Anh
+slot: gọi API /api/time-slot để lấy time_slot_code
+also_update_for_class_subject: truyền G, I, N, hoặc A. dùng để cập nhật cấu hình môn học của riêng lớp. G là update lại các lớp có cấu hình giống với gốc, I là chỉ update các lớp có cấu hình riêng biệt, N là không update, A là update lại toàn bộ","{
+  ""subject_code"": ""10NVAN01"",
+  ""is_online_course"": false,
+  ""weekly_slot"": 4,
+  ""continuous_slot"": 2,
+  ""limit"": 0,
+  ""fixed_slot"": [],
+  ""avoid_slot"": [],
+  ""also_update_for_class_subject"": ""A""
+}",,
+Xóa môn học,Dùng đề xóa môn học (soft delete),/api/subject/remove/{subjectCode},DELETE,subjectCode,,Authorization,subjectCode: mã môn cần xóa,/api/subject/remove/10NVAN01,,
+Xem giáo viến,Dùng để xem danh sách giáo viên,/api/teacher,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên SubjectCode, SubjectName, Grade
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/teacher?search=a&filter[class_code]=10SHCN01&sort=user_name&page=1&limit=100,,
+Xem giáo viến,Dùng để xem danh sách giáo viên chưa được xếp lớp,/api/teacher/available,GET,,,Authorization,,/api/teacher/available,,
+Xem giáo viến,Dùng để xem thông tin 1 giáo viên,/api/teacher/{teacherUsername},GET,teacherUsername,,Authorization,truyền username,/api/teacher/teacherA,,
+Xem môn giáo viến dạy,Dùng để xem danh sách môn dạy của giáo viên,/api/teacher/teacher-subject/{teacherUsername},GET,teacherUsername,,Authorization,truyền username,/api/teacher/teacher-subject/teacherA,,
+Xem cấu hình giáo viến,Dùng để xem cấu hình thời khóa biểu của giáo viên,/api/teacher/teacher-schedule-config/{teacherUsername},GET,teacherUsername,,Authorization,truyền username,/api/teacher/teacher-schedule-config/teacherA,,
+Assign môn cho giáo viên,Dùng để assign môn gd có thể dạy,/api/teacher/teacher-subject/add,POST,,"{
+  ""teacher_user_name"": ""string"",
+  ""subject_code"": [
+    ""string""
+  ]
+}",Authorization,"teacher_user_name: username của giáo viên
+subject_code: danh sách các môn, gọi API /api/subject?filter[status]=Đang hoạt động để lấy danh sách các môn khả dụng","{
+  ""teacher_user_name"": ""teacherA"",
+  ""subject_code"": [
+    ""10SHCN01"", ""12NVAN01"",""12TOAN01""
+  ]
+}","Khi muốn thêm mới hoặc xóa thì phải truyền toàn bộ danh sách xuống.
+Ví dụ trong DB đã có môn A B C D, truyền A E G thì sẽ cập nhật lại A, thêm E G và xóa B C D",
+Cấu hình thời khóa biểu giáo viến,Dùng để  cấu hình thời khóa biểu của giáo viên,/api/teacher/teacher-schedule-config/add,POST,,"{
+  ""teacher_user_name"": ""string"",
+  ""monday"": ""string"",
+  ""tuesday"": ""string"",
+  ""wednesday"": ""string"",
+  ""thursday"": ""string"",
+  ""friday"": ""string"",
+  ""saturday"": ""string"",
+  ""sunday"": ""string"",
+  ""weekly_minimum_slot"": 0,
+  ""weekly_maximum_slot"": 0,
+  ""daily_minimum_slot"": 0,
+  ""daily_maximum_slot"": 0,
+  ""weekly_minimum_day"": 0,
+  ""weekly_maximum_day"": 0
+}",Authorization,"teacher_user_name: username của giáo viên
+monday...: thứ trong tuần, truyền dữ liệu slotcode|slotcode| ví dụ 1|2|3, gọi API /api/time-slot để lấy time_slot_code
+weekly_minimum_slot: số tiết tối thiểu trong tuần, 0 là không giới hạn
+weekly_maximum_slot: số tiết tối đa trong tuần, 0 là không giới hạn
+daily_minimum_slot: số tiết tối thiểu trong ngày, 0 là không giới hạn
+daily_maximum_slot: số tiết tối đa trong ngày, 0 là không giới hạn
+weekly_minimum_day: số ngày tối thiểu trong tuần, 0 là không giới hạn
+weekly_maximum_day: số ngày tối đa trong tuần, 0 là không giới hạn","{
+  ""teacher_user_name"": ""teacherA"",
+  ""monday"": ""1|3|4|5|6"",
+  ""tuesday"": ""1|3|4|5|6"",
+  ""wednesday"": ""1|3|4|5|6"",
+  ""thursday"": ""1|3|4|5|6"",
+  ""friday"": ""1|3|4|5|6"",
+  ""saturday"": """",
+  ""sunday"": """",
+  ""weekly_minimum_slot"": 0,
+  ""weekly_maximum_slot"": 0,
+  ""daily_minimum_slot"": 0,
+  ""daily_maximum_slot"": 0,
+  ""weekly_minimum_day"": 0,
+  ""weekly_maximum_day"": 0
+}",,
+Xem tiết học,Xem danh sách tiết học,/api/time-slot,GET,,,Authorization,,/api/time-slot,,
+Update tiết học,Dùng đểt cập nhật hoặc thêm mới/xóa tiết học,/api/time-slot/add,POST,,"[
+  {    
+    ""start_time"": ""string"",
+    ""end_time"": ""string""
+  }
+]",Authorization,"start_time: thời gian bắt đầu tiết học
+end_time: thời gian kết thúc tiết học","[
+  {
+    
+    ""start_time"": ""07:00"",
+    ""end_time"": ""07:45""
+  },{
+    
+    ""start_time"": ""08:00"",
+    ""end_time"": ""08:45""
+  },{
+    
+    ""start_time"": ""09:00"",
+    ""end_time"": ""09:45""
+  }
+]","Khi muốn thêm mới hoặc xóa thì phải truyền toàn bộ danh sách xuống.
+Ví dụ trong DB đã có slot 1 2 3 4 5 6, truyền 1 2 3 thì sẽ cập nhật lại 1 2 3 và xóa 4 5 6",
+Xem tài khoản,Xem danh sách tài khoản trong hệ thống,/api/user,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên UserName, FullName, Email,Phone
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/user?search=a&filter[gender]=Nam&sort=user_name&page=1&limit=100,,
+Xem tài khoản,Xem cho user xem profile của bản thân,/api/user/profile,GET,,,Authorization,,/api/user/profile,,
+Xem tài khoản,Xem cho thông tin của 1 tài khoản,/api/user/{userName},GET,userName,,Authorization,truyền user name,/api/user/teacherA,,
+Tạo tài khoản,Dùng để tạo tài khoản,/api/user/add,GET,,"{
+  ""email"": ""string"",
+  ""full_name"": ""string"",
+  ""phone"": ""string"",
+  ""gender"": ""string"",
+  ""dob"": ""2025-05-27T07:30:30.273Z"",
+  ""role_id"": 0
+}",Authorization,"email: phải unique
+full_name: tên người dùng
+phone, dob: thông tin cơ bản
+gender: gọi API /api/code-list/GENDER, truyền code_id,
+role_id: gọi API /api/user-role?filter[status]=Đang hoạt động để lấy danh sách các role khả dụng","{
+  ""email"": ""string"",
+  ""full_name"": ""string"",
+  ""phone"": ""string"",
+  ""gender"": ""string"",
+  ""dob"": ""2025-05-27T07:30:30.273Z"",
+  ""role_id"": 0
+}","user_name hệ thống sẽ tự generate
+password sẽ đuọc gửi qua email",
+Update tài khoản,Dùng để update tài khoản,/api/user/update,PUT,,"{
+  ""full_name"": ""string"",
+  ""phone"": ""string"",
+  ""gender"": ""string"",
+  ""dob"": ""2025-05-27T07:35:50.844Z""
+}",Authorization,,"{
+  ""full_name"": ""Tên mới nè"",
+  ""phone"": ""0909090909"",
+  ""gender"": ""1"",
+  ""dob"": ""2025-05-27""
+}",chỉ có chủ tài khoản mới có được quyền update,
+Update tài khoản,Dùng để update tài khoản,/api/user/update-avatar,PUT,,,"Authorization
+ Content-Type: multipart/form-data",,,,
+Kích hoạt lại tài khoản,Dùng để kích hoạt lại tài khoản,/api/user/active/{userName},PUT,userName,,Authorization,truyền userName,/api/user/remove/tuyendht,,
+Block tài khoản,Dùng để block tài khoản ,/api/user/block/{userName},PUT,userName,,Authorization,truyền userName,/api/user/remove/tuyendht,,
+Xóa tài khoản,Dùng để xóa tài khoản (soft delete),/api/user/remove/{userName},DELETE,userName,,Authorization,truyền userName,/api/user/remove/tuyendht,,
+Xóa avatar,Dùng để xóa avatar,/api/user/remove-avatar,DELETE,,,Authorization,,/api/user/remove-avatar,chỉ có chủ tài khoản mới có được quyền update,
+Xem command,Xem danh sách command(lệnh) của hệ thống,/api/user-command,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên CommandId, CommandName
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/user_command?search=a&filter[command_name]=Nam&page=1&limit=100,,
+Xem command,Xem command(lệnh) của hệ thống,/api/user-command/{commandId},GET,commandId,,Authorization,,/api/user-command/GET_LOG,,
+Xem command,Xem application có sẵn của command,/api/user-command/application,GET,,,Authorization,,/api/user-command/application,,
+Tạo command,Tạo command,/api/user-command/add,POST,,"{
+  ""command_id"": ""string"",
+  ""command_name"": ""string"",
+  ""application"": ""string""
+}",Authorization,"command_id: mã command
+command_name: diễn giải
+application: có thể truyền tự do hoặc gọi API /api/user-command/application","{
+  ""command_id"": ""GET_INFO"",
+  ""command_name"": ""Xem thông tin"",
+  ""application"": ""Hệ thống""
+}",,
+Update command,Update command,/api/user-command/update,PUT,,"{
+  ""command_id"": ""string"",
+  ""command_name"": ""string"",
+  ""application"": ""string""
+}",Authorization,"command_id: mã command cần update
+command_name: diễn giải mới
+application: có thể truyền tự do hoặc gọi API /api/user-command/application","{
+  ""command_id"": ""GET_INFO"",
+  ""command_name"": ""Xem thông tin mới nè"",
+  ""application"": ""Hệ thống""
+}",,
+Xóa command,Dùng để xóa command (soft delete),/api/user-command/remove/{commandId},DELETE,commandId,,Authorization,,/api/user-command/remove/GET_LOG,,
+Xem phân quyền,Xem danh sách phần quyền,/api/user-right,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên CommandId
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/user_right?search=a&filter[command_name]=Nam&sort=user_name&page=1&limit=100,,
+Xem phân quyền,Xem danh sách phần quyền của 1 role,/api/user-right/role-id/{roleId},GET,roleId,,Authorization,,/api/user-right/role-id/1,,
+Xem phân quyền,Xem danh sách phần quyền của 1 command,/api/user-right/command-id/{commandId},GET,commandId,,Authorization,,/api/user-right/command-id/GET_LOG,,
+Phân quyền,Dùng để phân quyền,/api/user-right/add,,,"{
+  ""role_id"": 0,
+  ""command_id"": [
+    ""string""
+  ]
+}",Authorization,"role_id: role cần phân quyền
+command_id: danh sách các quyền command cần phân cho role, gọi API /api/user_command?search=a&filter[application]=XXX&page=1&limit=100","{
+  ""role_id"": 1,
+  ""command_id"": [
+    ""GET_LOG"", ""GET_USER""
+  ]
+}","Khi muốn thêm mới hoặc xóa thì phải truyền toàn bộ danh sách xuống.
+Ví dụ trong DB đã có môn A B C D, truyền A E G thì sẽ cập nhật lại A, thêm E G và xóa B C D
+",#UNKNOWN!
+Xem role,Xem danh sách role trong hệ thống,/api/user-role,GET,"search
+filter
+sort
+page
+limit",,Authorization,"search: tìm kiếm tương đối trên RoleName
+filter: tìm kiếm tuyệt đối trên các field response trả ra
+sort: sort trên các field response trả ra, sort 1 field duy nhất, mặc định là ASC, DESC thì thêm dấu - ở trước field 
+page: số trang
+limit: giới hạn phần tử trả ra, mặc định 20, tối đa 100",/api/user_role?page=1&limit=100,,
+Xem role,Xem thông tin 1 role trong hệ thống,/api/user-role/{roleId},GET,roleId,,Authorization,,/api/user-role/1,,
+Tạo role,Thêm 1 role ,/api/user-role/add,POST,,"{
+  ""role_name"": ""string"",
+  ""is_teacher"": true,
+  ""status"": ""string""
+}",Authorization,"role_name: tên của role
+is_teacher: role này có phải là giáo viên không?
+status:  gọi API /api/code-list/SYSSTS, truyền code_id ","{
+  ""role_name"": ""Giáo viên hợp đồng"",
+  ""is_teacher"": true,
+  ""status"": ""A""
+}",,
+Update role,Dùng để update role,/api/user-role/update,PUT,,"{
+  ""id"": 0,
+  ""role_name"": ""string""
+}",Authorization,"id: id của role cần update
+role_name: tên mới","{
+  ""id"": 1,
+  ""role_name"": ""Giáo viên""
+}",,
+Assign role,Dùng để assign lại role cho 1 tài khoản,/api/user-role/assign,PUT,,"{
+  ""role_id"": 0,
+  ""user_name"": ""string""
+}",Authorization,"id: id của role 
+user_name: tên tài khoản","{
+  ""role_id"": 1,
+  ""user_name"": ""tuyendht""
+}",,
+Xóa role,Dùng để xóa role,/api/user-role/remove/{roleId},DELETE,roleId,,Authorization,,/api/user-role/remove/0,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,11,,,,,,

@@ -74,6 +74,7 @@ function StaffLayout() {
                 <h2>Staff Menu</h2>
                 <nav>
                     <Link to="/staff/schedule">View Schedule</Link>
+
                     <DropdownContainer
                         onMouseEnter={handleMouseEnter}
                         onMouseLeave={handleMouseLeave}
@@ -90,6 +91,7 @@ function StaffLayout() {
                             </DropdownItem>
                         </Dropdown>
                     </DropdownContainer>
+
                 </nav>
             </aside>
             <main className="staff-main">
