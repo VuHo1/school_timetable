@@ -35,9 +35,9 @@ export function AuthProvider({ children }) {
             if (data.success) {
                 setUser(prevUser => {
                     const isAvatarChanged = prevUser?.avatar !== data.data.avatar;
-                    if (isAvatarChanged || JSON.stringify(prevUser) !== JSON.stringify(data.data)) {
-                        console.log('Updating user due to avatar change or other differences:', data.data);
-                        return data.data;
+                    if (isAvatarChanged || JSON.stringify(prevUser?.data) !== JSON.stringify(data.data)) {
+                        console.log('Updating user due to avatar change or other differences:', { ...data.data, token });
+                        return { ...data.data, token }; // Thêm token vào user object
                     }
                     console.log('User unchanged, skipping update. Prev avatar:', prevUser?.avatar, 'New avatar:', data.data.avatar);
                     return prevUser;
