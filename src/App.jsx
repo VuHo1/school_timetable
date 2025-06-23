@@ -8,6 +8,9 @@ import CodeList from './pages/admin/CodeList';
 import UserCommand from './pages/admin/UserCommand';
 import Setting from './pages/admin/Setting';
 import ViewSchedule from './pages/staff/ViewSchedule';
+import ClassManagement from './pages/staff/ClassManagement';
+import ClassDetail from './pages/staff/ClassDetail';
+import CreateClass from './pages/staff/CreateClass';
 import Profile from './pages/Profile';
 import Dashboard from './pages/admin/Dashboard';
 import Notification from './pages/admin/Notification';
@@ -35,6 +38,9 @@ function AppRoutes() {
         ) : (
           <Route element={<StaffLayout />}>
             <Route path="/staff/schedule" element={<ViewSchedule />} />
+            <Route path="/staff/class" element={<ClassManagement />} />
+            <Route path="/staff/class/create" element={<CreateClass />} />
+            <Route path="/staff/class/:classCode" element={<ClassDetail />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/staff/schedule" replace />} />
           </Route>

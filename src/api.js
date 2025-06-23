@@ -62,6 +62,140 @@ export const changePassword = async (token, data) => {
     const result = await response.json();
     return result; // Trả về toàn bộ response (success, description, v.v.)
 };
+
+// Class Management APIs
+export const fetchClasses = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.search) queryParams.append('search', params.search);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+    if (params.sort) queryParams.append('sort', params.sort);
+    // Add filters
+    if (params.filter) {
+        Object.keys(params.filter).forEach(key => {
+            queryParams.append(`filter[${key}]`, params.filter[key]);
+        });
+    }
+    const url = `${API_BASE_URL}/api/class?${queryParams.toString()}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch classes: ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data; // Trả về toàn bộ response để có thể access data_set và pagination
+};
+
+export const fetchClassDetail = async (token, classCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/${classCode}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch class detail');
+    const data = await response.json();
+    return data.data;
+};
+
+export const fetchClassSubjects = async (token, classCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/class-subject/${classCode}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch class subjects');
+    const data = await response.json();
+    return data.data;
+};
+
+export const createClass = async (token, classData) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/add`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify(classData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to create class');
+    }
+    const data = await response.json();
+    return data.data;
+};
+
+export const deleteClass = async (token, classCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/remove/${classCode}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'text/plain'
+        },
+    });
+    if (!response.ok) throw new Error('Failed to delete class');
+    const data = await response.json();
+    return data.data;
+};
+
+// Toggle class status (activate/deactivate)
+export const toggleClassStatus = async (token, classCode, currentStatus) => {
+    // Luôn gọi API deleteClass để toggle trạng thái (deactive hoặc active)
+    return await deleteClass(token, classCode);
+};
+
+export const fetchGradeLevels = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/GRADELVL`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch grade levels');
+    const data = await response.json();
+    return data.data_set;
+};
+
+export const fetchClassScheduleConfig = async (token, classCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/class-schedule-config/${classCode}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch class schedule config');
+    const data = await response.json();
+    return data.data;
+};
+
+export const fetchTimeSlots = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/time-slot`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch time slots');
+    const data = await response.json();
+    console.log('API /api/time-slot response:', data);
+    return data.data_set;
+};
+
+// Code list APIs
 export const fetchCodeList = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/code-list`, {
         method: 'GET',
@@ -74,6 +208,7 @@ export const fetchCodeList = async (token) => {
     const data = await response.json();
     return data.data_set; // Return the array of code items
 };
+
 export const fetchGenderList = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/code-list/gender`, {
         method: 'GET',
