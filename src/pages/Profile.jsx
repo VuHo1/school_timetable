@@ -296,6 +296,9 @@ function Profile() {
                             <InfoItem>
                                 <Label>Vai trò:</Label> {user.role_name || 'N/A'}
                             </InfoItem>
+                            <InfoItem>
+                                <Label>Tình trạng:</Label> {user.status || 'N/A'}
+                            </InfoItem>
                             <ButtonContainer>
                                 <EditButton onClick={() => {
                                     if (isGenderOptionsReady) {
