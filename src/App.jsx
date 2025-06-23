@@ -10,6 +10,7 @@ import Setting from './pages/admin/Setting';
 import ViewSchedule from './pages/staff/ViewSchedule';
 import Profile from './pages/Profile';
 import Dashboard from './pages/admin/Dashboard';
+import Notification from './pages/admin/Notification';
 import { useMemo } from 'react';
 
 function AppRoutes() {
@@ -27,6 +28,7 @@ function AppRoutes() {
             <Route path="/admin/user_command" element={<UserCommand />} />
             <Route path="/admin/setting" element={<Setting />} />
             <Route path="/admin/dashboard" element={<Dashboard />} />
+            <Route path="/admin/notification" element={<Notification />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
