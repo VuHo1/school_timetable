@@ -222,6 +222,112 @@ export const fetchGenderList = async (token) => {
     return data.data_set || []; // Trả về mảng data_set, dùng [] nếu không có
 };
 
+// Class Update APIs
+export const updateClassTeacher = async (token, classCode, teacherUserName) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/update/class-teacher`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify({
+            class_code: classCode,
+            teacher_user_name: teacherUserName
+        }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update class teacher');
+    }
+    const data = await response.json();
+    return data; // Trả về toàn bộ response
+};
+
+export const updateClassRoom = async (token, classCode, roomCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/update/class-room`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify({
+            class_code: classCode,
+            room_code: roomCode
+        }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update class room');
+    }
+    const data = await response.json();
+    return data; // Trả về toàn bộ response
+};
+
+export const fetchAvailableTeachers = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/teacher/available`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch available teachers');
+    const data = await response.json();
+    return data.data_set || []; // Trả về mảng data_set
+};
+
+export const fetchAvailableRooms = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/room/available`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch available rooms');
+    const data = await response.json();
+    return data.data_set || []; // Trả về mảng data_set
+};
+
+// Add APIs to fetch all teachers and rooms (not just available)
+export const fetchAllTeachers = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit || 100);
+
+    const url = `${API_BASE_URL}/api/teacher?${queryParams.toString()}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch all teachers');
+    const data = await response.json();
+    return data.data_set || []; // Trả về mảng data_set
+};
+
+export const fetchAllRooms = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit || 100);
+
+    const url = `${API_BASE_URL}/api/room?${queryParams.toString()}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch all rooms');
+    const data = await response.json();
+    return data.data_set || []; // Trả về mảng data_set
+};
+
 //Quản lý tài khoản
 export const fetchUserList = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/user`, {

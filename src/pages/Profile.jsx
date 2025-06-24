@@ -157,12 +157,9 @@ function Profile() {
         const fetchGenderOptions = async () => {
             try {
                 const token = localStorage.getItem('authToken');
-                console.log('Fetching gender options in Profile with token:', token);
                 const response = await fetchGenderList(token); // Lấy response từ API
-                console.log('Raw API response from fetchGenderList:', response); // Debug response
                 const codes = response?.data || response || []; // Xử lý nếu response là object hoặc array
                 const genderCodes = Array.isArray(codes) ? codes.filter(code => code.code_name === 'GENDER') : [];
-                console.log('Processed genderCodes:', genderCodes);
                 setGenderOptions(genderCodes);
                 // Set gender chỉ khi có dữ liệu
                 if (user?.gender && genderCodes.length > 0) {
@@ -307,9 +304,7 @@ function Profile() {
                                         setDob(user.dob ? user.dob.split('T')[0] : '');
                                         setGender(genderOptions.find(opt => opt.caption === user.gender)?.code_id || '');
                                         setIsEditProfile(true);
-                                    } else {
-                                        console.log('Gender options not ready yet');
-                                    }
+                                                }
                                 }}>Sửa hồ sơ</EditButton>
                                 <ForgotButton onClick={() => setIsChangePassword(true)}>Đổi mật khẩu</ForgotButton>
                             </ButtonContainer>
