@@ -329,15 +329,22 @@ export const fetchAllRooms = async (token, params = {}) => {
 };
 
 //Quản lý tài khoản
-export const fetchUserList = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/user`, {
+export const fetchUserList = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append('limit', params.limit);
+
+    const url = `${API_BASE_URL}/api/user?${queryParams.toString()}`;
+    const response = await fetch(url, {
         method: 'GET',
         headers: {
             'Accept': 'text/plain',
             'Authorization': `Bearer ${token}`,
         },
     });
-    if (!response.ok) throw new Error('Failed to fetch user list');
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch user list');
+    }
     const data = await response.json();
     return data.data_set || [];
 };

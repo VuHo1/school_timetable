@@ -10,7 +10,8 @@ import {
   fetchRoles,
 } from '../../api';
 import styled from 'styled-components';
-
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 const Container = styled.div`
   padding: 15px;
   background-color: #f5f5f5;
@@ -328,6 +329,29 @@ const Select = styled.select`
   }
 `;
 
+const DatePickerWrapper = styled.div`
+  width: 100%;
+  & .react-datepicker-wrapper {
+    width: 100%;
+  }
+  & .react-datepicker__input-container input {
+    width: 95%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: border-color 0.3s ease;
+    &:focus {
+      border-color: #007bff;
+      outline: none;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+    }
+    &:hover {
+      border-color: #bbb;
+    }
+  }
+`;
+
 const ModalButtonGroup = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -396,6 +420,23 @@ const formatDateTime = (dateString) => {
   const seconds = String(date.getSeconds()).padStart(2, '0');
   return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 };
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'N/A';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+const formatLocalDate = (date) => {
+  if (!date) return '';
+  // Lấy ngày local (không bị ảnh hưởng bởi múi giờ)
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`; // Trả về định dạng YYYY-MM-DD
+};
 export default function UserAccount() {
   const { user } = useAuth();
   const toast = useToast();
@@ -423,7 +464,7 @@ export default function UserAccount() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [roles, setRoles] = useState([]);
-  const limit = 7;
+  const limit = 10;
 
   // Refs for dropdown visibility
   const statusDropdownRef = useRef(null);
@@ -467,7 +508,7 @@ export default function UserAccount() {
       try {
         console.log('Fetching user list and roles with token:', user.token);
         const [userData, rolesData] = await Promise.all([
-          fetchUserList(user.token),
+          fetchUserList(user.token, { limit: 1000 }),
           fetchRoles(user.token),
         ]);
         console.log('Fetched user data:', userData);
@@ -529,12 +570,16 @@ export default function UserAccount() {
     setUsers(filteredUsers.slice(startIndex, endIndex));
     setTotalPages(Math.ceil(filteredUsers.length / limit));
   };
-
+  const resetPageAndFilter = () => {
+    setCurrentPage(1); // Đặt lại về trang 1
+    applyFilters(); // Áp dụng bộ lọc
+  };
   useEffect(() => {
     applyFilters();
   }, [searchKeyword, filterStatus, filterGender, filterRoleName, sortField, sortOrder, currentPage, allUsers]);
 
   const handleSearch = () => {
+    setCurrentPage(1);
     applyFilters(); // Chỉ gọi lọc ngay lập tức dựa trên searchKeyword
   };
 
@@ -562,7 +607,10 @@ export default function UserAccount() {
         dob: new Date(newUser.dob).toISOString(),
         role_id: parseInt(newUser.role_id),
       };
-      await createUser(user.token, userData);
+      const response = await createUser(user.token, userData);
+      if (!response.success) {
+        throw new Error(response.description || 'Tạo tài khoản thất bại.');
+      }
       toast.showToast('Tạo tài khoản thành công!', 'success');
       setIsCreateModalOpen(false);
       const updatedData = await fetchUserList(user.token);
@@ -682,10 +730,11 @@ export default function UserAccount() {
             const [field, order] = e.target.value.split(':');
             setSortField(field);
             setSortOrder(order);
+            setCurrentPage(1);
           }}
         >
-          <option value="user_name:ASC">Username (A-Z)</option>
-          <option value="user_name:DESC">Username (Z-A)</option>
+          <option value="user_name:ASC">Tên tài khoản (A-Z)</option>
+          <option value="user_name:DESC">Tên tài khoản (Z-A)</option>
           <option value="full_name:ASC">Họ tên (A-Z)</option>
           <option value="full_name:DESC">Họ tên (Z-A)</option>
         </SortSelect>
@@ -715,6 +764,7 @@ export default function UserAccount() {
                         setFilterGender(option.value);
                         setShowGenderDropdown(false);
                         applyFilters();
+                        resetPageAndFilter();
                       }}
                     >
                       {option.label}
@@ -738,6 +788,7 @@ export default function UserAccount() {
                         setFilterRoleName(option.value);
                         setShowRoleDropdown(false);
                         applyFilters();
+                        resetPageAndFilter();
                       }}
                     >
                       {option.label}
@@ -761,6 +812,7 @@ export default function UserAccount() {
                         setFilterStatus(option.value);
                         setShowStatusDropdown(false);
                         applyFilters();
+                        resetPageAndFilter();
                       }}
                     >
                       {option.label}
@@ -839,7 +891,7 @@ export default function UserAccount() {
                 />
               </FormGroup>
               <FormGroup>
-                <Label>Tên đăng nhập:</Label>
+                <Label>Họ và tên:</Label>
                 <Input
                   type="text"
                   value={newUser.full_name}
@@ -872,12 +924,19 @@ export default function UserAccount() {
               </FormGroup>
               <FormGroup>
                 <Label>Ngày sinh :</Label>
-                <Input
-                  type="date"
-                  value={newUser.dob}
-                  onChange={(e) => setNewUser({ ...newUser, dob: e.target.value })}
-                  required
-                />
+                <DatePickerWrapper>
+                  <DatePicker
+                    selected={newUser.dob ? new Date(newUser.dob) : null}
+                    onChange={(date) => {
+                      // Lưu ngày dưới dạng chuỗi YYYY-MM-DD
+                      const formattedDate = date ? formatLocalDate(date) : '';
+                      setNewUser({ ...newUser, dob: formattedDate });
+                    }}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="dd/mm/yyyy"
+                    required
+                  />
+                </DatePickerWrapper>
               </FormGroup>
               <FormGroup>
                 <Label>Vai trò :</Label>
@@ -934,7 +993,7 @@ export default function UserAccount() {
               </DetailItem>
               <DetailItem>
                 <DetailLabel>Ngày sinh:</DetailLabel>
-                <DetailValue>{selectedUser.dob ? new Date(selectedUser.dob).toLocaleDateString() : 'N/A'}</DetailValue>
+                <DetailValue>{formatDate(selectedUser.dob)}</DetailValue>
               </DetailItem>
               <DetailItem>
                 <DetailLabel>Vai trò:</DetailLabel>
