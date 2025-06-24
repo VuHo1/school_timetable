@@ -5,88 +5,177 @@ import { fetchClassDetail, fetchClassSubjects, fetchClassScheduleConfig, fetchTi
 import styled from 'styled-components';
 
 const Container = styled.div`
-  padding: 20px;
+  padding: 24px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
 `;
 
 const Header = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 30px;
-  gap: 20px;
+  margin-bottom: 32px;
+  padding: 20px 0;
+  border-bottom: 2px solid #e9ecef;
+  gap: 24px;
 `;
 
 const BackButton = styled.button`
-  background-color: #6c757d;
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 5px;
+  padding: 12px 20px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
   &:hover {
-    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+  }
+  
+  &::before {
+    content: "←";
+    font-size: 16px;
   }
 `;
 
-const Title = styled.h2`
-  color: #333;
+const UpdateButton = styled.button`
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  color: #212529;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+  }
+  
+  &::before {
+    content: "✏️";
+    font-size: 14px;
+  }
+`;
+
+const Title = styled.h1`
+  color: #2c3e50;
   margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  flex: 1;
 `;
 
 const InfoSection = styled.div`
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  margin-bottom: 32px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
 `;
 
 const SectionTitle = styled.h3`
-  color: #333;
-  margin: 0 0 20px 0;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #dee2e6;
+  color: #2c3e50;
+  margin: 0 0 24px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e9ecef;
   text-align: left;
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  &::before {
+    content: "📋";
+    font-size: 18px;
+  }
 `;
 
 const InfoGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px 40px;
+  gap: 20px 60px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
 `;
 
 const InfoRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   font-size: 16px;
-  margin-bottom: 2px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: #f8f9fa;
+  }
 `;
 
 const InfoLabel = styled.span`
-  font-weight: bold;
+  font-weight: 600;
   color: #495057;
+  min-width: 120px;
+  
+  &::after {
+    content: ":";
+    margin-left: 4px;
+  }
 `;
 
 const InfoValue = styled.span`
-  color: #333;
+  color: #2c3e50;
+  font-weight: 500;
+  flex: 1;
 `;
 
 const StatusBadge = styled.span`
-  padding: 4px 8px;
-  border-radius: 12px;
+  padding: 8px 16px;
+  border-radius: 20px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   display: inline-block;
-  background-color: ${props => {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 2px solid;
+  
+  background: ${props => {
     switch (props.status?.toLowerCase()) {
       case 'đang hoạt động':
       case 'active':
-        return '#d4edda';
+        return 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)';
       default:
-        return '#f8d7da';
+        return 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)';
     }
   }};
+  
   color: ${props => {
     switch (props.status?.toLowerCase()) {
       case 'đang hoạt động':
@@ -96,87 +185,192 @@ const StatusBadge = styled.span`
         return '#721c24';
     }
   }};
+  
+  border-color: ${props => {
+    switch (props.status?.toLowerCase()) {
+      case 'đang hoạt động':
+      case 'active':
+        return '#28a745';
+      default:
+        return '#dc3545';
+    }
+  }};
 `;
 
 const SubjectsSection = styled.div`
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
 `;
 
 const TableContainer = styled.div`
   overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  margin-top: 15px;
+  margin-top: 16px;
+  font-size: 14px;
 `;
 
 const TableHeader = styled.th`
-  background-color: #f8f9fa;
-  padding: 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 16px 12px;
   text-align: left;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 2px solid #dee2e6;
   font-weight: 600;
+  color: #495057;
+  
+  &:first-child {
+    border-top-left-radius: 12px;
+  }
+  
+  &:last-child {
+    border-top-right-radius: 12px;
+  }
 `;
 
 const TableRow = styled.tr`
+  transition: all 0.3s ease;
+  
   &:hover {
     background-color: #f8f9fa;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 `;
 
 const TableCell = styled.td`
-  padding: 12px;
-  border-bottom: 1px solid #dee2e6;
+  padding: 16px 12px;
+  border-bottom: 1px solid #f1f3f4;
+  vertical-align: middle;
+  
+  &:first-child {
+    font-weight: 500;
+    color: #2c3e50;
+  }
 `;
 
 const TeacherInfo = styled.div`
   .teacher-name {
-    font-weight: 500;
-    color: #333;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 14px;
   }
   .teacher-username {
     font-size: 12px;
-    color: #666;
-    margin-top: 2px;
+    color: #6c757d;
+    margin-top: 4px;
+    background: #f8f9fa;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
   }
 `;
 
 const NoSubjects = styled.div`
   text-align: center;
-  padding: 40px;
-  color: #666;
+  padding: 60px 40px;
+  color: #6c757d;
   font-style: italic;
+  font-size: 16px;
+  
+  &::before {
+    content: "📚";
+    display: block;
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
 `;
 
 const Loading = styled.div`
   text-align: center;
-  padding: 40px;
-  font-size: 16px;
-  color: #666;
+  padding: 60px 40px;
+  font-size: 18px;
+  color: #6c757d;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin: 20px 0;
+  
+  &::before {
+    content: "⏳";
+    display: block;
+    font-size: 32px;
+    margin-bottom: 16px;
+    animation: spin 2s linear infinite;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 `;
 
-const Error = styled.div`
-  background-color: #f8d7da;
+const ErrorMessage = styled.div`
+  background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
   color: #721c24;
-  padding: 12px;
-  border-radius: 5px;
-  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  border: 2px solid #dc3545;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  &::before {
+    content: "⚠️";
+    font-size: 20px;
+  }
 `;
 
 const Metadata = styled.div`
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #dee2e6;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #e9ecef;
   font-size: 14px;
-  color: #666;
+  color: #6c757d;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
   
   p {
-    margin: 5px 0;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    strong {
+      color: #495057;
+      font-weight: 600;
+    }
+  }
+  
+  p:first-child::before {
+    content: "👤";
+  }
+  
+  p:nth-child(2)::before {
+    content: "📅";
+  }
+  
+  p:last-child::before {
+    content: "🔄";
   }
 `;
 
@@ -226,6 +420,10 @@ function ClassDetail() {
         navigate('/staff/class');
     };
 
+    const handleUpdate = () => {
+        navigate(`/staff/class/update/${classCode}`);
+    };
+
     if (loading) {
         return (
             <Container>
@@ -237,7 +435,7 @@ function ClassDetail() {
     if (error) {
         return (
             <Container>
-                <Error>{error}</Error>
+                <ErrorMessage>{error}</ErrorMessage>
                 <BackButton onClick={handleBack}>
                     ← Quay lại
                 </BackButton>
@@ -248,7 +446,7 @@ function ClassDetail() {
     if (!classDetail) {
         return (
             <Container>
-                <Error>Không tìm thấy thông tin lớp học</Error>
+                <ErrorMessage>Không tìm thấy thông tin lớp học</ErrorMessage>
                 <BackButton onClick={handleBack}>
                     ← Quay lại
                 </BackButton>
@@ -266,6 +464,9 @@ function ClassDetail() {
                     ← Quay lại
                 </BackButton>
                 <Title>Chi tiết lớp {classDetail.class_code}</Title>
+                <UpdateButton onClick={handleUpdate}>
+                    Cập nhật lớp học
+                </UpdateButton>
             </Header>
 
             <InfoSection>
@@ -314,7 +515,7 @@ function ClassDetail() {
                 {loadingSchedule ? (
                     <Loading>Đang tải thời khóa biểu...</Loading>
                 ) : errorSchedule ? (
-                    <Error>{errorSchedule}</Error>
+                    <ErrorMessage>{errorSchedule}</ErrorMessage>
                 ) : timeSlots.length > 0 ? (
                     <ScheduleTable config={scheduleConfig} timeSlots={timeSlots} />
                 ) : (

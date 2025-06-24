@@ -27,7 +27,7 @@ function UserAvatar({ to }) {
   const avatarUrl = user?.avatar || defaultAvatar;
   const cacheBustUrl = useMemo(() => `${avatarUrl}?t=${Date.now()}`, [avatarUrl]); // Tạo timestamp khi avatarUrl thay đổi
 
-  console.log('Rendering UserAvatar with user:', user, 'avatarUrl:', avatarUrl, 'cacheBustUrl:', cacheBustUrl);
+
 
   return to ? (
     <Link to={to}>
