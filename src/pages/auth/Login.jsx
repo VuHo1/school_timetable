@@ -169,7 +169,7 @@ function Login() {
             const success = await login(userName, password);
             if (success) {
                 const role = localStorage.getItem('role');
-                console.log('Login successful, role:', role);
+    
                 if (role === 'admin') {
                     showToast('Đăng nhập thành công!', 'success');
                     setTimeout(() => {
@@ -198,11 +198,11 @@ function Login() {
             if (!credential) {
                 throw new Error('Không nhận được credential từ Google.');
             }
-            console.log('Google JWT token (id_token):', credential);
+    
             const success = await signInWithGoogle(credential);
             if (success) {
                 const role = localStorage.getItem('role');
-                console.log('Google Sign-In successful, role:', role);
+
                 if (role === 'admin') {
                     showToast('Đăng nhập bằng Google thành công!', 'success');
                     setTimeout(() => {

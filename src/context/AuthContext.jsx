@@ -1,21 +1,20 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-    const [role, setRole] = useState(null);
     const [user, setUser] = useState(null);
+    const [role, setRole] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [abilities, setAbilities] = useState([]);
     const [isProfileFetched, setIsProfileFetched] = useState(false);
 
     const fetchUserProfile = async (token) => {
         if (isProfileFetched) {
-            console.log('Profile already fetched, skipping');
             return;
         }
 
         try {
-            console.log('Fetching user profile with token:', token);
             const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/profile`, {
                 method: 'GET',
                 headers: {
@@ -31,17 +30,22 @@ export function AuthProvider({ children }) {
             }
 
             const data = await response.json();
-            console.log('Profile API Response:', data);
             if (data.success) {
                 setUser(prevUser => {
                     const isAvatarChanged = prevUser?.avatar !== data.data.avatar;
                     if (isAvatarChanged || JSON.stringify(prevUser) !== JSON.stringify(data.data)) {
-                        console.log('Updating user due to avatar change or other differences:', data.data);
                         return data.data;
                     }
-                    console.log('User unchanged, skipping update. Prev avatar:', prevUser?.avatar, 'New avatar:', data.data.avatar);
                     return prevUser;
                 });
+                
+                // Lưu abilities vào localStorage và state
+                if (data.data.abilities && Array.isArray(data.data.abilities)) {
+                    localStorage.setItem('abilities', JSON.stringify(data.data.abilities));
+                    setAbilities(data.data.abilities);
+                } else {
+                    setAbilities([]);
+                }
                 setIsProfileFetched(true);
             }
         } catch (error) {
@@ -49,41 +53,46 @@ export function AuthProvider({ children }) {
             setUser(null);
         } finally {
             if (loading) {
-                console.log('Setting loading to false in fetchUserProfile');
                 setLoading(false);
             }
         }
     };
 
     useEffect(() => {
-        console.log('AuthContext useEffect running');
         const token = localStorage.getItem('authToken');
         const storedRole = localStorage.getItem('role');
-        console.log('useEffect - token:', token, 'role:', storedRole, 'isProfileFetched:', isProfileFetched);
+        const storedAbilities = localStorage.getItem('abilities');
+        
         if (token && storedRole && !isProfileFetched) {
             setRole(prevRole => {
                 if (prevRole !== storedRole) {
-                    console.log('Updating role:', storedRole);
                     return storedRole;
                 }
                 return prevRole;
             });
-            fetchUserProfile(token).then(() => {
-                console.log('Profile fetch completed');
-            });
+            
+            // Load abilities từ localStorage nếu có
+            if (storedAbilities) {
+                try {
+                    const parsedAbilities = JSON.parse(storedAbilities);
+                    setAbilities(parsedAbilities);
+                } catch (error) {
+                    console.error('Error parsing stored abilities:', error);
+                }
+            }
+            
+            fetchUserProfile(token);
         } else if (!token || !storedRole) {
             if (loading) {
-                console.log('Setting loading to false due to no token');
                 setLoading(false);
             }
         }
-    }, []); // Chạy một lần khi mount, tránh lặp lại
+    }, []);
 
     const login = async (user_name, password) => {
         try {
             setLoading(true);
             setIsProfileFetched(false);
-            console.log('Login attempt:', user_name);
             const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/sign-in`, {
                 method: 'POST',
                 headers: {
@@ -100,15 +109,20 @@ export function AuthProvider({ children }) {
             }
 
             const data = await response.json();
-            console.log('Login API Response:', data);
-
-            const { token, role_name } = data.data;
+            const { token, role_name, abilities } = data.data;
             const userRole = role_name === 'Administrator' ? 'admin' : role_name === 'School Staff' ? 'staff' : null;
 
             if (token && ['admin', 'staff'].includes(userRole)) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', userRole);
                 setRole(userRole);
+                
+                // Set abilities from login response
+                if (abilities && Array.isArray(abilities)) {
+                    localStorage.setItem('abilities', JSON.stringify(abilities));
+                    setAbilities(abilities);
+                }
+                
                 await fetchUserProfile(token);
                 return true;
             } else {
@@ -127,7 +141,6 @@ export function AuthProvider({ children }) {
         try {
             setLoading(true);
             setIsProfileFetched(false);
-            console.log('Google Sign-In attempt');
             const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/sign-in-google`, {
                 method: 'POST',
                 headers: {
@@ -144,15 +157,20 @@ export function AuthProvider({ children }) {
             }
 
             const data = await response.json();
-            console.log('Google Sign-In API Response:', data);
-
-            const { token, role_name } = data.data;
+            const { token, role_name, abilities } = data.data;
             const userRole = role_name === 'Administrator' ? 'admin' : role_name === 'School Staff' ? 'staff' : null;
 
             if (token && ['admin', 'staff'].includes(userRole)) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', userRole);
                 setRole(userRole);
+                
+                // Set abilities from google signin response
+                if (abilities && Array.isArray(abilities)) {
+                    localStorage.setItem('abilities', JSON.stringify(abilities));
+                    setAbilities(abilities);
+                }
+                
                 await fetchUserProfile(token);
                 return true;
             } else {
@@ -169,45 +187,51 @@ export function AuthProvider({ children }) {
 
     const logout = async () => {
         try {
-            console.log('Logout attempt');
             const token = localStorage.getItem('authToken');
             if (token) {
-                const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/sign-out`, {
+                await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/sign-out`, {
                     method: 'POST',
                     headers: {
-                        'Accept': 'application/json',
-                        'Authorization': token,
+                        'Authorization': `Bearer ${token}`,
                     },
                 });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Logout API Error:', errorData);
-                    throw new Error(errorData.description || 'Logout failed');
-                }
-
-                console.log('Logout API Response:', await response.json());
             }
         } catch (error) {
-            console.error('Logout error:', error.message);
+            console.error('Logout API error:', error);
         } finally {
+            // Clear all data
             localStorage.removeItem('authToken');
             localStorage.removeItem('role');
-            setRole(null);
+            localStorage.removeItem('abilities');
             setUser(null);
+            setRole(null);
+            setAbilities([]);
             setIsProfileFetched(false);
-            setLoading(false);
-            console.log('Logout completed, user cleared');
         }
     };
 
+    const value = {
+        user,
+        role,
+        loading,
+        abilities,
+        login,
+        signInWithGoogle,
+        logout,
+        fetchUserProfile,
+    };
+
     return (
-        <AuthContext.Provider value={{ role, user, login, signInWithGoogle, logout, loading }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );
 }
 
 export function useAuth() {
-    return useContext(AuthContext);
-}
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
+} 
