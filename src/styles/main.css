@@ -68,7 +68,9 @@ body {
     color: black;
     padding: 15px 0;
     border-bottom: 1px solid #ccc;
-
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .header-content {
@@ -84,7 +86,7 @@ body {
 .header-content nav {
     display: flex;
     align-items: center;
-    gap: 30px;
+    gap: 67px;
 }
 
 .header-content nav a,
