@@ -217,7 +217,7 @@ function Login() {
 
             const body = JSON.stringify(email);
 
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/reset-password`, {
+                         const response = await fetch(`${(import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online')}/api/auth/reset-password`, {
                 method: 'PUT',
                 headers: {
                     'Accept': 'text/plain',
