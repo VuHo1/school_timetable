@@ -71,12 +71,14 @@ export const fetchClasses = async (token, params = {}) => {
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.sort) queryParams.append('sort', params.sort);
     // Add filters
-    if (params.filter) {
+    if (params.filter && typeof params.filter === 'object') {
         Object.keys(params.filter).forEach(key => {
             queryParams.append(`filter[${key}]`, params.filter[key]);
         });
     }
     const url = `${API_BASE_URL}/api/class?${queryParams.toString()}`;
+    console.log('[FETCH URL]', url);
+
     const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -84,13 +86,16 @@ export const fetchClasses = async (token, params = {}) => {
             'Authorization': `Bearer ${token}`,
         },
     });
+
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to fetch classes: ${response.status} ${response.statusText}`);
     }
+
     const data = await response.json();
-    return data; // Trả về toàn bộ response để có thể access data_set và pagination
+    return data;
 };
+
 
 export const fetchClassDetail = async (token, classCode) => {
     const response = await fetch(`${API_BASE_URL}/api/class/${classCode}`, {
@@ -296,6 +301,15 @@ export const fetchAllTeachers = async (token, params = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page);
     if (params.limit) queryParams.append('limit', params.limit || 100);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.sort) queryParams.append('sort', params.sort);
+    
+    // Add filters
+    if (params.filter) {
+        Object.keys(params.filter).forEach(key => {
+            queryParams.append(`filter[${key}]`, params.filter[key]);
+        });
+    }
 
     const url = `${API_BASE_URL}/api/teacher?${queryParams.toString()}`;
     const response = await fetch(url, {
@@ -437,4 +451,115 @@ export const fetchRoles = async (token) => {
     }
     const data = await response.json();
     return data.data_set || [];
+};
+
+// Subject Management APIs
+export const fetchSubjects = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit || 20);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.sort) queryParams.append('sort', params.sort);
+    
+    // Add filters
+    if (params.filter) {
+        Object.keys(params.filter).forEach(key => {
+            queryParams.append(`filter[${key}]`, params.filter[key]);
+        });
+    }
+
+    const url = `${API_BASE_URL}/api/subject?${queryParams.toString()}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch subjects');
+    const data = await response.json();
+    return data; // Return full response for pagination
+};
+
+export const fetchSubjectByCode = async (token, subjectCode, classCode = null) => {
+    let url = `${API_BASE_URL}/api/subject/${subjectCode}`;
+    if (classCode) {
+        url += `?classCode=${classCode}`;
+    }
+    
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch subject detail');
+    const data = await response.json();
+    return data.data || data.data_set || [];
+};
+
+export const fetchSubjectsByGrade = async (token, gradeLevel) => {
+    const response = await fetch(`${API_BASE_URL}/api/subject/grade/${gradeLevel}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch subjects by grade');
+    const data = await response.json();
+    return data.data_set || data.data || [];
+};
+
+export const createSubject = async (token, subjectData) => {
+    const response = await fetch(`${API_BASE_URL}/api/subject/add`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify(subjectData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to create subject');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const updateSubject = async (token, subjectData) => {
+    const response = await fetch(`${API_BASE_URL}/api/subject/update`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify(subjectData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update subject');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const deleteSubject = async (token, subjectCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/subject/remove/${subjectCode}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'text/plain'
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to delete subject');
+    }
+    const data = await response.json();
+    return data;
 };

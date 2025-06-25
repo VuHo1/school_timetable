@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
+import { 
+  fetchSubjects as apiFetchSubjects, 
+  createSubject, 
+  updateSubject, 
+  deleteSubject,
+  fetchGradeLevels 
+} from '../../api';
+
+// Get API base URL with fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
 
 // Styled Components
 const Container = styled.div`
@@ -133,6 +143,11 @@ const ActionButton = styled.button.withConfig({
   &:hover {
     opacity: 0.8;
   }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const StatusBadge = styled.span.withConfig({
@@ -210,60 +225,177 @@ const PaginationButton = styled.button.withConfig({
   }
 `;
 
+// Modal Styles
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const ModalHeader = styled.div`
+  padding: 20px 30px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const ModalTitle = styled.h2`
+  margin: 0;
+  color: #2c3e50;
+  font-size: 20px;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  
+  &:hover {
+    color: #333;
+  }
+`;
+
+const ModalBody = styled.div`
+  padding: 30px;
+`;
+
+const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const Label = styled.label`
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 14px;
+`;
+
+const Input = styled.input`
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+  }
+`;
+
+const CheckboxGroup = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 8px;
+`;
+
+const CheckboxItem = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  
+  input[type="checkbox"] {
+    margin: 0;
+  }
+`;
+
+const ModalActions = styled.div`
+  padding: 20px 30px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+`;
+
 function SubjectManagement() {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [modalLoading, setModalLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  
+  // Form data
+  const [formData, setFormData] = useState({
+    subject_code: '',
+    grade_level: [],
+    is_online_course: false,
+    weekly_slot: 1,
+    continuous_slot: 1,
+    limit: 0,
+    fixed_slot: [],
+    avoid_slot: []
+  });
+  
+  // Master data
+  const [gradeLevels, setGradeLevels] = useState([]);
+  const [subjectCodes, setSubjectCodes] = useState([]);
 
   // Fetch subjects from API
   const fetchSubjects = async () => {
     try {
       setLoading(true);
       
-      // Build query parameters according to API documentation
-      const params = new URLSearchParams({
+      const token = localStorage.getItem('authToken');
+      const params = {
         page: currentPage,
         limit: 20,
         sort: 'subject_code'
-      });
+      };
 
-      // Add search parameter if provided
       if (searchTerm && searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
+        params.search = searchTerm.trim();
       }
 
-      // Add grade filter if provided
-      if (gradeFilter) {
-        params.append('filter[grade]', gradeFilter);
+      if (gradeFilter || statusFilter) {
+        params.filter = {};
+        if (gradeFilter) params.filter.grade = gradeFilter;
+        if (statusFilter) params.filter.status = statusFilter;
       }
 
-      const response = await fetch(`/api/subject?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      // Set data based on actual API response structure
-      let subjectList = [];
-      if (Array.isArray(data)) {
-        subjectList = data;
-      } else if (data.data_set && Array.isArray(data.data_set)) {
-        subjectList = data.data_set;
-      } else if (data.data && Array.isArray(data.data)) {
-        subjectList = data.data;
-      } else {
-        subjectList = [];
-      }
+      const data = await apiFetchSubjects(token, params);
+      const subjectList = data.data_set || data.data || [];
       
       setSubjects(subjectList);
       setTotalPages(Math.ceil((data.pagination?.total || subjectList.length || 0) / 20));
@@ -273,13 +405,10 @@ function SubjectManagement() {
     } catch (error) {
       console.error('Error fetching subjects:', error);
       
-      // More detailed error messages
       if (error.message.includes('401')) {
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       } else if (error.message.includes('403')) {
         toast.error('Bạn không có quyền truy cập chức năng này.');
-      } else if (error.message.includes('404')) {
-        toast.error('API endpoint không tồn tại.');
       } else {
         toast.error('Không thể tải danh sách môn học. Vui lòng thử lại.');
       }
@@ -290,39 +419,166 @@ function SubjectManagement() {
     }
   };
 
-  // Handle subject deletion
+  // Fetch master data
+  const fetchMasterData = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      // Fetch grade levels
+      const grades = await fetchGradeLevels(token);
+      setGradeLevels(grades || []);
+      
+      // Fetch subject codes
+      const response = await fetch(`${API_BASE_URL}/api/code-list/SUBJECT`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'text/plain',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSubjectCodes(data.data_set || []);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching master data:', error);
+      // Use fallback data
+      setGradeLevels([
+        { code_id: '10', caption: 'Khối 10' },
+        { code_id: '11', caption: 'Khối 11' },
+        { code_id: '12', caption: 'Khối 12' }
+      ]);
+    }
+  };
+
+  // Handle create subject
+  const handleCreate = async () => {
+    try {
+      setModalLoading(true);
+      
+      if (!formData.subject_code || formData.grade_level.length === 0) {
+        toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+        return;
+      }
+      
+      const token = localStorage.getItem('authToken');
+      await createSubject(token, formData);
+
+      toast.success('Tạo môn học thành công!');
+      setShowCreateModal(false);
+      resetForm();
+      fetchSubjects();
+      
+    } catch (error) {
+      console.error('Error creating subject:', error);
+      toast.error('Có lỗi khi tạo môn học: ' + error.message);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Handle update subject
+  const handleUpdate = async () => {
+    try {
+      setModalLoading(true);
+      
+      const token = localStorage.getItem('authToken');
+      const updateData = {
+        subject_code: selectedSubject.subject_code,
+        is_online_course: formData.is_online_course,
+        weekly_slot: formData.weekly_slot,
+        continuous_slot: formData.continuous_slot,
+        limit: formData.limit,
+        fixed_slot: formData.fixed_slot,
+        avoid_slot: formData.avoid_slot,
+        also_update_for_class_subject: 'A' // Update all related class subjects
+      };
+      
+      await updateSubject(token, updateData);
+
+      toast.success('Cập nhật môn học thành công!');
+      setShowEditModal(false);
+      resetForm();
+      fetchSubjects();
+      
+    } catch (error) {
+      console.error('Error updating subject:', error);
+      toast.error('Có lỗi khi cập nhật môn học: ' + error.message);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  // Handle delete subject
   const handleDelete = async (subjectCode) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa môn học này?')) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/subject/remove/${subjectCode}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const token = localStorage.getItem('authToken');
+      await deleteSubject(token, subjectCode);
 
       toast.success('Xóa môn học thành công');
-      fetchSubjects(); // Refresh data
+      fetchSubjects();
     } catch (error) {
       console.error('Error deleting subject:', error);
-      
-      if (error.message.includes('401')) {
-        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else if (error.message.includes('403')) {
-        toast.error('Bạn không có quyền xóa môn học này.');
-      } else if (error.message.includes('404')) {
-        toast.error('Môn học không tồn tại.');
-      } else {
-        toast.error('Không thể xóa môn học. Vui lòng thử lại.');
-      }
+      toast.error('Có lỗi khi xóa môn học: ' + error.message);
+    }
+  };
+
+  // Handle edit click
+  const handleEdit = (subject) => {
+    setSelectedSubject(subject);
+    setFormData({
+      subject_code: subject.subject_code,
+      grade_level: subject.grade_level || [],
+      is_online_course: subject.is_online_course || false,
+      weekly_slot: subject.weekly_slot || 1,
+      continuous_slot: subject.continuous_slot || 1,
+      limit: subject.limit || 0,
+      fixed_slot: subject.fixed_slot || [],
+      avoid_slot: subject.avoid_slot || []
+    });
+    setShowEditModal(true);
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setFormData({
+      subject_code: '',
+      grade_level: [],
+      is_online_course: false,
+      weekly_slot: 1,
+      continuous_slot: 1,
+      limit: 0,
+      fixed_slot: [],
+      avoid_slot: []
+    });
+    setSelectedSubject(null);
+  };
+
+  // Handle form input changes
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Handle grade level selection
+  const handleGradeLevelChange = (gradeId, isChecked) => {
+    if (isChecked) {
+      setFormData(prev => ({
+        ...prev,
+        grade_level: [...prev.grade_level, gradeId]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        grade_level: prev.grade_level.filter(id => id !== gradeId)
+      }));
     }
   };
 
@@ -332,22 +588,156 @@ function SubjectManagement() {
     setCurrentPage(1);
   };
 
-  // Handle filter change
-  const handleGradeFilter = (value) => {
-    setGradeFilter(value);
+  // Handle filter changes
+  const handleFilterChange = (type, value) => {
+    if (type === 'grade') {
+      setGradeFilter(value);
+    } else if (type === 'status') {
+      setStatusFilter(value);
+    }
     setCurrentPage(1);
   };
 
   // Fetch data when dependencies change
   useEffect(() => {
     fetchSubjects();
-  }, [currentPage, searchTerm, gradeFilter]);
+  }, [currentPage, searchTerm, gradeFilter, statusFilter]);
+
+  // Fetch master data on mount
+  useEffect(() => {
+    fetchMasterData();
+  }, []);
+
+  // Create/Edit Modal Component
+  const SubjectModal = ({ isEdit = false }) => (
+    <ModalOverlay onClick={(e) => e.target === e.currentTarget && (isEdit ? setShowEditModal(false) : setShowCreateModal(false))}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>{isEdit ? 'Chỉnh sửa môn học' : 'Thêm môn học mới'}</ModalTitle>
+          <CloseButton onClick={() => isEdit ? setShowEditModal(false) : setShowCreateModal(false)}>
+            ×
+          </CloseButton>
+        </ModalHeader>
+        
+        <ModalBody>
+          <FormGrid>
+            <FormGroup>
+              <Label>Mã môn học *</Label>
+              {isEdit ? (
+                <Input
+                  type="text"
+                  value={formData.subject_code}
+                  disabled
+                />
+              ) : (
+                <Select
+                  value={formData.subject_code}
+                  onChange={(e) => handleInputChange('subject_code', e.target.value)}
+                  required
+                >
+                  <option value="">Chọn mã môn</option>
+                  {subjectCodes.map(code => (
+                    <option key={code.code_id} value={code.code_id}>
+                      {code.code_id} - {code.caption}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Học online</Label>
+              <CheckboxItem>
+                <input
+                  type="checkbox"
+                  checked={formData.is_online_course}
+                  onChange={(e) => handleInputChange('is_online_course', e.target.checked)}
+                />
+                Môn học online
+              </CheckboxItem>
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Số tiết/tuần *</Label>
+              <Input
+                type="number"
+                min="1"
+                max="10"
+                value={formData.weekly_slot}
+                onChange={(e) => handleInputChange('weekly_slot', parseInt(e.target.value) || 1)}
+                required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Số tiết liên tiếp tối đa *</Label>
+              <Input
+                type="number"
+                min="1"
+                max="5"
+                value={formData.continuous_slot}
+                onChange={(e) => handleInputChange('continuous_slot', parseInt(e.target.value) || 1)}
+                required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Giới hạn đồng thời</Label>
+              <Input
+                type="number"
+                min="0"
+                value={formData.limit}
+                onChange={(e) => handleInputChange('limit', parseInt(e.target.value) || 0)}
+                placeholder="0 = không giới hạn"
+              />
+            </FormGroup>
+          </FormGrid>
+
+          {!isEdit && (
+            <FormGroup>
+              <Label>Khối học *</Label>
+              <CheckboxGroup>
+                {gradeLevels.map(grade => (
+                  <CheckboxItem key={grade.code_id}>
+                    <input
+                      type="checkbox"
+                      checked={formData.grade_level.includes(grade.code_id)}
+                      onChange={(e) => handleGradeLevelChange(grade.code_id, e.target.checked)}
+                    />
+                    {grade.caption}
+                  </CheckboxItem>
+                ))}
+              </CheckboxGroup>
+            </FormGroup>
+          )}
+        </ModalBody>
+        
+        <ModalActions>
+          <ActionButton 
+            onClick={() => isEdit ? setShowEditModal(false) : setShowCreateModal(false)}
+          >
+            Hủy
+          </ActionButton>
+          <ActionButton 
+            variant="success"
+            onClick={isEdit ? handleUpdate : handleCreate}
+            disabled={modalLoading}
+          >
+            {modalLoading ? '⏳ Đang lưu...' : (isEdit ? 'Cập nhật' : 'Tạo môn học')}
+          </ActionButton>
+        </ModalActions>
+      </ModalContent>
+    </ModalOverlay>
+  );
 
   return (
     <Container>
       <Header>
         <Title>📚 Quản lí môn học</Title>
-        <AddButton onClick={() => toast.success('Chức năng thêm môn học đang phát triển')}>
+        <AddButton onClick={() => {
+          resetForm();
+          setShowCreateModal(true);
+        }}>
           + Thêm môn học
         </AddButton>
       </Header>
@@ -362,12 +752,23 @@ function SubjectManagement() {
         
         <Select 
           value={gradeFilter} 
-          onChange={(e) => handleGradeFilter(e.target.value)}
+          onChange={(e) => handleFilterChange('grade', e.target.value)}
         >
           <option value="">Tất cả khối</option>
-          <option value="10">Khối 10</option>
-          <option value="11">Khối 11</option>
-          <option value="12">Khối 12</option>
+          {gradeLevels.map(grade => (
+            <option key={grade.code_id} value={grade.code_id}>
+              {grade.caption}
+            </option>
+          ))}
+        </Select>
+
+        <Select 
+          value={statusFilter} 
+          onChange={(e) => handleFilterChange('status', e.target.value)}
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value="Đang hoạt động">Đang hoạt động</option>
+          <option value="Dừng hoạt động">Dừng hoạt động</option>
         </Select>
       </FilterSection>
 
@@ -418,20 +819,14 @@ function SubjectManagement() {
                     </TableCell>
                     <TableCell>
                       <ActionButton 
-                        variant="primary"
-                        onClick={() => toast.success('Chức năng xem chi tiết đang phát triển')}
-                      >
-                        Xem
-                      </ActionButton>
-                      <ActionButton 
+                        onClick={() => handleEdit(subject)}
                         variant="warning"
-                        onClick={() => toast.success('Chức năng chỉnh sửa đang phát triển')}
                       >
                         Sửa
                       </ActionButton>
                       <ActionButton 
-                        variant="danger"
                         onClick={() => handleDelete(subject.subject_code)}
+                        variant="danger"
                       >
                         Xóa
                       </ActionButton>
@@ -447,35 +842,34 @@ function SubjectManagement() {
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
-                  ← Trước
+                  « Trước
                 </PaginationButton>
                 
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = Math.max(1, currentPage - 2) + i;
-                  if (pageNum > totalPages) return null;
-                  
-                  return (
-                    <PaginationButton
-                      key={pageNum}
-                      active={pageNum === currentPage}
-                      onClick={() => setCurrentPage(pageNum)}
-                    >
-                      {pageNum}
-                    </PaginationButton>
-                  );
-                })}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <PaginationButton
+                    key={page}
+                    active={page === currentPage}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </PaginationButton>
+                ))}
                 
                 <PaginationButton 
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
-                  Tiếp →
+                  Sau »
                 </PaginationButton>
               </Pagination>
             )}
           </>
         )}
       </TableContainer>
+
+      {/* Modals */}
+      {showCreateModal && <SubjectModal />}
+      {showEditModal && <SubjectModal isEdit />}
     </Container>
   );
 }
