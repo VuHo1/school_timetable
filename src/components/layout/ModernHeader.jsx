@@ -24,19 +24,26 @@ const PAGE_MAPPINGS = {
 const Container = styled.div`
   min-height: 100vh;
   background-color: #f5f5f5;
+  overflow-x: hidden;
+  position: sticky;
 `;
 
 const Header = styled.header`
   background: #e53e3e;
   height: 70px;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   padding: 0 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 1000;
+
 `;
+
 
 const LeftSection = styled.div`
   display: flex;
@@ -137,48 +144,6 @@ const LogoSub = styled.div`
   letter-spacing: 1px;
 `;
 
-const CenterSection = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  justify-self: center;
-`;
-
-const SearchContainer = styled.div`
-  position: relative;
-  width: 100%;
-  max-width: 400px;
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  padding: 10px 16px 10px 40px;
-  border: none;
-  border-radius: 25px;
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.3s ease;
-  
-  &::placeholder {
-    color: rgba(255, 255, 255, 0.8);
-  }
-  
-  &:focus {
-    background: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
-  }
-`;
-
-const SearchIcon = styled.div`
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 16px;
-`;
 
 const RightSection = styled.div`
   display: flex;
@@ -267,7 +232,7 @@ const AvatarMenuItem = styled.div`
 
 const Content = styled.main`
   min-height: calc(100vh - 70px);
-  padding: 30px;
+  padding-top: 50px; 
 `;
 
 const Overlay = styled.div.withConfig({
@@ -291,7 +256,6 @@ function ModernHeader() {
   const [currentAbilities, setCurrentAbilities] = useState([]);
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [avatarError, setAvatarError] = useState(false);
 
   const menuDropdownRef = useRef(null);
@@ -416,17 +380,6 @@ function ModernHeader() {
         </LeftSection>
 
         {/* Search Section */}
-        <CenterSection>
-          <SearchContainer>
-            <SearchIcon>🔍</SearchIcon>
-            <SearchInput
-              type="text"
-              placeholder="Tìm kiếm..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </SearchContainer>
-        </CenterSection>
 
         {/* Avatar Dropdown */}
         <RightSection>
