@@ -168,21 +168,10 @@ function Login() {
         try {
             const success = await login(userName, password);
             if (success) {
-                const role = localStorage.getItem('role');
-    
-                if (role === 'admin') {
-                    showToast('Đăng nhập thành công!', 'success');
-                    setTimeout(() => {
-                        navigate('/admin/dashboard');
-                    }, 3000);
-                } else if (role === 'staff') {
-                    showToast('Đăng nhập thành công!', 'success');
-                    setTimeout(() => {
-                        navigate('/staff/schedule');
-                    }, 3000);
-                } else {
-                    showToast('Vai trò không phù hợp.', 'error');
-                }
+                showToast('Đăng nhập thành công!', 'success');
+                setTimeout(() => {
+                    navigate('/admin/dashboard');
+                }, 3000);
             } else {
                 showToast('Đăng nhập thất bại. Vui lòng kiểm tra lại.', 'error');
             }
@@ -198,26 +187,15 @@ function Login() {
             if (!credential) {
                 throw new Error('Không nhận được credential từ Google.');
             }
-    
+
             const success = await signInWithGoogle(credential);
             if (success) {
-                const role = localStorage.getItem('role');
-
-                if (role === 'admin') {
-                    showToast('Đăng nhập bằng Google thành công!', 'success');
-                    setTimeout(() => {
-                        navigate('/admin/dashboard');
-                    }, 3000);
-                } else if (role === 'staff') {
-                    showToast('Đăng nhập bằng Google thành công!', 'success');
-                    setTimeout(() => {
-                        navigate('/staff/schedule');
-                    }, 3000);
-                } else {
-                    showToast('Vai trò không phù hợp.', 'error');
-                }
+                showToast('Đăng nhập thành công!', 'success');
+                setTimeout(() => {
+                    navigate('/admin/dashboard');
+                }, 3000);
             } else {
-                showToast('Đăng nhập bằng Google thất bại.', 'error');
+                showToast('Đăng nhập thất bại. Vui lòng kiểm tra lại.', 'error');
             }
         } catch (err) {
             showToast('Đã có lỗi xảy ra khi đăng nhập bằng Google.', 'error');

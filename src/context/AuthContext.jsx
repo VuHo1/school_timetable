@@ -111,9 +111,9 @@ export function AuthProvider({ children }) {
 
             const data = await response.json();
             const { token, role_name, abilities } = data.data;
-            const userRole = role_name === 'Administrator' ? 'admin' : role_name === 'School Staff' ? 'staff' : null;
+            const userRole = role_name;
 
-            if (token && ['admin', 'staff'].includes(userRole)) {
+            if (token) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', userRole);
                 setRole(userRole);
@@ -159,9 +159,9 @@ export function AuthProvider({ children }) {
 
             const data = await response.json();
             const { token, role_name, abilities } = data.data;
-            const userRole = role_name === 'Administrator' ? 'admin' : role_name === 'School Staff' ? 'staff' : null;
+            const userRole = role_name;
 
-            if (token && ['admin', 'staff'].includes(userRole)) {
+            if (token) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', userRole);
                 setRole(userRole);
