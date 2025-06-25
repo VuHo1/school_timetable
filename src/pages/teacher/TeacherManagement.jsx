@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
-import { fetchTimeSlots } from '../../api';
+import { fetchTimeSlots, fetchAllTeachers } from '../../api';
+
+// Get API base URL with fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
 
 // Styled Components
 const Container = styled.div`
@@ -545,12 +548,10 @@ function TeacherManagement() {
       setLoading(true);
       
       const token = localStorage.getItem('authToken');
-      let apiUrl = '/api/teacher';
       
       // Special case: if filter is "AVAILABLE", use different endpoint
       if (classFilter === 'AVAILABLE') {
-        apiUrl = '/api/teacher/available';
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`${API_BASE_URL}/api/teacher/available`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -577,56 +578,34 @@ function TeacherManagement() {
         return;
       }
       
-      // Regular teacher list with pagination and filters
-      const params = new URLSearchParams({
+      // Use fetchAllTeachers from api.js for regular teacher list with enhanced parameters
+      const params = {
         page: currentPage,
         limit: 20,
-        sort: 'user_name'
-      });
+      };
 
       // Add search parameter if provided
       if (searchTerm && searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
+        params.search = searchTerm.trim();
       }
 
       // Add filters if provided
       if (statusFilter) {
-        params.append('filter[status]', statusFilter);
+        params.filter = params.filter || {};
+        params.filter.status = statusFilter;
       }
       
       if (classFilter && classFilter !== 'AVAILABLE') {
-        params.append('filter[homeroom_class]', classFilter);
+        params.filter = params.filter || {};
+        params.filter.homeroom_class = classFilter;
       }
 
-      const response = await fetch(`${apiUrl}?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const teacherList = await fetchAllTeachers(token, params);
       
-      // Set data based on actual API response structure
-      let teacherList = [];
-      if (Array.isArray(data)) {
-        teacherList = data;
-      } else if (data.data_set && Array.isArray(data.data_set)) {
-        teacherList = data.data_set;
-      } else if (data.data && Array.isArray(data.data)) {
-        teacherList = data.data;
-      } else {
-        teacherList = [];
-      }
+      setTeachers(teacherList || []);
+      setTotalPages(Math.ceil((teacherList?.length || 0) / 20));
       
-      setTeachers(teacherList);
-      setTotalPages(Math.ceil((data.pagination?.total || teacherList.length || 0) / 20));
-      
-      toast.success(`Tải thành công ${teacherList.length} giáo viên`);
+      toast.success(`Tải thành công ${teacherList?.length || 0} giáo viên`);
       
     } catch (error) {
       console.error('Error fetching teachers:', error);
@@ -660,7 +639,7 @@ function TeacherManagement() {
       const token = localStorage.getItem('authToken');
       
       // Load teacher basic info
-      const teacherResponse = await fetch(`/api/teacher/${teacherUsername}`, {
+      const teacherResponse = await fetch(`${API_BASE_URL}/api/teacher/${teacherUsername}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -677,13 +656,13 @@ function TeacherManagement() {
       
       // Load teacher subjects and schedule config in parallel
       Promise.all([
-        fetch(`/api/teacher/teacher-subject/${teacherUsername}`, {
+        fetch(`${API_BASE_URL}/api/teacher/teacher-subject/${teacherUsername}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }),
-        fetch(`/api/teacher/teacher-schedule-config/${teacherUsername}`, {
+        fetch(`${API_BASE_URL}/api/teacher/teacher-schedule-config/${teacherUsername}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -728,7 +707,7 @@ function TeacherManagement() {
       setModalLoading(true);
       
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/user/add', {
+      const response = await fetch(`${API_BASE_URL}/api/user/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -781,7 +760,7 @@ function TeacherManagement() {
   const fetchRoles = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/user-role?filter[status]=Đang hoạt động&filter[is_teacher]=true', {
+      const response = await fetch(`${API_BASE_URL}/api/user-role?filter[status]=Đang hoạt động&filter[is_teacher]=true`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -804,7 +783,7 @@ function TeacherManagement() {
   const fetchAvailableSubjects = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/subject?filter[status]=Đang hoạt động&limit=100', {
+      const response = await fetch(`${API_BASE_URL}/api/subject?filter[status]=Đang hoạt động&limit=100`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -876,7 +855,7 @@ function TeacherManagement() {
   const fetchTeacherSubjects = async (teacherUsername) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/teacher/teacher-subject/${teacherUsername}`, {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/teacher-subject/${teacherUsername}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -900,7 +879,7 @@ function TeacherManagement() {
   const fetchTeacherScheduleConfig = async (teacherUsername) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/teacher/teacher-schedule-config/${teacherUsername}`, {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/teacher-schedule-config/${teacherUsername}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -1009,7 +988,7 @@ function TeacherManagement() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/teacher/teacher-subject/add', {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/teacher-subject/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1060,7 +1039,7 @@ function TeacherManagement() {
         ...apiScheduleData
       };
       
-      const response = await fetch('/api/teacher/teacher-schedule-config/add', {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/teacher-schedule-config/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -296,6 +296,15 @@ export const fetchAllTeachers = async (token, params = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page);
     if (params.limit) queryParams.append('limit', params.limit || 100);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.sort) queryParams.append('sort', params.sort);
+    
+    // Add filters
+    if (params.filter) {
+        Object.keys(params.filter).forEach(key => {
+            queryParams.append(`filter[${key}]`, params.filter[key]);
+        });
+    }
 
     const url = `${API_BASE_URL}/api/teacher?${queryParams.toString()}`;
     const response = await fetch(url, {
