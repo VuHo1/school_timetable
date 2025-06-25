@@ -20,6 +20,7 @@ import TeacherManagement from './pages/teacher/TeacherManagement';
 import SubjectManagement from './pages/subject/SubjectManagement';
 import RoomManagement from './pages/room/RoomManagement';
 import TimeslotManagement from './pages/timeslot/TimeslotManagement';
+import Notification from './pages/admin/Notification';
 import { useMemo } from 'react';
 
 function AppRoutes() {
@@ -28,7 +29,7 @@ function AppRoutes() {
   // Tạo default route dựa trên abilities
   const getDefaultRoute = () => {
     if (!abilities || abilities.length === 0) return '/profile';
-    
+
     // Priority order for default routes (Admin first, then Staff)
     const routePriority = [
       'Quản lí tài khoản',
@@ -38,7 +39,7 @@ function AppRoutes() {
       'Quản lí lớp học',
       'Cá nhân'
     ];
-    
+
     for (const priority of routePriority) {
       if (abilities.includes(priority)) {
         switch (priority) {
@@ -51,7 +52,7 @@ function AppRoutes() {
         }
       }
     }
-    
+
     return '/profile';
   };
 
@@ -81,9 +82,9 @@ function AppRoutes() {
             </ProtectedRoute>
           } />
           <Route path="/admin/dashboard" element={<Dashboard />} />
-          
 
-          
+
+
           {/* Staff routes */}
           <Route path="/staff/schedule" element={
             <ProtectedRoute requiredAbility="Thời khóa biểu">
@@ -110,14 +111,14 @@ function AppRoutes() {
               <ClassDetail />
             </ProtectedRoute>
           } />
-          
+
           {/* Common routes */}
           <Route path="/profile" element={
             <ProtectedRoute requiredAbility="Cá nhân">
               <Profile />
             </ProtectedRoute>
           } />
-          
+
           {/* School Management pages */}
           <Route path="/teacher" element={
             <ProtectedRoute requiredAbility="Quản lí giáo viên">
@@ -139,7 +140,7 @@ function AppRoutes() {
               <TimeslotManagement />
             </ProtectedRoute>
           } />
-          
+
           {/* Placeholder routes for remaining pages */}
           <Route path="/attendance" element={
             <ProtectedRoute requiredAbility="Điểm danh">
@@ -166,7 +167,7 @@ function AppRoutes() {
               <PlaceholderPage title="Nhật ký & Giám sát" icon="📊" />
             </ProtectedRoute>
           } />
-          
+
           <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
         </Route>
       ) : (

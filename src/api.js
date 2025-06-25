@@ -296,7 +296,7 @@ export const fetchAllTeachers = async (token, params = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page);
     if (params.limit) queryParams.append('limit', params.limit || 100);
-    
+
     const url = `${API_BASE_URL}/api/teacher?${queryParams.toString()}`;
     const response = await fetch(url, {
         method: 'GET',
@@ -314,7 +314,7 @@ export const fetchAllRooms = async (token, params = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page);
     if (params.limit) queryParams.append('limit', params.limit || 100);
-    
+
     const url = `${API_BASE_URL}/api/room?${queryParams.toString()}`;
     const response = await fetch(url, {
         method: 'GET',
@@ -326,4 +326,115 @@ export const fetchAllRooms = async (token, params = {}) => {
     if (!response.ok) throw new Error('Failed to fetch all rooms');
     const data = await response.json();
     return data.data_set || []; // Trả về mảng data_set
+};
+
+//Quản lý tài khoản
+export const fetchUserList = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append('limit', params.limit);
+
+    const url = `${API_BASE_URL}/api/user?${queryParams.toString()}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch user list');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+
+export const fetchUserByUsername = async (token, username) => {
+    const response = await fetch(`${API_BASE_URL}/api/user/${username}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch user by username');
+    const data = await response.json();
+    return data.data || null; // Trả về data nếu có, null nếu không tìm thấy
+};
+
+export const createUser = async (token, userData) => {
+    const response = await fetch(`${API_BASE_URL}/api/user/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to create user');
+    }
+    return await response.json();
+};
+
+export const activateUser = async (token, username) => {
+    const response = await fetch(`${API_BASE_URL}/api/user/active/${username}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to activate user');
+    }
+    return await response.json();
+};
+
+export const blockUser = async (token, username) => {
+    const response = await fetch(`${API_BASE_URL}/api/user/block/${username}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to block user');
+    }
+    return await response.json();
+};
+
+export const deleteUser = async (token, username) => {
+    const response = await fetch(`${API_BASE_URL}/api/user/remove/${username}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to delete user');
+    }
+    return await response.json();
+};
+export const fetchRoles = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-role`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch roles');
+    }
+    const data = await response.json();
+    return data.data_set || [];
 };

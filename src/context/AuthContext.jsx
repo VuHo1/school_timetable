@@ -33,12 +33,13 @@ export function AuthProvider({ children }) {
             if (data.success) {
                 setUser(prevUser => {
                     const isAvatarChanged = prevUser?.avatar !== data.data.avatar;
-                    if (isAvatarChanged || JSON.stringify(prevUser) !== JSON.stringify(data.data)) {
-                        return data.data;
+                    if (isAvatarChanged || JSON.stringify(prevUser?.data) !== JSON.stringify(data.data)) {
+                        console.log('Updating user due to avatar change or other differences:', { ...data.data, token });
+                        return { ...data.data, token }; // Thêm token vào user object
                     }
                     return prevUser;
                 });
-                
+
                 // Lưu abilities vào localStorage và state
                 if (data.data.abilities && Array.isArray(data.data.abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(data.data.abilities));
@@ -62,7 +63,7 @@ export function AuthProvider({ children }) {
         const token = localStorage.getItem('authToken');
         const storedRole = localStorage.getItem('role');
         const storedAbilities = localStorage.getItem('abilities');
-        
+
         if (token && storedRole && !isProfileFetched) {
             setRole(prevRole => {
                 if (prevRole !== storedRole) {
@@ -70,7 +71,7 @@ export function AuthProvider({ children }) {
                 }
                 return prevRole;
             });
-            
+
             // Load abilities từ localStorage nếu có
             if (storedAbilities) {
                 try {
@@ -80,7 +81,7 @@ export function AuthProvider({ children }) {
                     console.error('Error parsing stored abilities:', error);
                 }
             }
-            
+
             fetchUserProfile(token);
         } else if (!token || !storedRole) {
             if (loading) {
@@ -116,13 +117,13 @@ export function AuthProvider({ children }) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', userRole);
                 setRole(userRole);
-                
+
                 // Set abilities from login response
                 if (abilities && Array.isArray(abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(abilities));
                     setAbilities(abilities);
                 }
-                
+
                 await fetchUserProfile(token);
                 return true;
             } else {
@@ -164,13 +165,13 @@ export function AuthProvider({ children }) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', userRole);
                 setRole(userRole);
-                
+
                 // Set abilities from google signin response
                 if (abilities && Array.isArray(abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(abilities));
                     setAbilities(abilities);
                 }
-                
+
                 await fetchUserProfile(token);
                 return true;
             } else {
