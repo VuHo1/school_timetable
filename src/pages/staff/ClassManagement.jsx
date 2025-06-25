@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useAbilities } from '../../hooks/useAbilities';
@@ -49,18 +49,20 @@ const FilterSection = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   display: flex;
+  flex-wrap: nowrap;
   gap: 15px;
   align-items: center;
-  flex-wrap: wrap;
+  overflow-x: auto;
 `;
 
 const SearchInput = styled.input`
+  width: 250px;
+  flex-shrink: 0;
+  flex-grow: 0;
   padding: 10px 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 14px;
-  min-width: 250px;
-  
   &:focus {
     outline: none;
     border-color: #667eea;
@@ -137,32 +139,18 @@ const TableHeaderCell = styled.th`
   font-weight: 600;
   color: #2c3e50;
   font-size: 14px;
-  cursor: pointer;
   user-select: none;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: #e9ecef;
-  }
 `;
 
-const StatusBadge = styled.button`
+const StatusBadge = styled.span.withConfig({
+  shouldForwardProp: (prop) => prop !== 'status',
+})`
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  border:none;
   background: ${props => props.status === 'Đang hoạt động' ? '#d4edda' : '#f8d7da'};
   color: ${props => props.status === 'Đang hoạt động' ? '#155724' : '#721c24'};
-  
-  &:hover {
-    opacity: 0.8;
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 const ActionButton = styled.button.withConfig({
@@ -177,11 +165,9 @@ const ActionButton = styled.button.withConfig({
   cursor: pointer;
   margin-right: 5px;
   transition: all 0.3s ease;
-  
   &:hover {
     opacity: 0.8;
   }
-  
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -204,7 +190,6 @@ const EmptyState = styled.div`
   justify-content: center;
   height: 200px;
   color: #666;
-  
   .icon {
     font-size: 48px;
     margin-bottom: 16px;
@@ -346,6 +331,74 @@ const CancelModalButton = styled.button`
   }
 `;
 
+const ActionMenuButton = styled.button`
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  &:hover {
+    background: #4338ca;
+    transform: scale(1.05);
+  }
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const ActionDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  margin-top: 5px;
+  opacity: ${(props) => (props.isOpen ? 1 : 0)};
+  transform: ${(props) => (props.isOpen ? 'translateY(0)' : 'translateY(-10px)')};
+  visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+`;
+
+const ActionMenuItem = styled.div`
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #2c3e50;
+  &:hover {
+    background: #f8f9fa;
+  }
+  &:last-child {
+    border-bottom: none;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8f9fa;
+  }
+`;
+
+const ActionMenuText = styled.span`
+  font-size: 14px;
+  color: #2c3e50;
+`;
+
 function ClassManagement() {
   const { user } = useAuth();
   const { hasAbility } = useAbilities();
@@ -361,23 +414,23 @@ function ClassManagement() {
   const [updatingStatus, setUpdatingStatus] = useState({});
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [modalData, setModalData] = useState({ classCode: '', currentStatus: '', action: '' });
+  const [openActionMenu, setOpenActionMenu] = useState(null);
+  const actionMenuRef = useRef(null);
 
   const loadClasses = async (params = {}) => {
     setLoading(true);
     setError('');
     try {
       const token = localStorage.getItem('authToken');
-      const searchParams = {
+      const searchParams = ({
         page: currentPage,
         limit: 10,
         sort: sortOrder === 'desc' ? `-${sortBy}` : sortBy,
         ...params
-      };
-
-      if (searchTerm) {
-        searchParams.search = searchTerm;
+      });
+      if (searchTerm && searchTerm.trim()) {
+        searchParams.search = searchTerm.trim();
       }
-
       const result = await fetchClasses(token, searchParams);
 
       if (result && result.data_set) {
@@ -403,16 +456,23 @@ function ClassManagement() {
     loadClasses();
   }, [currentPage, sortBy, sortOrder]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    loadClasses({ search: searchTerm });
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    setCurrentPage(1);
+  useEffect(() => {
     loadClasses();
+  }, [searchTerm]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setOpenActionMenu(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
   };
 
   const handleSort = (field) => {
@@ -475,6 +535,10 @@ function ClassManagement() {
     setModalData({ classCode: '', currentStatus: '', action: '' });
   };
 
+  const handleActionMenuToggle = (classCode) => {
+    setOpenActionMenu(openActionMenu === classCode ? null : classCode);
+  };
+
   return (
     <Container>
       <Header>
@@ -489,18 +553,10 @@ function ClassManagement() {
       <FilterSection>
         <SearchInput
           type="text"
-          placeholder="Tìm kiếm theo mã lớp, khối, tên phòng, loại phòng..."
+          placeholder="Tìm kiếm theo tên, email, số điện thoại..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearch}
         />
-        <SearchButton onClick={handleSearch}>
-          🔍 Tìm kiếm
-        </SearchButton>
-        {searchTerm && (
-          <ClearButton onClick={handleClearSearch}>
-            ❌ Xóa
-          </ClearButton>
-        )}
       </FilterSection>
 
       {error && (
@@ -537,28 +593,28 @@ function ClassManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHeaderCell onClick={() => handleSort('class_code')}>
+                    <TableHeaderCell style={{ width: '10%' }} onClick={() => handleSort('class_code')}>
                       Mã lớp
                       <SortIcon>{getSortIcon('class_code')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell onClick={() => handleSort('grade_level')}>
+                    <TableHeaderCell style={{ width: '10%' }} onClick={() => handleSort('grade_level')}>
                       Khối
                       <SortIcon>{getSortIcon('grade_level')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell onClick={() => handleSort('room_name')}>
+                    <TableHeaderCell style={{ width: '30%' }} onClick={() => handleSort('room_name')}>
                       Phòng học
                       <SortIcon>{getSortIcon('room_name')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell onClick={() => handleSort('room_type_name')}>
+                    <TableHeaderCell style={{ width: '20%' }} onClick={() => handleSort('room_type_name')}>
                       Loại phòng
                       <SortIcon>{getSortIcon('room_type_name')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell onClick={() => handleSort('teacher_full_name')}>
+                    <TableHeaderCell style={{ width: '10%' }} onClick={() => handleSort('teacher_full_name')}>
                       GVCN
                       <SortIcon>{getSortIcon('teacher_full_name')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell>Trạng thái</TableHeaderCell>
-                    <TableHeaderCell>Thao tác</TableHeaderCell>
+                    <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
+                    <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
                   </TableRow>
                 </TableHeader>
                 <tbody>
@@ -570,33 +626,43 @@ function ClassManagement() {
                       <TableCell>{cls.room_type_name || 'N/A'}</TableCell>
                       <TableCell>{cls.teacher_full_name || 'Chưa có GVCN'}</TableCell>
                       <TableCell>
-                        <StatusBadge
-                          status={cls.status}
-                          onClick={() => handleToggleStatus(cls.class_code, cls.status)}
-                          disabled={updatingStatus[cls.class_code]}
-                          title={cls.status?.toLowerCase() === 'đang hoạt động'
-                            ? 'Click để ngừng hoạt động'
-                            : 'Click để kích hoạt lại'}
-                        >
-                          {updatingStatus[cls.class_code]
-                            ? 'Đang cập nhật...'
-                            : (cls.status || 'N/A')
-                          }
+                        <StatusBadge status={cls.status}>
+                          {cls.status}
                         </StatusBadge>
                       </TableCell>
-                      <TableCell>
-                        <ActionButton
-                          variant="primary"
-                          onClick={() => handleViewDetail(cls.class_code)}
+                      <TableCell style={{ position: 'relative' }}>
+                        <ActionMenuButton
+                          onClick={() => handleActionMenuToggle(cls.class_code)}
+                          ref={actionMenuRef}
                         >
-                          👁️ Xem
-                        </ActionButton>
-                        <ActionButton
-                          variant="warning"
-                          onClick={() => handleUpdateClass(cls.class_code)}
-                        >
-                          ✏️ Cập nhật
-                        </ActionButton>
+                          ⋯
+                        </ActionMenuButton>
+                        <ActionDropdown isOpen={openActionMenu === cls.class_code}>
+                          <ActionMenuItem onClick={() => {
+                            handleViewDetail(cls.class_code);
+                            setOpenActionMenu(null);
+                          }}>
+                            <ActionMenuText>Xem chi tiết</ActionMenuText>
+                          </ActionMenuItem>
+                          <ActionMenuItem onClick={() => {
+                            handleUpdateClass(cls.class_code);
+                            setOpenActionMenu(null);
+                          }}>
+                            <ActionMenuText>Cập nhật</ActionMenuText>
+                          </ActionMenuItem>
+                          <ActionMenuItem
+                            onClick={() => {
+                              handleToggleStatus(cls.class_code, cls.status);
+                              setOpenActionMenu(null);
+                            }}
+                          >
+                            <ActionMenuText style={{ color: cls.status?.toLowerCase() === 'đang hoạt động' ? '#e74c3c' : '#28a745' }}>
+                              {cls.status?.toLowerCase() === 'đang hoạt động'
+                                ? 'Xóa'
+                                : 'Kích hoạt'}
+                            </ActionMenuText>
+                          </ActionMenuItem>
+                        </ActionDropdown>
                       </TableCell>
                     </TableRow>
                   ))}

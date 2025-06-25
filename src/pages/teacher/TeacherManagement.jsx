@@ -699,6 +699,7 @@ function TeacherManagement() {
         params.append('filter[homeroom_class]', classFilter);
       }
 
+      console.log(params)
       const response = await fetch(`${apiUrl}?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,

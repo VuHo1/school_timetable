@@ -71,12 +71,14 @@ export const fetchClasses = async (token, params = {}) => {
     if (params.limit) queryParams.append('limit', params.limit);
     if (params.sort) queryParams.append('sort', params.sort);
     // Add filters
-    if (params.filter) {
+    if (params.filter && typeof params.filter === 'object') {
         Object.keys(params.filter).forEach(key => {
             queryParams.append(`filter[${key}]`, params.filter[key]);
         });
     }
     const url = `${API_BASE_URL}/api/class?${queryParams.toString()}`;
+    console.log('[FETCH URL]', url);
+
     const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -84,13 +86,16 @@ export const fetchClasses = async (token, params = {}) => {
             'Authorization': `Bearer ${token}`,
         },
     });
+
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Failed to fetch classes: ${response.status} ${response.statusText}`);
     }
+
     const data = await response.json();
-    return data; // Trả về toàn bộ response để có thể access data_set và pagination
+    return data;
 };
+
 
 export const fetchClassDetail = async (token, classCode) => {
     const response = await fetch(`${API_BASE_URL}/api/class/${classCode}`, {
