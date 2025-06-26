@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
-import { 
-  fetchSubjects as apiFetchSubjects, 
-  createSubject, 
-  updateSubject, 
+import {
+  fetchSubjects as apiFetchSubjects,
+  createSubject,
+  updateSubject,
   deleteSubject,
-  fetchGradeLevels 
+  fetchGradeLevels
 } from '../../api';
 
 // Get API base URL with fallback
@@ -94,7 +94,6 @@ const TableContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 `;
 
 const Table = styled.table`
@@ -350,12 +349,12 @@ function SubjectManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  
+
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
-  
+
   // Form data
   const [formData, setFormData] = useState({
     subject_code: '',
@@ -367,7 +366,7 @@ function SubjectManagement() {
     fixed_slot: [],
     avoid_slot: []
   });
-  
+
   // Master data
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjectCodes, setSubjectCodes] = useState([]);
@@ -376,7 +375,7 @@ function SubjectManagement() {
   const fetchSubjects = async () => {
     try {
       setLoading(true);
-      
+
       const token = localStorage.getItem('authToken');
       const params = {
         page: currentPage,
@@ -396,15 +395,15 @@ function SubjectManagement() {
 
       const data = await apiFetchSubjects(token, params);
       const subjectList = data.data_set || data.data || [];
-      
+
       setSubjects(subjectList);
       setTotalPages(Math.ceil((data.pagination?.total || subjectList.length || 0) / 20));
-      
+
       toast.success(`Tải thành công ${subjectList.length} môn học`);
-      
+
     } catch (error) {
       console.error('Error fetching subjects:', error);
-      
+
       if (error.message.includes('401')) {
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       } else if (error.message.includes('403')) {
@@ -412,7 +411,7 @@ function SubjectManagement() {
       } else {
         toast.error('Không thể tải danh sách môn học. Vui lòng thử lại.');
       }
-      
+
       setSubjects([]);
     } finally {
       setLoading(false);
@@ -423,11 +422,11 @@ function SubjectManagement() {
   const fetchMasterData = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      
+
       // Fetch grade levels
       const grades = await fetchGradeLevels(token);
       setGradeLevels(grades || []);
-      
+
       // Fetch subject codes
       const response = await fetch(`${API_BASE_URL}/api/code-list/SUBJECT`, {
         headers: {
@@ -435,12 +434,12 @@ function SubjectManagement() {
           'Accept': 'text/plain',
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setSubjectCodes(data.data_set || []);
       }
-      
+
     } catch (error) {
       console.error('Error fetching master data:', error);
       // Use fallback data
@@ -456,12 +455,12 @@ function SubjectManagement() {
   const handleCreate = async () => {
     try {
       setModalLoading(true);
-      
+
       if (!formData.subject_code || formData.grade_level.length === 0) {
         toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
         return;
       }
-      
+
       const token = localStorage.getItem('authToken');
       await createSubject(token, formData);
 
@@ -469,7 +468,7 @@ function SubjectManagement() {
       setShowCreateModal(false);
       resetForm();
       fetchSubjects();
-      
+
     } catch (error) {
       console.error('Error creating subject:', error);
       toast.error('Có lỗi khi tạo môn học: ' + error.message);
@@ -482,7 +481,7 @@ function SubjectManagement() {
   const handleUpdate = async () => {
     try {
       setModalLoading(true);
-      
+
       const token = localStorage.getItem('authToken');
       const updateData = {
         subject_code: selectedSubject.subject_code,
@@ -494,14 +493,14 @@ function SubjectManagement() {
         avoid_slot: formData.avoid_slot,
         also_update_for_class_subject: 'A' // Update all related class subjects
       };
-      
+
       await updateSubject(token, updateData);
 
       toast.success('Cập nhật môn học thành công!');
       setShowEditModal(false);
       resetForm();
       fetchSubjects();
-      
+
     } catch (error) {
       console.error('Error updating subject:', error);
       toast.error('Có lỗi khi cập nhật môn học: ' + error.message);
@@ -618,7 +617,7 @@ function SubjectManagement() {
             ×
           </CloseButton>
         </ModalHeader>
-        
+
         <ModalBody>
           <FormGrid>
             <FormGroup>
@@ -711,14 +710,14 @@ function SubjectManagement() {
             </FormGroup>
           )}
         </ModalBody>
-        
+
         <ModalActions>
-          <ActionButton 
+          <ActionButton
             onClick={() => isEdit ? setShowEditModal(false) : setShowCreateModal(false)}
           >
             Hủy
           </ActionButton>
-          <ActionButton 
+          <ActionButton
             variant="success"
             onClick={isEdit ? handleUpdate : handleCreate}
             disabled={modalLoading}
@@ -749,9 +748,9 @@ function SubjectManagement() {
           value={searchTerm}
           onChange={handleSearch}
         />
-        
-        <Select 
-          value={gradeFilter} 
+
+        <Select
+          value={gradeFilter}
           onChange={(e) => handleFilterChange('grade', e.target.value)}
         >
           <option value="">Tất cả khối</option>
@@ -762,8 +761,8 @@ function SubjectManagement() {
           ))}
         </Select>
 
-        <Select 
-          value={statusFilter} 
+        <Select
+          value={statusFilter}
           onChange={(e) => handleFilterChange('status', e.target.value)}
         >
           <option value="">Tất cả trạng thái</option>
@@ -818,13 +817,13 @@ function SubjectManagement() {
                       </StatusBadge>
                     </TableCell>
                     <TableCell>
-                      <ActionButton 
+                      <ActionButton
                         onClick={() => handleEdit(subject)}
                         variant="warning"
                       >
                         Sửa
                       </ActionButton>
-                      <ActionButton 
+                      <ActionButton
                         onClick={() => handleDelete(subject.subject_code)}
                         variant="danger"
                       >
@@ -838,13 +837,13 @@ function SubjectManagement() {
 
             {totalPages > 1 && (
               <Pagination>
-                <PaginationButton 
+                <PaginationButton
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
                   « Trước
                 </PaginationButton>
-                
+
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                   <PaginationButton
                     key={page}
@@ -854,8 +853,8 @@ function SubjectManagement() {
                     {page}
                   </PaginationButton>
                 ))}
-                
-                <PaginationButton 
+
+                <PaginationButton
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
