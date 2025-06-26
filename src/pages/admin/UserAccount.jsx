@@ -836,7 +836,7 @@ export default function UserAccount() {
 
   return (
     <Container>
-      <Title>Quản lý tài khoản 👨‍💼</Title>
+
 
       <Header>
         <Title>👨‍💼 Quản lý tài khoản</Title>

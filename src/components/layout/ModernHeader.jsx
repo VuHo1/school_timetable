@@ -7,7 +7,6 @@ import styled from 'styled-components';
 const PAGE_MAPPINGS = {
   'Cấu hình hệ thống': '/admin/setting',
   'Danh mục dùng chung': '/admin/code_list',
-  'Danh mục dùng chung': '/admin/code_list',
   'Nhật ký & Giám sát': '/log',
   'Quản lí chức năng': '/admin/user_command',
   'Quản lí tài khoản': '/admin/user_account',
