@@ -84,7 +84,6 @@ const TableContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 `;
 
 const Table = styled.table`
@@ -154,7 +153,7 @@ const RoomTypeBadge = styled.span.withConfig({
   font-size: 12px;
   font-weight: 500;
   background: ${props => {
-    switch(props.type) {
+    switch (props.type) {
       case 'LR': return '#e1f5fe';
       case 'LAB': return '#f3e5f5';
       case 'GYM': return '#e8f5e8';
@@ -162,7 +161,7 @@ const RoomTypeBadge = styled.span.withConfig({
     }
   }};
   color: ${props => {
-    switch(props.type) {
+    switch (props.type) {
       case 'LR': return '#01579b';
       case 'LAB': return '#4a148c';
       case 'GYM': return '#1b5e20';
@@ -257,7 +256,7 @@ function RoomManagement() {
   const fetchRooms = async () => {
     try {
       setLoading(true);
-      
+
       // Build query parameters according to API documentation
       const params = new URLSearchParams({
         page: currentPage,
@@ -287,7 +286,7 @@ function RoomManagement() {
       }
 
       const data = await response.json();
-      
+
       // Set data based on actual API response structure
       let roomList = [];
       if (Array.isArray(data)) {
@@ -299,15 +298,15 @@ function RoomManagement() {
       } else {
         roomList = [];
       }
-      
+
       setRooms(roomList);
       setTotalPages(Math.ceil((data.pagination?.total || roomList.length || 0) / 20));
-      
+
       toast.success(`Tải thành công ${roomList.length} phòng học`);
-      
+
     } catch (error) {
       console.error('Error fetching rooms:', error);
-      
+
       // More detailed error messages
       if (error.message.includes('401')) {
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -318,7 +317,7 @@ function RoomManagement() {
       } else {
         toast.error('Không thể tải danh sách phòng học. Vui lòng thử lại.');
       }
-      
+
       setRooms([]);
     } finally {
       setLoading(false);
@@ -348,7 +347,7 @@ function RoomManagement() {
       fetchRooms(); // Refresh data
     } catch (error) {
       console.error('Error deleting room:', error);
-      
+
       if (error.message.includes('401')) {
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       } else if (error.message.includes('403')) {
@@ -394,9 +393,9 @@ function RoomManagement() {
           value={searchTerm}
           onChange={handleSearch}
         />
-        
-        <Select 
-          value={typeFilter} 
+
+        <Select
+          value={typeFilter}
           onChange={(e) => handleTypeFilter(e.target.value)}
         >
           <option value="">Tất cả loại phòng</option>
@@ -452,19 +451,19 @@ function RoomManagement() {
                       </StatusBadge>
                     </TableCell>
                     <TableCell>
-                      <ActionButton 
+                      <ActionButton
                         variant="primary"
                         onClick={() => toast.success('Chức năng xem chi tiết đang phát triển')}
                       >
                         Xem
                       </ActionButton>
-                      <ActionButton 
+                      <ActionButton
                         variant="warning"
                         onClick={() => toast.success('Chức năng chỉnh sửa đang phát triển')}
                       >
                         Sửa
                       </ActionButton>
-                      <ActionButton 
+                      <ActionButton
                         variant="danger"
                         onClick={() => handleDelete(room.room_code)}
                         disabled={!!room.assigned_class}
@@ -480,17 +479,17 @@ function RoomManagement() {
 
             {totalPages > 1 && (
               <Pagination>
-                <PaginationButton 
+                <PaginationButton
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
                   ← Trước
                 </PaginationButton>
-                
+
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   const pageNum = Math.max(1, currentPage - 2) + i;
                   if (pageNum > totalPages) return null;
-                  
+
                   return (
                     <PaginationButton
                       key={pageNum}
@@ -501,8 +500,8 @@ function RoomManagement() {
                     </PaginationButton>
                   );
                 })}
-                
-                <PaginationButton 
+
+                <PaginationButton
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
