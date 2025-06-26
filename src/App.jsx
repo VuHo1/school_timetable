@@ -30,6 +30,7 @@ function AppRoutes() {
 
   // Tạo default route dựa trên abilities
   const getDefaultRoute = () => {
+
     if (!abilities || abilities.length === 0) return '/profile';
 
     // Priority order for default routes (Admin first, then Staff)
@@ -86,9 +87,6 @@ function AppRoutes() {
             </ProtectedRoute>
           } />
           <Route path="/admin/dashboard" element={<Dashboard />} />
-
-
-
           {/* Staff routes */}
           <Route path="/staff/schedule" element={
             <ProtectedRoute requiredAbility="Thời khóa biểu">

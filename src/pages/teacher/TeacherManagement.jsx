@@ -1,6 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
+import { fetchTimeSlots, fetchAllTeachers } from '../../api';
+
+// Get API base URL with fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
 
 // Styled Components
 const Container = styled.div`
@@ -47,9 +51,10 @@ const FilterSection = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   display: flex;
+  flex-wrap: nowrap; 
   gap: 15px;
   align-items: center;
-  flex-wrap: wrap;
+  overflow-x: auto; 
 `;
 
 const SearchInput = styled.input`
@@ -66,7 +71,7 @@ const SearchInput = styled.input`
   }
 `;
 
-const Select = styled.select`
+const SelectMenu = styled.select`
   padding: 10px 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -84,7 +89,6 @@ const TableContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 `;
 
 const Table = styled.table`
@@ -147,9 +151,28 @@ const StatusBadge = styled.span.withConfig({
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: ${props => props.status === 'Đang hoạt động' ? '#d4edda' : '#f8d7da'};
-  color: ${props => props.status === 'Đang hoạt động' ? '#155724' : '#721c24'};
+  background: ${(props) => {
+    switch (props.status) {
+      case 'Đang hoạt động':
+        return '#d4edda'; // xanh nhạt
+      case 'Tạm khóa':
+        return '#fff3cd'; // vàng nhạt
+      default:
+        return '#f8d7da'; // đỏ nhạt
+    }
+  }};
+  color: ${(props) => {
+    switch (props.status) {
+      case 'Đang hoạt động':
+        return '#155724'; // xanh đậm
+      case 'Tạm khóa':
+        return '#856404'; // vàng đậm
+      default:
+        return '#721c24'; // đỏ đậm
+    }
+  }};
 `;
+
 
 const Pagination = styled.div`
   display: flex;
@@ -222,9 +245,9 @@ const ModalContent = styled.div`
   background: white;
   border-radius: 12px;
   padding: 30px;
-  max-width: 800px;
-  width: 90%;
-  max-height: 85vh;
+  max-width: 1200px;
+  width: 95%;
+  max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 `;
@@ -301,65 +324,61 @@ const CheckboxItem = styled.label`
   }
 `;
 
-// Schedule Grid Components - like timetable
-const ScheduleTable = styled.div`
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
+// Modern Schedule Table Components
+const ScheduleTableContainer = styled.div`
   margin: 20px 0;
-  background: white;
+  border-radius: 8px;
+  overflow-x: auto;
+  overflow-y: visible;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 `;
 
-const DayHeader = styled.div`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+const ScheduleTableElement = styled.table`
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+  background: white;
+`;
+
+const TimeSlotHeader = styled.th`
+  background: #f8f9fa;
+  border: 1px solid #ddd;
   padding: 12px 8px;
   text-align: center;
   font-weight: 600;
   font-size: 14px;
-  border-right: 1px solid rgba(255,255,255,0.2);
-  
-  &:last-child {
-    border-right: none;
-  }
+  color: #2c3e50;
+  min-width: 100px;
 `;
 
-const SlotRow = styled.div`
-  display: contents;
-`;
-
-const SlotCell = styled.div`
-  padding: 8px;
-  border-right: 1px solid #eee;
-  border-bottom: 1px solid #eee;
+const DayHeaderCell = styled.th`
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 12px 8px;
   text-align: center;
-  font-size: 12px;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 120px;
+`;
+
+const ScheduleCell = styled.td.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isSelected' && prop !== 'isEditing',
+})`
+  border: 1px solid #ddd;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  height: 50px;
+  cursor: ${props => props.isEditing ? 'pointer' : 'default'};
+  background: ${props => props.isSelected ? '#28a745' : '#dc3545'};
+  color: white;
+  transition: all 0.2s ease;
+  white-space: nowrap;
   
-  &:last-child {
-    border-right: none;
-  }
-  
-  &.available {
-    background: #d4edda;
-    color: #155724;
-    font-weight: 500;
-  }
-  
-  &.unavailable {
-    background: #f8d7da;
-    color: #721c24;
-  }
-  
-  &.empty {
-    background: #f8f9fa;
-    color: #6c757d;
+  &:hover {
+    opacity: ${props => props.isEditing ? '0.8' : '1'};
   }
 `;
 
@@ -467,6 +486,116 @@ const EmptyMessage = styled.div`
   }
 `;
 
+const APIStatusCard = styled.div`
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 10px 0;
+  border-left: 4px solid #007bff;
+  
+  .status-title {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .status-content {
+    font-size: 12px;
+    color: #666;
+    
+    .api-endpoint {
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      margin: 2px 0;
+      display: inline-block;
+    }
+  }
+`;
+const ActionMenuButton = styled.button`
+  background: #4f46e5; /* Indigo-600 */
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    background: #4338ca; /* Indigo-700 */
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const ActionDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  margin-top: 5px;
+  opacity: ${(props) => (props.isOpen ? 1 : 0)};
+  transform: ${(props) => (props.isOpen ? 'translateY(0)' : 'translateY(-10px)')};
+  visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+`;
+
+const ActionMenuItem = styled.div`
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #2c3e50;
+  
+  &:hover {
+    background: #f8f9fa;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8f9fa;
+  }
+`;
+
+const ActionMenuIcon = styled.span`
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+`;
+
+const ActionMenuText = styled.span`
+  font-size: 14px;
+  color: #2c3e50;
+`;
+
+
 function TeacherManagement() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -474,26 +603,27 @@ function TeacherManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [classFilter, setClassFilter] = useState('');
-  
+  // Add state for action dropdown
+  const [openActionMenu, setOpenActionMenu] = useState(null);
+  const actionMenuRef = useRef(null);
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [modalLoading, setModalLoading] = useState(false);
   const [roles, setRoles] = useState([]);
-  
+
   // Teacher detail extended states
   const [teacherSubjects, setTeacherSubjects] = useState([]);
   const [teacherScheduleConfig, setTeacherScheduleConfig] = useState(null);
   const [activeTab, setActiveTab] = useState('info'); // 'info', 'subjects', 'schedule'
-  
+
   // Edit modes
   const [editingSubjects, setEditingSubjects] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(false);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
-  
+
   // Schedule data state - moved to main component level for proper re-rendering
   const [scheduleData, setScheduleData] = useState({
     monday: '',
@@ -515,94 +645,38 @@ function TeacherManagement() {
   const fetchTeachers = async () => {
     try {
       setLoading(true);
-      
+
       const token = localStorage.getItem('authToken');
-      let apiUrl = '/api/teacher';
-      
+
       // Special case: if filter is "AVAILABLE", use different endpoint
-      if (classFilter === 'AVAILABLE') {
-        apiUrl = '/api/teacher/available';
-        const response = await fetch(apiUrl, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        let teacherList = [];
-        if (Array.isArray(data)) {
-          teacherList = data;
-        } else if (data.data_set && Array.isArray(data.data_set)) {
-          teacherList = data.data_set;
-        } else if (data.data && Array.isArray(data.data)) {
-          teacherList = data.data;
-        }
-        
-        setTeachers(teacherList);
-        setTotalPages(1); // Available teachers usually don't have pagination
-        toast.success(`Tải thành công ${teacherList.length} giáo viên chưa có lớp`);
-        return;
-      }
-      
-      // Regular teacher list with pagination and filters
-      const params = new URLSearchParams({
+      // Use fetchAllTeachers from api.js for regular teacher list with enhanced parameters
+      const params = {
         page: currentPage,
-        limit: 20,
-        sort: 'user_name'
-      });
+        limit: 10,
+      };
 
       // Add search parameter if provided
       if (searchTerm && searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
+        params.search = searchTerm.trim();
       }
 
       // Add filters if provided
       if (statusFilter) {
-        params.append('filter[status]', statusFilter);
-      }
-      
-      if (classFilter && classFilter !== 'AVAILABLE') {
-        params.append('filter[homeroom_class]', classFilter);
+        params.filter = params.filter || {};
+        params.filter.status = statusFilter;
       }
 
-      const response = await fetch(`${apiUrl}?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const teacherList = await fetchAllTeachers(token, params);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      setTeachers(teacherList || []);
+      setTotalPages(Math.ceil((teacherList?.length || 0) / 20));
 
-      const data = await response.json();
-      
-      // Set data based on actual API response structure
-      let teacherList = [];
-      if (Array.isArray(data)) {
-        teacherList = data;
-      } else if (data.data_set && Array.isArray(data.data_set)) {
-        teacherList = data.data_set;
-      } else if (data.data && Array.isArray(data.data)) {
-        teacherList = data.data;
-      } else {
-        teacherList = [];
-      }
-      
-      setTeachers(teacherList);
-      setTotalPages(Math.ceil((data.pagination?.total || teacherList.length || 0) / 20));
-      
-      toast.success(`Tải thành công ${teacherList.length} giáo viên`);
-      
+      toast.success(`Tải thành công ${teacherList?.length || 0} giáo viên`);
+
     } catch (error) {
       console.error('Error fetching teachers:', error);
-      
+
       // More detailed error messages
       if (error.message.includes('401')) {
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -613,13 +687,42 @@ function TeacherManagement() {
       } else {
         toast.error('Không thể tải danh sách giáo viên. Vui lòng thử lại.');
       }
-      
+
       setTeachers([]);
     } finally {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const handleMouseLeave = (event) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.relatedTarget)) {
+        setShowStatusDropdown(false);
+      }
+      if (genderDropdownRef.current && !genderDropdownRef.current.contains(event.relatedTarget)) {
+        setShowGenderDropdown(false);
+      }
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.relatedTarget)) {
+        setShowRoleDropdown(false);
+      }
+    };
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, []);
 
+  // Handle click outside to close action menu
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setOpenActionMenu(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleActionMenuToggle = (userId) => {
+    setOpenActionMenu(openActionMenu === userId ? null : userId);
+  };
   // Handle view teacher detail
   const handleViewDetail = async (teacherUsername) => {
     try {
@@ -628,11 +731,11 @@ function TeacherManagement() {
       setActiveTab('info'); // Reset to info tab
       setEditingSubjects(false); // Reset edit modes
       setEditingSchedule(false);
-      
+
       const token = localStorage.getItem('authToken');
-      
+
       // Load teacher basic info
-      const teacherResponse = await fetch(`/api/teacher/${teacherUsername}`, {
+      const teacherResponse = await fetch(`${API_BASE_URL}/api/teacher/${teacherUsername}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -646,16 +749,16 @@ function TeacherManagement() {
       const teacherData = await teacherResponse.json();
       const teacherDetail = teacherData.data_set?.[0] || teacherData.data || teacherData;
       setSelectedTeacher(teacherDetail);
-      
+
       // Load teacher subjects and schedule config in parallel
       Promise.all([
-        fetch(`/api/teacher/teacher-subject/${teacherUsername}`, {
+        fetch(`${API_BASE_URL}/api/teacher/teacher-subject/${teacherUsername}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         }),
-        fetch(`/api/teacher/teacher-schedule-config/${teacherUsername}`, {
+        fetch(`${API_BASE_URL}/api/teacher/teacher-schedule-config/${teacherUsername}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -670,7 +773,7 @@ function TeacherManagement() {
         } else {
           setTeacherSubjects([]);
         }
-        
+
         // Handle schedule config
         if (scheduleRes.ok) {
           const scheduleData = await scheduleRes.json();
@@ -684,7 +787,7 @@ function TeacherManagement() {
         setTeacherSubjects([]);
         setTeacherScheduleConfig(null);
       });
-      
+
     } catch (error) {
       console.error('Error fetching teacher detail:', error);
       toast.error('Không thể tải thông tin chi tiết giáo viên');
@@ -698,9 +801,9 @@ function TeacherManagement() {
   const handleCreateTeacher = async (teacherData) => {
     try {
       setModalLoading(true);
-      
+
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/user/add', {
+      const response = await fetch(`${API_BASE_URL}/api/user/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -724,7 +827,7 @@ function TeacherManagement() {
       toast.success('Tạo giáo viên thành công! Mật khẩu đã được gửi qua email.');
       setShowCreateModal(false);
       fetchTeachers(); // Refresh data
-      
+
     } catch (error) {
       console.error('Error creating teacher:', error);
       toast.error('Lỗi tạo giáo viên: ' + error.message);
@@ -743,8 +846,6 @@ function TeacherManagement() {
   const handleFilterChange = (type, value) => {
     if (type === 'status') {
       setStatusFilter(value);
-    } else if (type === 'class') {
-      setClassFilter(value);
     }
     setCurrentPage(1);
   };
@@ -753,7 +854,7 @@ function TeacherManagement() {
   const fetchRoles = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/user-role?filter[status]=Đang hoạt động&filter[is_teacher]=true', {
+      const response = await fetch(`${API_BASE_URL}/api/user-role?filter[status]=Đang hoạt động&filter[is_teacher]=true`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -776,7 +877,7 @@ function TeacherManagement() {
   const fetchAvailableSubjects = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/subject?filter[status]=Đang hoạt động&limit=100', {
+      const response = await fetch(`${API_BASE_URL}/api/subject?filter[status]=Đang hoạt động&limit=100`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -794,25 +895,53 @@ function TeacherManagement() {
     }
   };
 
-  // Fetch time slots for schedule configuration
-  const fetchTimeSlots = async () => {
+  // Fetch time slots for schedule configuration  
+  const fetchTimeSlotsData = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/time-slot', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const slotList = await fetchTimeSlots(token);
+
+      if (!slotList || !Array.isArray(slotList)) {
+        setTimeSlots([]);
+        return;
+      }
+
+      // Filter and normalize slots
+      const validSlots = slotList.filter(slot => {
+        if (!slot) return false;
+        const hasCode = slot.time_slot_code !== undefined || slot.code !== undefined || slot.id !== undefined;
+        const hasStartTime = slot.start_time || slot.startTime || slot.start;
+        const hasEndTime = slot.end_time || slot.endTime || slot.end;
+        return hasCode && hasStartTime && hasEndTime;
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const slotList = data.data_set || data.data || [];
-        setTimeSlots(slotList);
+      const normalizedSlots = validSlots.map(slot => ({
+        time_slot_code: slot.time_slot_code || slot.code || slot.slot_code || slot.id,
+        start_time: slot.start_time || slot.startTime || slot.start,
+        end_time: slot.end_time || slot.endTime || slot.end
+      }));
+
+      setTimeSlots(normalizedSlots);
+
+      if (normalizedSlots.length === 0) {
+        toast.error('Không có dữ liệu tiết học');
       }
+
     } catch (error) {
-      console.error('Error fetching time slots:', error);
-      setTimeSlots([]);
+      // Fallback to default time slots if API fails
+      const fallbackSlots = [
+        { time_slot_code: 1, start_time: '07:00', end_time: '07:45' },
+        { time_slot_code: 2, start_time: '08:00', end_time: '08:45' },
+        { time_slot_code: 3, start_time: '09:00', end_time: '09:45' },
+        { time_slot_code: 4, start_time: '10:00', end_time: '10:45' },
+        { time_slot_code: 5, start_time: '13:00', end_time: '13:45' },
+        { time_slot_code: 6, start_time: '14:00', end_time: '14:45' },
+        { time_slot_code: 7, start_time: '15:00', end_time: '15:45' },
+        { time_slot_code: 8, start_time: '16:00', end_time: '16:45' },
+      ];
+
+      setTimeSlots(fallbackSlots);
+      toast.warning('Sử dụng dữ liệu mặc định');
     }
   };
 
@@ -820,7 +949,7 @@ function TeacherManagement() {
   const fetchTeacherSubjects = async (teacherUsername) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/teacher/teacher-subject/${teacherUsername}`, {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/teacher-subject/${teacherUsername}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -844,7 +973,7 @@ function TeacherManagement() {
   const fetchTeacherScheduleConfig = async (teacherUsername) => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`/api/teacher/teacher-schedule-config/${teacherUsername}`, {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/teacher-schedule-config/${teacherUsername}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -853,8 +982,7 @@ function TeacherManagement() {
 
       if (response.ok) {
         const data = await response.json();
-        const schedule = data.data_set?.[0] || data.data || null;
-
+        const schedule = data.data || data.data_set?.[0] || null;
         setTeacherScheduleConfig(schedule);
       } else {
         setTeacherScheduleConfig(null);
@@ -865,41 +993,61 @@ function TeacherManagement() {
     }
   };
 
+  // Fetch time slots once when component mounts
+  useEffect(() => {
+    fetchTimeSlotsData(); // Load time slots for schedule
+  }, []); // Run only once
+
   // Fetch data when dependencies change
   useEffect(() => {
     fetchTeachers();
     fetchRoles(); // Load roles for create modal
     fetchAvailableSubjects(); // Load subjects for assignment
-    fetchTimeSlots(); // Load time slots for schedule
-  }, [currentPage, searchTerm, statusFilter, classFilter]);
+  }, [currentPage, searchTerm, statusFilter]);
 
-  // Update scheduleData when teacherScheduleConfig changes (moved from renderScheduleConfig)
+  // Convert API schedule format to internal format and vice versa
+  const convertApiScheduleToInternal = (apiSchedule) => {
+    if (!apiSchedule) return {};
+    const result = {};
+
+    // Handle each day - API returns arrays, we need strings with "|" separator
+    ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
+      if (Array.isArray(apiSchedule[day])) {
+        // Filter out empty strings and join with "|"
+        result[day] = apiSchedule[day].filter(slot => slot && slot.trim()).join('|');
+      } else if (typeof apiSchedule[day] === 'string') {
+        result[day] = apiSchedule[day];
+      } else {
+        result[day] = '';
+      }
+    });
+
+    return result;
+  };
+
+  const convertInternalScheduleToApi = (internalSchedule) => {
+    const result = { ...internalSchedule };
+
+    ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
+      if (!result[day]) {
+        result[day] = '';
+      }
+    });
+
+    return result;
+  };
+
   useEffect(() => {
     if (teacherScheduleConfig) {
-      const convertApiScheduleToInternal = (apiSchedule) => {
-        if (!apiSchedule) return {};
-        const result = {};
-        Object.keys(apiSchedule).forEach(day => {
-          if (Array.isArray(apiSchedule[day])) {
-            result[day] = apiSchedule[day].join('|');
-          } else if (typeof apiSchedule[day] === 'string') {
-            result[day] = apiSchedule[day];
-          } else {
-            result[day] = '';
-          }
-        });
-        return result;
-      };
-
-      const newConvertedSchedule = convertApiScheduleToInternal(teacherScheduleConfig);
+      const convertedSchedule = convertApiScheduleToInternal(teacherScheduleConfig);
       const newData = {
-        monday: newConvertedSchedule.monday || '',
-        tuesday: newConvertedSchedule.tuesday || '',
-        wednesday: newConvertedSchedule.wednesday || '',
-        thursday: newConvertedSchedule.thursday || '',
-        friday: newConvertedSchedule.friday || '',
-        saturday: newConvertedSchedule.saturday || '',
-        sunday: newConvertedSchedule.sunday || '',
+        monday: convertedSchedule.monday || '',
+        tuesday: convertedSchedule.tuesday || '',
+        wednesday: convertedSchedule.wednesday || '',
+        thursday: convertedSchedule.thursday || '',
+        friday: convertedSchedule.friday || '',
+        saturday: convertedSchedule.saturday || '',
+        sunday: convertedSchedule.sunday || '',
         weekly_minimum_slot: teacherScheduleConfig?.weekly_minimum_slot || 0,
         weekly_maximum_slot: teacherScheduleConfig?.weekly_maximum_slot || 0,
         daily_minimum_slot: teacherScheduleConfig?.daily_minimum_slot || 0,
@@ -907,8 +1055,24 @@ function TeacherManagement() {
         weekly_minimum_day: teacherScheduleConfig?.weekly_minimum_day || 0,
         weekly_maximum_day: teacherScheduleConfig?.weekly_maximum_day || 0,
       };
-      console.log('🎯 LOADING scheduleData from API (fixed):', newData);
+
       setScheduleData(newData);
+    } else {
+      setScheduleData({
+        monday: '',
+        tuesday: '',
+        wednesday: '',
+        thursday: '',
+        friday: '',
+        saturday: '',
+        sunday: '',
+        weekly_minimum_slot: 0,
+        weekly_maximum_slot: 0,
+        daily_minimum_slot: 0,
+        daily_maximum_slot: 0,
+        weekly_minimum_day: 0,
+        weekly_maximum_day: 0,
+      });
     }
   }, [teacherScheduleConfig]);
 
@@ -918,7 +1082,7 @@ function TeacherManagement() {
 
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch('/api/teacher/teacher-subject/add', {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/teacher-subject/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -952,18 +1116,24 @@ function TeacherManagement() {
   };
 
   // Handle save teacher schedule
-  const handleSaveSchedule = async (scheduleData) => {
-    if (!selectedTeacher) return;
+  const handleSaveSchedule = async (internalScheduleData) => {
+    if (!selectedTeacher) {
+      console.error('❌ No selected teacher');
+      return;
+    }
 
     try {
+      setModalLoading(true);
       const token = localStorage.getItem('authToken');
-      
+
+      const apiScheduleData = convertInternalScheduleToApi(internalScheduleData);
+
       const requestData = {
         teacher_user_name: selectedTeacher.user_name,
-        ...scheduleData
+        ...apiScheduleData
       };
-      
-      const response = await fetch('/api/teacher/teacher-schedule-config/add', {
+
+      const response = await fetch(`${API_BASE_URL}/api/teacher/teacher-schedule-config/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -975,21 +1145,22 @@ function TeacherManagement() {
       if (response.ok) {
         toast.success('Cập nhật lịch làm việc thành công!');
         setEditingSchedule(false);
-        // Reload teacher schedule config
         await fetchTeacherScheduleConfig(selectedTeacher.user_name);
       } else {
         const errorData = await response.text();
+
         if (response.status === 401) {
           toast.error('Phiên đăng nhập đã hết hạn');
         } else if (response.status === 403) {
           toast.error('Không có quyền thực hiện thao tác này');
         } else {
-          toast.error('Có lỗi khi cập nhật lịch làm việc: ' + errorData);
+          toast.error(`Có lỗi khi cập nhật lịch làm việc (${response.status}): ${errorData}`);
         }
       }
     } catch (error) {
-      console.error('Error saving schedule:', error);
       toast.error('Có lỗi kết nối khi cập nhật lịch làm việc');
+    } finally {
+      setModalLoading(false);
     }
   };
 
@@ -1014,13 +1185,13 @@ function TeacherManagement() {
 
     const handleSubmit = (e) => {
       e.preventDefault();
-      
+
       // Basic validation
       if (!formData.email || !formData.full_name || !formData.phone) {
         toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
         return;
       }
-      
+
       handleCreateTeacher(formData);
     };
 
@@ -1064,14 +1235,14 @@ function TeacherManagement() {
 
         <FormGroup>
           <Label>Giới tính</Label>
-          <Select
+          <SelectMenu
             name="gender"
             value={formData.gender}
             onChange={handleInputChange}
           >
             <option value="1">Nam</option>
             <option value="2">Nữ</option>
-          </Select>
+          </SelectMenu>
         </FormGroup>
 
         <FormGroup>
@@ -1086,7 +1257,7 @@ function TeacherManagement() {
 
         <FormGroup>
           <Label>Vai trò</Label>
-          <Select
+          <SelectMenu
             name="role_id"
             value={formData.role_id}
             onChange={handleInputChange}
@@ -1100,19 +1271,19 @@ function TeacherManagement() {
             ) : (
               <option value="2">Teacher (Default)</option>
             )}
-          </Select>
+          </SelectMenu>
         </FormGroup>
 
         <ModalActions>
-          <ActionButton 
-            type="button" 
+          <ActionButton
+            type="button"
             onClick={() => setShowCreateModal(false)}
             disabled={modalLoading}
           >
             Hủy
           </ActionButton>
-          <ActionButton 
-            type="submit" 
+          <ActionButton
+            type="submit"
             variant="primary"
             disabled={modalLoading}
           >
@@ -1130,42 +1301,42 @@ function TeacherManagement() {
     const renderBasicInfo = () => (
       <TabContent>
         <DetailItem>
-          <span className="label">Tên đăng nhập:</span>
+          <span className="label">Tên tài khoản:</span>
           <span className="value">{selectedTeacher.user_name}</span>
         </DetailItem>
-        
+
         <DetailItem>
           <span className="label">Họ và tên:</span>
           <span className="value">{selectedTeacher.full_name}</span>
         </DetailItem>
-        
+
         <DetailItem>
           <span className="label">Email:</span>
           <span className="value">{selectedTeacher.email}</span>
         </DetailItem>
-        
+
         <DetailItem>
           <span className="label">Số điện thoại:</span>
           <span className="value">{selectedTeacher.phone || 'Chưa cập nhật'}</span>
         </DetailItem>
-        
+
         <DetailItem>
           <span className="label">Giới tính:</span>
           <span className="value">{selectedTeacher.gender || 'Chưa cập nhật'}</span>
         </DetailItem>
-        
+
         <DetailItem>
           <span className="label">Ngày sinh:</span>
           <span className="value">
             {selectedTeacher.dob ? new Date(selectedTeacher.dob).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
           </span>
         </DetailItem>
-        
+
         <DetailItem>
           <span className="label">Lớp chủ nhiệm:</span>
           <span className="value">{selectedTeacher.homeroom_class || selectedTeacher.class_code || 'Chưa có lớp'}</span>
         </DetailItem>
-        
+
         <DetailItem>
           <span className="label">Trạng thái:</span>
           <span className="value">
@@ -1206,8 +1377,8 @@ function TeacherManagement() {
             <h4 style={{ color: '#2c3e50', margin: 0 }}>
               📚 Môn học đang dạy ({teacherSubjects.length} môn)
             </h4>
-            <ActionButton 
-              variant="primary" 
+            <ActionButton
+              variant="primary"
               onClick={() => setEditingSubjects(!editingSubjects)}
             >
               {editingSubjects ? 'Hủy' : 'Chỉnh sửa'}
@@ -1270,7 +1441,7 @@ function TeacherManagement() {
     const renderScheduleConfig = () => {
       const dayNames = {
         monday: 'Thứ 2',
-        tuesday: 'Thứ 3', 
+        tuesday: 'Thứ 3',
         wednesday: 'Thứ 4',
         thursday: 'Thứ 5',
         friday: 'Thứ 6',
@@ -1279,18 +1450,23 @@ function TeacherManagement() {
       };
 
       const handleSlotToggle = (day, slotCode) => {
+        if (!day || slotCode === undefined || slotCode === null) return;
+
         const currentSlots = scheduleData[day] ? scheduleData[day].split('|').filter(Boolean) : [];
         const slotStr = String(slotCode);
-        
+
+        const slotExists = timeSlots.some(slot => String(slot.time_slot_code) === slotStr);
+        if (!slotExists) return;
+
         let newSlots;
         if (currentSlots.includes(slotStr)) {
-          // Remove slot
           newSlots = currentSlots.filter(s => s !== slotStr);
         } else {
-          // Add slot
           newSlots = [...currentSlots, slotStr].sort((a, b) => parseInt(a) - parseInt(b));
         }
-        
+
+
+
         setScheduleData(prev => ({
           ...prev,
           [day]: newSlots.join('|')
@@ -1306,8 +1482,16 @@ function TeacherManagement() {
       };
 
       const handleSaveScheduleLocal = () => {
+        const hasAnySlots = Object.keys(scheduleData)
+          .filter(key => !key.includes('_slot') && !key.includes('_day'))
+          .some(day => scheduleData[day] && scheduleData[day].length > 0);
+
+        if (!hasAnySlots) {
+          toast.warning('Vui lòng chọn ít nhất một tiết học trước khi lưu');
+          return;
+        }
+
         handleSaveSchedule(scheduleData);
-        setEditingSchedule(false);
       };
 
       return (
@@ -1316,76 +1500,139 @@ function TeacherManagement() {
             <h4 style={{ color: '#2c3e50', margin: 0 }}>
               📅 Cấu hình lịch làm việc
             </h4>
-            <ActionButton 
-              variant="primary" 
+            <ActionButton
+              variant="primary"
               onClick={() => setEditingSchedule(!editingSchedule)}
             >
               {editingSchedule ? '❌ Hủy' : '✏️ Chỉnh sửa'}
             </ActionButton>
           </div>
 
+
+
           {editingSchedule ? (
             <div>
-              <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e7f3ff', borderRadius: '8px' }}>
-                <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
-                  💡 <strong>Hướng dẫn:</strong> Click vào các checkbox để chọn tiết học mà giáo viên có thể dạy. 
-                  Theo API document: <code>monday: "1|3|4|5|6"</code> nghĩa là thứ 2 dạy tiết 1,3,4,5,6
-                </p>
+              <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+                    Click vào các ô để chọn tiết học mà giáo viên có thể dạy
+                  </p>
+                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                    <ActionButton
+                      variant="secondary"
+                      style={{ fontSize: '11px', padding: '4px 8px' }}
+                      onClick={() => {
+                        const allSlots = timeSlots
+                          .map(slot => String(slot.time_slot_code))
+                          .sort((a, b) => parseInt(a) - parseInt(b))
+                          .join('|');
+
+                        setScheduleData(prev => ({
+                          ...prev,
+                          monday: allSlots,
+                          tuesday: allSlots,
+                          wednesday: allSlots,
+                          thursday: allSlots,
+                          friday: allSlots
+                        }));
+                      }}
+                    >
+                      Chọn tất cả T2-T6
+                    </ActionButton>
+                    <ActionButton
+                      variant="secondary"
+                      style={{ fontSize: '11px', padding: '4px 8px' }}
+                      onClick={() => {
+                        const morningSlots = timeSlots
+                          .filter(slot => parseInt(slot.time_slot_code) <= 4)
+                          .map(slot => String(slot.time_slot_code))
+                          .sort((a, b) => parseInt(a) - parseInt(b))
+                          .join('|');
+
+                        setScheduleData(prev => ({
+                          ...prev,
+                          monday: morningSlots,
+                          tuesday: morningSlots,
+                          wednesday: morningSlots,
+                          thursday: morningSlots,
+                          friday: morningSlots
+                        }));
+                      }}
+                    >
+                      Chỉ ca sáng
+                    </ActionButton>
+                    <ActionButton
+                      variant="secondary"
+                      style={{ fontSize: '11px', padding: '4px 8px' }}
+                      onClick={() => {
+                        setScheduleData(prev => ({
+                          ...prev,
+                          monday: '',
+                          tuesday: '',
+                          wednesday: '',
+                          thursday: '',
+                          friday: '',
+                          saturday: '',
+                          sunday: ''
+                        }));
+                      }}
+                    >
+                      Xóa tất cả
+                    </ActionButton>
+                  </div>
+                </div>
               </div>
 
               {/* Schedule Grid */}
-              <ScheduleTable>
-                {/* Headers */}
-                {Object.keys(dayNames).map(day => (
-                  <DayHeader key={day}>
-                    {dayNames[day]}
-                  </DayHeader>
-                ))}
-                
-                {/* Slot rows */}
-                {timeSlots && timeSlots.length > 0 ? timeSlots.map(slot => (
-                  <SlotRow key={slot.time_slot_code}>
-                    {Object.keys(dayNames).map(day => {
-                      const currentSlots = scheduleData[day] ? scheduleData[day].split('|').filter(Boolean) : [];
-                      const slotCode = String(slot.time_slot_code);
-                      const isSelected = currentSlots.includes(slotCode);
-                      
+              <ScheduleTableContainer>
+                <ScheduleTableElement>
+                  <thead>
+                    <tr>
+                      <TimeSlotHeader>Tiết học</TimeSlotHeader>
+                      {Object.keys(dayNames).map(day => (
+                        <DayHeaderCell key={day}>
+                          {dayNames[day]}
+                        </DayHeaderCell>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {timeSlots && timeSlots.length > 0 ? timeSlots.map((slot, index) => {
+                      if (!slot || slot.time_slot_code === undefined) return null;
+
                       return (
-                        <SlotCell 
-                          key={`${day}-${slot.time_slot_code}`}
-                          style={{ 
-                            cursor: 'pointer',
-                            backgroundColor: isSelected ? '#d4edda' : '#f8d7da',
-                            border: '1px solid ' + (isSelected ? '#28a745' : '#dc3545'),
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: '50px',
-                            fontSize: '12px'
-                          }}
-                          onClick={() => handleSlotToggle(day, slot.time_slot_code)}
-                        >
-                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontWeight: 'bold' }}>
-                              Tiết {slot.time_slot_code}
-                            </div>
-                            <div style={{ fontSize: '10px', marginTop: '2px' }}>
-                              {slot.start_time}-{slot.end_time}
-                            </div>
-                            <div style={{ fontSize: '16px', marginTop: '4px' }}>
-                              {isSelected ? '✅' : '❌'}
-                            </div>
-                          </div>
-                        </SlotCell>
+                        <tr key={`slot-${slot.time_slot_code}-${index}`}>
+                          <TimeSlotHeader>
+                            <div style={{ fontWeight: 'bold' }}>Tiết {slot.time_slot_code}</div>
+                          </TimeSlotHeader>
+                          {Object.keys(dayNames).map(day => {
+                            const currentSlots = scheduleData[day] ? scheduleData[day].split('|').filter(Boolean) : [];
+                            const slotCode = String(slot.time_slot_code);
+                            const isSelected = currentSlots.includes(slotCode);
+
+                            return (
+                              <ScheduleCell
+                                key={`${day}-${slot.time_slot_code}`}
+                                isSelected={isSelected}
+                                isEditing={true}
+                                onClick={() => handleSlotToggle(day, slot.time_slot_code)}
+                              >
+                                {isSelected ? 'Trống' : 'Nghỉ'}
+                              </ScheduleCell>
+                            );
+                          })}
+                        </tr>
                       );
-                    })}
-                  </SlotRow>
-                )) : (
-                  <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '20px' }}>
-                    Đang tải thông tin tiết học...
-                  </div>
-                )}
-              </ScheduleTable>
+                    }) : (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: '#6c757d' }}>
+                          Đang tải thông tin tiết học...
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </ScheduleTableElement>
+              </ScheduleTableContainer>
 
               {/* Number Inputs */}
               <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
@@ -1398,7 +1645,7 @@ function TeacherManagement() {
                     onChange={(e) => handleNumberChange('weekly_minimum_slot', e.target.value)}
                   />
                 </FormGroup>
-                
+
                 <FormGroup>
                   <Label>Tiết tối đa/tuần:</Label>
                   <Input
@@ -1408,7 +1655,7 @@ function TeacherManagement() {
                     onChange={(e) => handleNumberChange('weekly_maximum_slot', e.target.value)}
                   />
                 </FormGroup>
-                
+
                 <FormGroup>
                   <Label>Tiết tối thiểu/ngày:</Label>
                   <Input
@@ -1418,7 +1665,7 @@ function TeacherManagement() {
                     onChange={(e) => handleNumberChange('daily_minimum_slot', e.target.value)}
                   />
                 </FormGroup>
-                
+
                 <FormGroup>
                   <Label>Tiết tối đa/ngày:</Label>
                   <Input
@@ -1428,7 +1675,7 @@ function TeacherManagement() {
                     onChange={(e) => handleNumberChange('daily_maximum_slot', e.target.value)}
                   />
                 </FormGroup>
-                
+
                 <FormGroup>
                   <Label>Ngày tối thiểu/tuần:</Label>
                   <Input
@@ -1439,7 +1686,7 @@ function TeacherManagement() {
                     onChange={(e) => handleNumberChange('weekly_minimum_day', e.target.value)}
                   />
                 </FormGroup>
-                
+
                 <FormGroup>
                   <Label>Ngày tối đa/tuần:</Label>
                   <Input
@@ -1452,25 +1699,22 @@ function TeacherManagement() {
                 </FormGroup>
               </div>
 
-              {/* Current Data Preview */}
-              <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#fff3cd', borderRadius: '8px' }}>
-                <strong>📋 Data sẽ gửi lên API:</strong>
-                <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                  {Object.keys(dayNames).map(day => (
-                    <div key={day} style={{ fontSize: '12px', padding: '8px', backgroundColor: '#fff', borderRadius: '4px' }}>
-                      <strong>{dayNames[day]}:</strong> "{scheduleData[day] || ''}"
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Action Buttons */}
+
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                <ActionButton variant="primary" onClick={handleSaveScheduleLocal}>
-                  💾 Lưu cấu hình
+                <ActionButton
+                  variant="primary"
+                  onClick={handleSaveScheduleLocal}
+                  disabled={modalLoading}
+                >
+                  {modalLoading ? 'Đang lưu...' : 'Lưu cấu hình'}
                 </ActionButton>
-                <ActionButton variant="secondary" onClick={() => setEditingSchedule(false)}>
-                  ❌ Hủy
+                <ActionButton
+                  variant="secondary"
+                  onClick={() => setEditingSchedule(false)}
+                  disabled={modalLoading}
+                >
+                  Hủy
                 </ActionButton>
               </div>
             </div>
@@ -1478,77 +1722,65 @@ function TeacherManagement() {
             <div>
               {teacherScheduleConfig ? (
                 <div>
-                  {/* View Mode Schedule Grid */}
-                  <ScheduleTable>
-                    {Object.keys(dayNames).map(day => (
-                      <DayHeader key={day}>
-                        {dayNames[day]}
-                      </DayHeader>
-                    ))}
-                    
-                    {timeSlots && timeSlots.map(slot => (
-                      <SlotRow key={slot.time_slot_code}>
-                        {Object.keys(dayNames).map(day => {
-                          let slots = [];
-                          const dayData = teacherScheduleConfig[day];
-                          
-                          if (Array.isArray(dayData)) {
-                            slots = dayData;
-                          } else if (typeof dayData === 'string' && dayData) {
-                            slots = dayData.split('|').filter(Boolean);
-                          }
-                          
-                          const slotCode = slot.time_slot_code;
-                          const hasSlot = slots.includes(String(slotCode)) || slots.includes(slotCode);
-                          
+                  {/* View Mode Schedule Table */}
+                  <ScheduleTableContainer>
+                    <ScheduleTableElement>
+                      <thead>
+                        <tr>
+                          <TimeSlotHeader>Tiết học</TimeSlotHeader>
+                          {Object.keys(dayNames).map(day => (
+                            <DayHeaderCell key={day}>
+                              {dayNames[day]}
+                            </DayHeaderCell>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {timeSlots && timeSlots.length > 0 ? timeSlots.map((slot, index) => {
+                          if (!slot || slot.time_slot_code === undefined) return null;
+
                           return (
-                            <SlotCell 
-                              key={`${day}-${slot.time_slot_code}`}
-                              style={{
-                                backgroundColor: hasSlot ? '#d4edda' : '#f8d7da',
-                                color: hasSlot ? '#155724' : '#721c24',
-                                textAlign: 'center',
-                                fontSize: '12px',
-                                padding: '8px'
-                              }}
-                            >
-                              <div>Tiết {slot.time_slot_code}</div>
-                              <div style={{ fontSize: '10px' }}>{slot.start_time}-{slot.end_time}</div>
-                              <div>{hasSlot ? '✅' : '❌'}</div>
-                            </SlotCell>
+                            <tr key={`view-slot-${slot.time_slot_code}-${index}`}>
+                              <TimeSlotHeader>
+                                <div style={{ fontWeight: 'bold' }}>Tiết {slot.time_slot_code}</div>
+                              </TimeSlotHeader>
+                              {Object.keys(dayNames).map(day => {
+                                let slots = [];
+                                const dayData = teacherScheduleConfig[day];
+
+                                if (Array.isArray(dayData)) {
+                                  slots = dayData.filter(s => s && s.trim());
+                                } else if (typeof dayData === 'string' && dayData) {
+                                  slots = dayData.split('|').filter(Boolean);
+                                }
+
+                                const slotCode = String(slot.time_slot_code);
+                                const hasSlot = slots.includes(slotCode);
+
+                                return (
+                                  <ScheduleCell
+                                    key={`view-${day}-${slot.time_slot_code}`}
+                                    isSelected={hasSlot}
+                                    isEditing={false}
+                                  >
+                                    {hasSlot ? 'Trống' : 'Nghỉ'}
+                                  </ScheduleCell>
+                                );
+                              })}
+                            </tr>
                           );
-                        })}
-                      </SlotRow>
-                    ))}
-                  </ScheduleTable>
-                  
-                  {/* Summary */}
-                  <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                    <DetailItem>
-                      <span className="label">Tiết tối thiểu/tuần:</span>
-                      <span className="value">{teacherScheduleConfig.weekly_minimum_slot || 0}</span>
-                    </DetailItem>
-                    <DetailItem>
-                      <span className="label">Tiết tối đa/tuần:</span>
-                      <span className="value">{teacherScheduleConfig.weekly_maximum_slot || 'Không giới hạn'}</span>
-                    </DetailItem>
-                    <DetailItem>
-                      <span className="label">Tiết tối thiểu/ngày:</span>
-                      <span className="value">{teacherScheduleConfig.daily_minimum_slot || 0}</span>
-                    </DetailItem>
-                    <DetailItem>
-                      <span className="label">Tiết tối đa/ngày:</span>
-                      <span className="value">{teacherScheduleConfig.daily_maximum_slot || 'Không giới hạn'}</span>
-                    </DetailItem>
-                    <DetailItem>
-                      <span className="label">Ngày tối thiểu/tuần:</span>
-                      <span className="value">{teacherScheduleConfig.weekly_minimum_day || 0}</span>
-                    </DetailItem>
-                    <DetailItem>
-                      <span className="label">Ngày tối đa/tuần:</span>
-                      <span className="value">{teacherScheduleConfig.weekly_maximum_day || 'Không giới hạn'}</span>
-                    </DetailItem>
-                  </div>
+                        }) : (
+                          <tr>
+                            <td colSpan={8} style={{ textAlign: 'center', padding: '20px', color: '#6c757d' }}>
+                              Không có dữ liệu tiết học
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </ScheduleTableElement>
+                  </ScheduleTableContainer>
+
+
                 </div>
               ) : (
                 <EmptyMessage>
@@ -1565,20 +1797,20 @@ function TeacherManagement() {
     return (
       <div>
         <TabContainer>
-          <Tab 
-            active={activeTab === 'info'} 
+          <Tab
+            active={activeTab === 'info'}
             onClick={() => setActiveTab('info')}
           >
             👤 Thông tin cơ bản
           </Tab>
-          <Tab 
-            active={activeTab === 'subjects'} 
+          <Tab
+            active={activeTab === 'subjects'}
             onClick={() => setActiveTab('subjects')}
           >
             📚 Môn học ({teacherSubjects.length})
           </Tab>
-          <Tab 
-            active={activeTab === 'schedule'} 
+          <Tab
+            active={activeTab === 'schedule'}
             onClick={() => setActiveTab('schedule')}
           >
             📅 Lịch làm việc
@@ -1602,9 +1834,6 @@ function TeacherManagement() {
     <Container>
       <Header>
         <Title>👨‍🏫 Quản lí giáo viên</Title>
-        <AddButton onClick={() => setShowCreateModal(true)}>
-          + Thêm giáo viên
-        </AddButton>
       </Header>
 
       <FilterSection>
@@ -1614,24 +1843,17 @@ function TeacherManagement() {
           value={searchTerm}
           onChange={handleSearch}
         />
-        
-        <Select 
-          value={statusFilter} 
+
+        <SelectMenu
+          value={statusFilter}
           onChange={(e) => handleFilterChange('status', e.target.value)}
         >
           <option value="">Tất cả trạng thái</option>
           <option value="Đang hoạt động">Đang hoạt động</option>
           <option value="Tạm khóa">Tạm khóa</option>
-        </Select>
+          <option value="Ngưng hoạt động">Ngưng hoạt động</option>
+        </SelectMenu>
 
-        <Select 
-          value={classFilter} 
-          onChange={(e) => handleFilterChange('class', e.target.value)}
-        >
-          <option value="">Tất cả lớp</option>
-          <option value="NONE">Chưa có lớp</option>
-          <option value="AVAILABLE">Chỉ GV chưa có lớp</option>
-        </Select>
       </FilterSection>
 
       <TableContainer>
@@ -1649,13 +1871,13 @@ function TeacherManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>Tên đăng nhập</TableHeaderCell>
-                  <TableHeaderCell>Họ và tên</TableHeaderCell>
-                  <TableHeaderCell>Email</TableHeaderCell>
-                  <TableHeaderCell>Số điện thoại</TableHeaderCell>
-                  <TableHeaderCell>Lớp chủ nhiệm</TableHeaderCell>
-                  <TableHeaderCell>Trạng thái</TableHeaderCell>
-                  <TableHeaderCell>Thao tác</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Tên tài khoản</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '25%' }}>Họ và tên</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '25%' }}>Email</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Số điện thoại</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Lớp chủ nhiệm</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <tbody>
@@ -1671,55 +1893,65 @@ function TeacherManagement() {
                         {teacher.status}
                       </StatusBadge>
                     </TableCell>
-                    <TableCell>
-                      <ActionButton 
-                        variant="primary"
-                        onClick={() => handleViewDetail(teacher.user_name)}
+                    <TableCell style={{ position: 'relative' }}>
+                      <ActionMenuButton
+                        onClick={() => handleActionMenuToggle(teacher.user_name)}
+                        ref={actionMenuRef}
                       >
-                        👁️ Xem chi tiết
-                      </ActionButton>
+                        ⋯
+                      </ActionMenuButton>
+                      <ActionDropdown isOpen={openActionMenu === teacher.user_name}>
+                        <ActionMenuItem onClick={() => {
+                          handleViewDetail(teacher.user_name);
+                          setOpenActionMenu(null);
+                        }}>
+                          <ActionMenuText>Xem chi tiết</ActionMenuText>
+                        </ActionMenuItem>
+                      </ActionDropdown>
                     </TableCell>
+
+
                   </TableRow>
                 ))}
               </tbody>
             </Table>
 
-            {totalPages > 1 && (
-              <Pagination>
-                <PaginationButton 
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  ← Trước
-                </PaginationButton>
-                
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = Math.max(1, currentPage - 2) + i;
-                  if (pageNum > totalPages) return null;
-                  
-                  return (
-                    <PaginationButton
-                      key={pageNum}
-                      active={pageNum === currentPage}
-                      onClick={() => setCurrentPage(pageNum)}
-                    >
-                      {pageNum}
-                    </PaginationButton>
-                  );
-                })}
-                
-                <PaginationButton 
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                >
-                  Tiếp →
-                </PaginationButton>
-              </Pagination>
-            )}
+
           </>
         )}
       </TableContainer>
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationButton
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            ← Trước
+          </PaginationButton>
 
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const pageNum = Math.max(1, currentPage - 2) + i;
+            if (pageNum > totalPages) return null;
+
+            return (
+              <PaginationButton
+                key={pageNum}
+                active={pageNum === currentPage}
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </PaginationButton>
+            );
+          })}
+
+          <PaginationButton
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Tiếp →
+          </PaginationButton>
+        </Pagination>
+      )}
       {/* Create Teacher Modal */}
       {showCreateModal && (
         <Modal>

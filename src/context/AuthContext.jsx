@@ -1,5 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
+// Get API base URL with fallback
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
+
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
@@ -15,7 +18,7 @@ export function AuthProvider({ children }) {
         }
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/profile`, {
+            const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'text/plain',
@@ -94,7 +97,7 @@ export function AuthProvider({ children }) {
         try {
             setLoading(true);
             setIsProfileFetched(false);
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/sign-in`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/sign-in`, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -111,9 +114,9 @@ export function AuthProvider({ children }) {
 
             const data = await response.json();
             const { token, role_name, abilities } = data.data;
-            const userRole = role_name === 'Administrator' ? 'admin' : role_name === 'School Staff' ? 'staff' : null;
+            const userRole = role_name;
 
-            if (token && ['admin', 'staff'].includes(userRole)) {
+            if (token) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', userRole);
                 setRole(userRole);
@@ -142,7 +145,7 @@ export function AuthProvider({ children }) {
         try {
             setLoading(true);
             setIsProfileFetched(false);
-            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/sign-in-google`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/sign-in-google`, {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -159,9 +162,9 @@ export function AuthProvider({ children }) {
 
             const data = await response.json();
             const { token, role_name, abilities } = data.data;
-            const userRole = role_name === 'Administrator' ? 'admin' : role_name === 'School Staff' ? 'staff' : null;
+            const userRole = role_name;
 
-            if (token && ['admin', 'staff'].includes(userRole)) {
+            if (token) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', userRole);
                 setRole(userRole);
@@ -190,7 +193,7 @@ export function AuthProvider({ children }) {
         try {
             const token = localStorage.getItem('authToken');
             if (token) {
-                await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/sign-out`, {
+                await fetch(`${API_BASE_URL}/api/auth/sign-out`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,

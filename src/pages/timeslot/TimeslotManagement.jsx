@@ -59,7 +59,6 @@ const TableContainer = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 `;
 
 const Table = styled.table`
@@ -208,7 +207,7 @@ function TimeslotManagement() {
   const fetchTimeslots = async () => {
     try {
       setLoading(true);
-      
+
       const response = await fetch('/api/time-slot', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -220,8 +219,8 @@ function TimeslotManagement() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-            const data = await response.json();
-      
+      const data = await response.json();
+
       // Set data based on actual API response structure  
       let timeslotList = [];
       if (Array.isArray(data)) {
@@ -233,14 +232,14 @@ function TimeslotManagement() {
       } else {
         timeslotList = [];
       }
-      
+
       setTimeslots(timeslotList);
-      
+
       toast.success(`Tải thành công ${timeslotList.length} tiết học`);
-      
+
     } catch (error) {
       console.error('Error fetching timeslots:', error);
-      
+
       // More detailed error messages
       if (error.message.includes('401')) {
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
@@ -251,7 +250,7 @@ function TimeslotManagement() {
       } else {
         toast.error('Không thể tải danh sách tiết học. Vui lòng thử lại.');
       }
-      
+
       setTimeslots([]);
     } finally {
       setLoading(false);
@@ -321,7 +320,7 @@ function TimeslotManagement() {
 
     try {
       setSaving(true);
-      
+
       // Prepare payload according to API documentation
       const payload = timeslots.map(slot => ({
         start_time: slot.start_time,
@@ -343,10 +342,10 @@ function TimeslotManagement() {
 
       toast.success('Lưu cấu hình tiết học thành công');
       fetchTimeslots(); // Refresh data
-      
+
     } catch (error) {
       console.error('Error saving timeslots:', error);
-      
+
       if (error.message.includes('401')) {
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       } else if (error.message.includes('403')) {
@@ -383,8 +382,8 @@ function TimeslotManagement() {
 
       <InfoSection>
         <InfoText>
-          <strong>Lưu ý:</strong> Cấu hình tiết học sẽ áp dụng cho toàn trường. 
-          Khi thay đổi, vui lòng đảm bảo không có xung đột với thời khóa biểu hiện tại. 
+          <strong>Lưu ý:</strong> Cấu hình tiết học sẽ áp dụng cho toàn trường.
+          Khi thay đổi, vui lòng đảm bảo không có xung đột với thời khóa biểu hiện tại.
           Hệ thống sẽ tự động cập nhật lại mã tiết (1, 2, 3, ...) theo thứ tự thời gian.
         </InfoText>
       </InfoSection>
@@ -429,13 +428,13 @@ function TimeslotManagement() {
                       />
                     </TableCell>
                     <TableCell>
-                      {slot.start_time && slot.end_time ? 
-                        `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}` : 
+                      {slot.start_time && slot.end_time ?
+                        `${formatTime(slot.start_time)} - ${formatTime(slot.end_time)}` :
                         'Chưa đặt'
                       }
                     </TableCell>
                     <TableCell>
-                      <RemoveButton 
+                      <RemoveButton
                         onClick={() => handleRemoveSlot(index)}
                         disabled={timeslots.length <= 1}
                         title={timeslots.length <= 1 ? 'Phải có ít nhất 1 tiết học' : 'Xóa tiết này'}
@@ -445,7 +444,7 @@ function TimeslotManagement() {
                     </TableCell>
                   </TableRow>
                 ))}
-                
+
                 <AddSlotRow>
                   <TableCell>
                     <TimeSlotBadge style={{ background: '#95a5a6' }}>
@@ -469,8 +468,8 @@ function TimeslotManagement() {
                     />
                   </TableCell>
                   <TableCell>
-                    {newSlot.start_time && newSlot.end_time ? 
-                      `${newSlot.start_time} - ${newSlot.end_time}` : 
+                    {newSlot.start_time && newSlot.end_time ?
+                      `${newSlot.start_time} - ${newSlot.end_time}` :
                       'Nhập thời gian'
                     }
                   </TableCell>
@@ -484,8 +483,8 @@ function TimeslotManagement() {
             </Table>
 
             <SaveButtonContainer>
-              <SaveButton 
-                onClick={handleSave} 
+              <SaveButton
+                onClick={handleSave}
                 disabled={saving || timeslots.length === 0}
               >
                 {saving ? '🔄 Đang lưu...' : '💾 Lưu cấu hình'}

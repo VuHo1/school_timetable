@@ -13,109 +13,109 @@ import styled from 'styled-components';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 const Container = styled.div`
-  padding: 15px;
-  background-color: #f5f5f5;
- 
+  padding: 20px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 70px);
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 `;
 
 const Title = styled.h1`
-  font-size: 22px;
-  font-weight: bold;
-  text-align: left;
-  color: #333;
+  color: #2c3e50;
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+
 `;
 
-const SearchSection = styled.div`
+const AddButton = styled.button`
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+`;
+
+const FilterSection = styled.div`
+  
+
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
   display: flex;
-  gap: 8px;
-  margin-bottom: 15px;
-  align-items: flex-end;
+  flex-wrap: nowrap; 
+  gap: 15px;
+  align-items: center;
+  overflow-x: auto; 
 `;
 
 const SearchInput = styled.input`
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
   width: 250px;
-  font-size: 12px;
-`;
+  flex-shrink: 0;
+  flex-grow: 0;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
 
-const SortSelect = styled.select`
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 12px;
-  width: 180px;
-  margin-left: auto;
-`;
-
-const SearchButton = styled.button`
-  padding: 10px 12px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  &:hover {
-    background-color: #0056b3;
-  }
-  &:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 `;
 
-const ClearButton = styled.button`
-  margin-top: 8px;
-  padding: 5px 10px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  &:hover {
-    background-color: #5a6268;
-  }
-`;
 
-const CreateButton = styled.button`
-  padding: 10px 12px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  &:hover {
-    background-color: #218838;
-  }
-  &:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-  }
+const TableContainer = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 `;
 
 const Table = styled.table`
   width: 100%;
-  background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-collapse: collapse;
 `;
 
-const TableHead = styled.thead``;
+const TableHeader = styled.thead`
+  background: #f8f9fa;
+`;
 
-const TableHeader = styled.th`
-  padding: 8px;
-  border: 1px solid #dee2e6;
-  text-align: left;
-  background-color: #e9ecef;
+const TableRow = styled.tr`
+  &:hover {
+    background: #f8f9fa;
+  }
+`;
+
+const TableCell = styled.td`
+  padding: 15px;
+  border-bottom: 1px solid #eee;
   font-size: 14px;
-  position: relative;
-  cursor: pointer;
-  
+  color: #2c3e50;
+`;
+
+const TableHeaderCell = styled.th`
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
 `;
 
 const FilterDropdown = styled.div`
@@ -142,270 +142,361 @@ const FilterItem = styled.div`
   color: #333;
   cursor: pointer;
   &:hover {
-    background-color: #588bc1;
+    background-color: #667eea;
+    color: white;
   }
   ${(props) => props.selected && `
-    background-color: #007bff;
+    background-color: #667eea;
     color: white;
   `}
 `;
 
-const TableBody = styled.tbody``;
-
-const TableRow = styled.tr`
-  &:hover {
-    background-color: #f8f9fa;
-  }
-`;
-
-const TableCell = styled.td`
-  padding: 10px;
-  border: 1px solid #dee2e6;
-  font-size: 14px;
-  text-align: left;
-
-`;
-
-const ActionButton = styled.button`
-  padding: 3px 6px;
-  margin-right: 4px;
+const ActionButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant',
+})`
+  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'warning' ? '#f39c12' : props.variant === 'success' ? '#28a745' : '#3498db'};
+  color: white;
   border: none;
-  border-radius: 3px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
-  font-size: 10px;
+  margin-right: 5px;
+  transition: all 0.3s ease;
+  
   &:hover {
-    opacity: 0.9;
+    opacity: 0.8;
   }
-`;
-
-const ViewButton = styled(ActionButton)`
-  background-color: #007bff;
-  color: white;
-`;
-
-const ActivateButton = styled(ActionButton)`
-  background-color: #28a745;
-  color: white;
+  
   &:disabled {
-    background-color: #cccccc;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 `;
 
-const BlockButton = styled(ActionButton)`
-  background-color: #ffc107;
+const ActionMenuButton = styled.button`
+  background: #4f46e5; /* Indigo-600 */
   color: white;
-  &:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-  }
-`;
-
-const DeleteButton = styled(ActionButton)`
-  background-color: #dc3545;
-  color: white;
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  border: none;
+  padding: 6px 10px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-`;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
-const ModalContent = styled.div`
-  background-color: white;
-  padding: 15px;
-  border-radius: 6px;
-  width: 450px;
-  margin-top: 20px;
-  overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  animation: fadeIn 0.3s ease-in;
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+  &:hover {
+    background: #4338ca; /* Indigo-700 */
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
-const ModalTitle = styled.h2`
-  font-size: 16px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
-  text-align: center;
-  border-bottom: 1px solid #eee;
-  
+const ActionDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  margin-top: 5px;
+  opacity: ${(props) => (props.isOpen ? 1 : 0)};
+  transform: ${(props) => (props.isOpen ? 'translateY(0)' : 'translateY(-10px)')};
+  visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
 `;
 
-const DetailSection = styled.div`
+const ActionMenuItem = styled.div`
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #2c3e50;
+  
+  &:hover {
+    background: #f8f9fa;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8f9fa;
+  }
+`;
+
+const ActionMenuIcon = styled.span`
+  font-size: 14px;
+  width: 16px;
+  text-align: center;
+`;
+
+const ActionMenuText = styled.span`
+  font-size: 14px;
+  color: #2c3e50;
+`;
+
+const StatusBadge = styled.span.withConfig({
+  shouldForwardProp: (prop) => prop !== 'status',
+})`
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: ${(props) => {
+    switch (props.status) {
+      case 'Đang hoạt động':
+        return '#d4edda';
+      case 'Tạm khóa':
+        return '#fff3cd';
+      case 'Ngưng hoạt động':
+        return '#f8d7da';
+      default:
+        return '#e9ecef';
+    }
+  }};
+  color: ${(props) => {
+    switch (props.status) {
+      case 'Đang hoạt động':
+        return '#155724';
+      case 'Tạm khóa':
+        return '#856404';
+      case 'Ngưng hoạt động':
+        return '#721c24';
+      default:
+        return '#6c757d';
+    }
+  }};
+`;
+
+const Pagination = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  gap: 10px;
+`;
+
+const PaginationButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})`
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: ${props => props.active ? '#667eea' : 'white'};
+  color: ${props => props.active ? 'white' : '#2c3e50'};
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  
+  &:hover {
+    background: ${props => props.active ? '#667eea' : '#f8f9fa'};
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 16px;
+  color: #666;
+`;
+
+const EmptyState = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #666;
+  
+  .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
 `;
 
-const DetailItem = styled.div`
+// Modal Styled Components
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+`;
+
+const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 6px;
-  background-color: #f9f9f9;
-  border-radius: 3px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
 `;
 
-const DetailLabel = styled.span`
-  font-weight: bold;
-  color: #555;
-  font-size: 12px;
-`;
-
-const DetailValue = styled.span`
-  color: #333;
-  font-size: 12px;
+const ModalTitle = styled.h3`
+  color: #2c3e50;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 `;
 
 const CloseButton = styled.button`
-  padding: 6px 12px;
-  background-color: #dc3545;
-  color: white;
+  background: none;
   border: none;
-  border-radius: 4px;
+  font-size: 24px;
   cursor: pointer;
+
   font-size: 12px;
       margin-top: 8px;
         margin-left: 397px;
+  color: #666;
   &:hover {
-    background-color: #c82333;
+    color: #333;
   }
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  margin-bottom: 20px;
 `;
 
 const Label = styled.label`
-  display: inline-block;
-  width: 100px; 
-  font-weight: 600;
-  color: #444;
-  font-size: 13px;
-  text-align: left;
-  flex-shrink: 0;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #2c3e50;
 `;
+
 const Input = styled.input`
+  box-sizing: border-box;
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 15px;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-  transition: border-color 0.3s ease;
+  border-radius: 8px;
+  font-size: 14px;
+
   &:focus {
-    border-color: #007bff;
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-  }
-  &:hover {
-    border-color: #bbb;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 `;
 
 const Select = styled.select`
+  box-sizing: border-box;
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 15px;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-  transition: border-color 0.3s ease;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+
   &:focus {
-    border-color: #007bff;
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-  }
-  &:hover {
-    border-color: #bbb;
+    border-color: #667eea;
   }
 `;
-
+const SelectMenu = styled.select`
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  min-width: 150px;
+  
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+`;
 const DatePickerWrapper = styled.div`
   width: 100%;
   & .react-datepicker-wrapper {
     width: 100%;
   }
   & .react-datepicker__input-container input {
-    width: 95%;
-    padding: 8px 12px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px 15px;
     border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 13px;
+    border-radius: 8px;
+    font-size: 14px;
     transition: border-color 0.3s ease;
+
     &:focus {
-      border-color: #007bff;
+      border-color: #667eea;
       outline: none;
-      box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
+
     &:hover {
       border-color: #bbb;
     }
   }
 `;
 
-const ModalButtonGroup = styled.div`
+
+const ModalActions = styled.div`
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
-  gap: 8px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
 `;
 
-const SubmitButton = styled.button`
-  padding: 6px 12px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  &:hover {
-    background-color: #218838;
-  }
-  &:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-  }
-`;
-
-const CancelButton = styled.button`
-  padding: 6px 12px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  &:hover {
-    background-color: #5a6268;
-  }
-`;
-
-const Pagination = styled.div`
+const DetailItem = styled.div`
   display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 15px;
-`;
-
-const PageButton = styled.button`
-  padding: 6px 10px;
-  background-color: ${props => props.active ? '#007bff' : '#fff'};
-  color: ${props => props.active ? '#fff' : '#007bff'};
-  border: 1px solid #007bff;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  &:hover {
-    background-color: ${props => props.active ? '#0056b3' : '#e7f0fa'};
+  margin-bottom: 15px;
+  
+  .label {
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 150px;
+  }
+  
+  .value {
+    color: #666;
+    flex: 1;
   }
 `;
 
@@ -449,6 +540,9 @@ export default function UserAccount() {
   const [filterRoleName, setFilterRoleName] = useState('');
   const [sortField, setSortField] = useState('user_name');
   const [sortOrder, setSortOrder] = useState('ASC');
+  const [roleOptions, setRoleOptions] = useState([
+    { value: '', label: 'Tất cả Vai trò' }
+  ]);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -476,9 +570,13 @@ export default function UserAccount() {
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
+  // Add state for action dropdown
+  const [openActionMenu, setOpenActionMenu] = useState(null);
+  const actionMenuRef = useRef(null);
+
   const genderOptions = [
     { value: '', label: 'Tất cả Giới tính' },
-    { value: 'Không xác định / Chưa chọn', label: 'Không xác định / Chưa chọn' },
+    { value: 'Không xác định', label: 'Không xác định' },
     { value: 'Nam', label: 'Nam' },
     { value: 'Nữ', label: 'Nữ' },
     { value: 'Khác', label: 'Khác' },
@@ -487,17 +585,17 @@ export default function UserAccount() {
   const statusOptions = [
     { value: '', label: 'Tất cả Trạng thái' },
     { value: 'Đang hoạt động', label: 'Đang hoạt động' },
-    { value: 'Bị chặn / Đã khóa', label: 'Bị chặn' },
-    { value: 'Đã xóa', label: 'Đã xóa' },
+    { value: 'Tạm khóa', label: 'Tạm khóa' },
+    { value: 'Ngưng hoạt động', label: 'Ngưng hoạt động' },
   ];
 
-  const roleOptions = [
-    { value: '', label: 'Tất cả Vai trò' },
-    ...[...new Set(allUsers.map(user => user.role_name))].map(role => ({
-      value: role || 'N/A',
-      label: role || 'N/A',
-    })),
-  ];
+  // const roleOptions = [
+  //   { value: '', label: 'Tất cả Vai trò' },
+  //   ...[...new Set(allUsers.map(user => user.role_name))].map(role => ({
+  //     value: role || 'N/A',
+  //     label: role || 'N/A',
+  //   })),
+  // ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -520,6 +618,16 @@ export default function UserAccount() {
           setAllUsers(userData.data_set || []);
         }
         setRoles(rolesData);
+        if (Array.isArray(rolesData)) {
+          const options = [
+            { value: '', label: 'Tất cả Vai trò' },
+            ...rolesData.map(role => ({
+              value: role.role_name || 'N/A',
+              label: role.role_name || 'N/A'
+            }))
+          ];
+          setRoleOptions(options);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.showToast('Không thể tải dữ liệu. Chi tiết:', 'error');
@@ -711,220 +819,297 @@ export default function UserAccount() {
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, []);
 
+  // Handle click outside to close action menu
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setOpenActionMenu(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleActionMenuToggle = (userId) => {
+    setOpenActionMenu(openActionMenu === userId ? null : userId);
+  };
+
   return (
     <Container>
       <Title>Quản lý tài khoản 👨‍💼</Title>
 
-      <SearchSection>
+      <Header>
+        <Title>👨‍💼 Quản lý tài khoản</Title>
+        <AddButton onClick={() => setIsCreateModalOpen(true)}>
+          + Tạo tài khoản
+        </AddButton>
+      </Header>
+
+
+      <FilterSection>
         <SearchInput
           type="text"
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}
-          placeholder="Tìm kiếm theo tên ,email,số điện thoại..."
+          placeholder="Tìm kiếm theo tên, email, số điện thoại..."
         />
-        <SearchButton onClick={handleSearch} disabled={loading}>
-          Tìm kiếm
-        </SearchButton>
-        <SortSelect
+
+        <SelectMenu
           value={`${sortField}:${sortOrder}`}
           onChange={(e) => {
             const [field, order] = e.target.value.split(':');
             setSortField(field);
             setSortOrder(order);
-            setCurrentPage(1);
           }}
         >
           <option value="user_name:ASC">Tên tài khoản (A-Z)</option>
           <option value="user_name:DESC">Tên tài khoản (Z-A)</option>
           <option value="full_name:ASC">Họ tên (A-Z)</option>
           <option value="full_name:DESC">Họ tên (Z-A)</option>
-        </SortSelect>
-        <CreateButton onClick={() => setIsCreateModalOpen(true)} disabled={loading}>
-          + Tạo tài khoản
-        </CreateButton>
-      </SearchSection>
+        </SelectMenu>
+        <SelectMenu
+          value={filterRoleName}
+          onChange={(e) => {
+            setFilterRoleName(e.target.value);
+            resetPageAndFilter();
+          }}
+        >
+          {roleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </SelectMenu>
 
-      <Table>
-        <TableHead>
-          <tr>
-            <TableHeader>Tên tài khoản</TableHeader>
-            <TableHeader>Họ và tên</TableHeader>
-            <TableHeader>Email</TableHeader>
-            <TableHeader
-              onMouseEnter={() => setShowGenderDropdown(true)}
-              onMouseLeave={() => setShowGenderDropdown(false)}
-            >
-              Giới tính ▼
-              {showGenderDropdown && (
-                <FilterDropdown isOpen={showGenderDropdown} ref={genderDropdownRef}>
-                  {genderOptions.map((option) => (
-                    <FilterItem
-                      key={option.value}
-                      selected={filterGender === option.value}
-                      onClick={() => {
-                        setFilterGender(option.value);
-                        setShowGenderDropdown(false);
-                        applyFilters();
-                        resetPageAndFilter();
-                      }}
-                    >
-                      {option.label}
-                    </FilterItem>
-                  ))}
-                </FilterDropdown>
-              )}
-            </TableHeader>
-            <TableHeader
-              onMouseEnter={() => setShowRoleDropdown(true)}
-              onMouseLeave={() => setShowRoleDropdown(false)}
-            >
-              Vai trò ▼
-              {showRoleDropdown && (
-                <FilterDropdown isOpen={showRoleDropdown} ref={roleDropdownRef}>
-                  {roleOptions.map((option) => (
-                    <FilterItem
-                      key={option.value}
-                      selected={filterRoleName === option.value}
-                      onClick={() => {
-                        setFilterRoleName(option.value);
-                        setShowRoleDropdown(false);
-                        applyFilters();
-                        resetPageAndFilter();
-                      }}
-                    >
-                      {option.label}
-                    </FilterItem>
-                  ))}
-                </FilterDropdown>
-              )}
-            </TableHeader>
-            <TableHeader
-              onMouseEnter={() => setShowStatusDropdown(true)}
-              onMouseLeave={() => setShowStatusDropdown(false)}
-            >
-              Trạng thái ▼
-              {showStatusDropdown && (
-                <FilterDropdown isOpen={showStatusDropdown} ref={statusDropdownRef}>
-                  {statusOptions.map((option) => (
-                    <FilterItem
-                      key={option.value}
-                      selected={filterStatus === option.value}
-                      onClick={() => {
-                        setFilterStatus(option.value);
-                        setShowStatusDropdown(false);
-                        applyFilters();
-                        resetPageAndFilter();
-                      }}
-                    >
-                      {option.label}
-                    </FilterItem>
-                  ))}
-                </FilterDropdown>
-              )}
-            </TableHeader>
-            <TableHeader>Hành động</TableHeader>
-          </tr>
-        </TableHead>
-        <TableBody>
-          {loading ? (
-            <tr>
-              <TableCell colSpan="7" style={{ textAlign: 'center', padding: '15px' }}>Đang tải...</TableCell>
-            </tr>
-          ) : users.length > 0 ? (
-            users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.user_name}</TableCell>
-                <TableCell>{user.full_name}</TableCell>
-                <TableCell>{user.email || `N/A`}</TableCell>
-                <TableCell>{user.gender}</TableCell>
-                <TableCell>{user.role_name}</TableCell>
-                <TableCell>{user.status}</TableCell>
-                <TableCell>
-                  <ViewButton onClick={() => handleViewDetail(user)}>Xem</ViewButton>
-                  <ActivateButton
-                    onClick={() => handleActivateUser(user.user_name)}
-                    disabled={user.status === 'Đang hoạt động'}
-                  >
-                    Kích hoạt
-                  </ActivateButton>
-                  <BlockButton
-                    onClick={() => handleBlockUser(user.user_name)}
-                    disabled={user.status !== 'Đang hoạt động'}
-                  >
-                    Chặn
-                  </BlockButton>
-                  <DeleteButton onClick={() => handleDeleteUser(user.user_name)}>Xóa</DeleteButton>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <tr>
-              <TableCell colSpan="7" style={{ textAlign: 'center', padding: '15px' }}>Không có tài khoản nào.</TableCell>
-            </tr>
-          )}
-        </TableBody>
-      </Table>
+        {/* Filter giới tính */}
+        <SelectMenu
+          value={filterGender}
+          onChange={(e) => {
+            setFilterGender(e.target.value);
+            resetPageAndFilter();
+          }}
+        >
+          {genderOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </SelectMenu>
 
-      <Pagination>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-          <PageButton
-            key={page}
-            active={page === currentPage}
-            onClick={() => setCurrentPage(page)}
+        {/* Filter trạng thái */}
+        <SelectMenu
+          value={filterStatus}
+          onChange={(e) => {
+            setFilterStatus(e.target.value);
+            resetPageAndFilter();
+          }}
+        >
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </SelectMenu>
+      </FilterSection>
+
+      <TableContainer>
+        {loading ? (
+          <LoadingSpinner>
+            🔄 Đang tải dữ liệu...
+          </LoadingSpinner>
+        ) : users.length === 0 ? (
+          <EmptyState>
+            <div className="icon">👨‍💼</div>
+            <div>Không tìm thấy tài khoản nào</div>
+          </EmptyState>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell style={{ width: '10%' }}>Tên tài khoản</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '25%' }}>Họ và tên</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '25%' }}>Email</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Giới tính</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Vai trò</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <tbody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.user_name}</TableCell>
+                    <TableCell>{user.full_name}</TableCell>
+                    <TableCell>{user.email || 'N/A'}</TableCell>
+                    <TableCell>{user.gender}</TableCell>
+                    <TableCell>{user.role_name}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={user.status}>
+                        {user.status}
+                      </StatusBadge>
+                    </TableCell>
+                    <TableCell style={{ position: 'relative' }}>
+                      <ActionMenuButton
+                        onClick={() => handleActionMenuToggle(user.id)}
+                        ref={actionMenuRef}
+                      >
+                        ⋯
+                      </ActionMenuButton>
+                      <ActionDropdown isOpen={openActionMenu === user.id}>
+                        <ActionMenuItem onClick={() => {
+                          handleViewDetail(user);
+                          setOpenActionMenu(null);
+                        }}>
+                          <ActionMenuText>Xem chi tiết</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
+                          onClick={() => {
+                            handleActivateUser(user.user_name);
+                            setOpenActionMenu(null);
+                          }}
+                          style={{
+                            opacity: user.status === 'Đang hoạt động' ? 0.5 : 1,
+                            cursor: user.status === 'Đang hoạt động' ? 'not-allowed' : 'pointer'
+                          }}
+                          onMouseDown={(e) => {
+                            if (user.status === 'Đang hoạt động') {
+                              e.preventDefault();
+                              return;
+                            }
+                          }}
+                        >
+                          <ActionMenuText >Kích hoạt</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
+                          onClick={() => {
+                            handleBlockUser(user.user_name);
+                            setOpenActionMenu(null);
+                          }}
+                          style={{
+                            opacity: user.status === 'Tạm khóa' ? 0.5 : 1,
+                            cursor: user.status === 'Tạm khóa' ? 'not-allowed' : 'pointer'
+                          }}
+                          onMouseDown={(e) => {
+                            if (user.status === 'Tạm khóa') {
+                              e.preventDefault();
+                              return;
+                            }
+                          }}
+                        >
+                          <ActionMenuText>Chặn</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
+                          onClick={() => {
+                            handleDeleteUser(user.user_name);
+                            setOpenActionMenu(null);
+                          }}
+                          style={{
+                            color: '#e74c3c',
+                            opacity: user.status === 'Ngưng hoạt động' ? 0.5 : 1,
+                            cursor: user.status === 'Ngưng hoạt động' ? 'not-allowed' : 'pointer'
+                          }}
+                          onMouseDown={(e) => {
+                            if (user.status === 'Ngưng hoạt động') {
+                              e.preventDefault();
+                              return;
+                            }
+                          }}
+                        >
+                          <ActionMenuText style={{ color: '#e74c3c' }}>Xóa</ActionMenuText>
+                        </ActionMenuItem>
+                      </ActionDropdown>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+
+
+          </>
+        )}
+      </TableContainer>{totalPages > 1 && (
+        <Pagination>
+          <PaginationButton
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
           >
-            {page}
-          </PageButton>
-        ))}
-      </Pagination>
+            ← Trước
+          </PaginationButton>
 
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const pageNum = Math.max(1, currentPage - 2) + i;
+            if (pageNum > totalPages) return null;
+
+            return (
+              <PaginationButton
+                key={pageNum}
+                active={pageNum === currentPage}
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </PaginationButton>
+            );
+          })}
+
+          <PaginationButton
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Tiếp →
+          </PaginationButton>
+        </Pagination>
+      )}
+
+      {/* Create User Modal */}
       {isCreateModalOpen && (
-        <ModalOverlay>
+        <Modal>
           <ModalContent>
-            <ModalTitle>Tạo Tài Khoản Mới</ModalTitle>
+            <ModalHeader>
+              <ModalTitle>Tạo tài khoản mới</ModalTitle>
+              <CloseButton onClick={() => setIsCreateModalOpen(false)}>
+                ×
+              </CloseButton>
+            </ModalHeader>
             <form onSubmit={handleCreateUser}>
               <FormGroup>
-                <Label>Email :</Label>
+                <Label>Email *</Label>
                 <Input
                   type="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  placeholder="Nhập email"
                   required
                 />
               </FormGroup>
               <FormGroup>
-                <Label>Họ và tên:</Label>
+                <Label>Họ và tên *</Label>
                 <Input
                   type="text"
                   value={newUser.full_name}
                   onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
+                  placeholder="Nhập họ và tên"
                   required
                 />
               </FormGroup>
               <FormGroup>
-                <Label>Số điện thoại :</Label>
+                <Label>Số điện thoại *</Label>
                 <Input
                   type="text"
                   value={newUser.phone}
                   onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                  placeholder="Nhập số điện thoại"
                   required
                 />
               </FormGroup>
               <FormGroup>
-                <Label>Giới tính :</Label>
-                <Select
-                  value={newUser.gender}
-                  onChange={(e) => setNewUser({ ...newUser, gender: e.target.value })}
+                <Label>Ngày sinh *</Label>
+                {/* <Input
+                  type="date"
+                  value={newUser.dob}
+                  onChange={(e) => setNewUser({ ...newUser, dob: e.target.value })}
                   required
-                >
-                  <option value="">Chọn giới tính</option>
-                  <option value="0">Không xác định / Chưa chọn</option>
-                  <option value="1">Nam</option>
-                  <option value="2">Nữ</option>
-                  <option value="3">Khác</option>
-                </Select>
-              </FormGroup>
-              <FormGroup>
-                <Label>Ngày sinh :</Label>
+                /> */}
                 <DatePickerWrapper>
                   <DatePicker
                     selected={newUser.dob ? new Date(newUser.dob) : null}
@@ -934,19 +1119,33 @@ export default function UserAccount() {
                       setNewUser({ ...newUser, dob: formattedDate });
                     }}
                     dateFormat="dd/MM/yyyy"
-                    placeholderText="dd/mm/yyyy"
+                    placeholderText="dd/MM/yyyy"
                     required
                   />
                 </DatePickerWrapper>
               </FormGroup>
               <FormGroup>
-                <Label>Vai trò :</Label>
+                <Label>Giới tính *</Label>
+                <Select
+                  value={newUser.gender}
+                  onChange={(e) => setNewUser({ ...newUser, gender: e.target.value })}
+                  required
+                >
+                  <option value="">Chọn giới tính</option>
+                  <option value="0">Không xác định</option>
+                  <option value="1">Nam</option>
+                  <option value="2">Nữ</option>
+                  <option value="3">Khác</option>
+                </Select>
+              </FormGroup>
+              <FormGroup>
+                <Label>Vai trò *</Label>
                 <Select
                   value={newUser.role_id}
                   onChange={(e) => setNewUser({ ...newUser, role_id: e.target.value })}
                   required
                 >
-                  <option value="">Chọn vai trò </option>
+                  <option value="">Chọn vai trò</option>
                   {roles.map((role) => (
                     <option key={role.id} value={role.id}>
                       {role.role_name}
@@ -954,65 +1153,90 @@ export default function UserAccount() {
                   ))}
                 </Select>
               </FormGroup>
-              <ModalButtonGroup>
-                <SubmitButton type="submit" disabled={loading}>Tạo</SubmitButton>
-                <CancelButton type="button" onClick={() => setIsCreateModalOpen(false)}>Hủy</CancelButton>
-              </ModalButtonGroup>
+              <ModalActions>
+                <ActionButton
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  disabled={loading}
+                >
+                  Hủy
+                </ActionButton>
+                <ActionButton
+                  type="submit"
+                  variant="primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Đang tạo...' : 'Tạo tài khoản'}
+                </ActionButton>
+              </ModalActions>
             </form>
           </ModalContent>
-        </ModalOverlay>
+        </Modal>
       )}
 
+      {/* User Detail Modal */}
       {isDetailModalOpen && selectedUser && (
-        <ModalOverlay>
+        <Modal>
           <ModalContent>
-            <ModalTitle>Chi Tiết Tài Khoản</ModalTitle>
-            <DetailSection>
-              <DetailItem>
-                <DetailLabel>Tên đăng nhập:</DetailLabel>
-                <DetailValue>{selectedUser.user_name}</DetailValue>
-              </DetailItem>
-              <DetailItem>
-                <DetailLabel>Họ và tên:</DetailLabel>
-                <DetailValue>{selectedUser.full_name}</DetailValue>
-              </DetailItem>
-              <DetailItem>
-                <DetailLabel>Số điện thoại:</DetailLabel>
-                <DetailValue>{selectedUser.phone || 'N/A'}</DetailValue>
-              </DetailItem>
-              <DetailItem>
-                <DetailLabel>Email:</DetailLabel>
-                <DetailValue>{selectedUser.email || 'N/A'}</DetailValue>
-              </DetailItem>
-              <DetailItem>
-                <DetailLabel>Trạng thái:</DetailLabel>
-                <DetailValue>{selectedUser.status}</DetailValue>
-              </DetailItem>
-              <DetailItem>
-                <DetailLabel>Giới tính:</DetailLabel>
-                <DetailValue>{selectedUser.gender || 'N/A'}</DetailValue>
-              </DetailItem>
-              <DetailItem>
-                <DetailLabel>Ngày sinh:</DetailLabel>
-                <DetailValue>{formatDate(selectedUser.dob)}</DetailValue>
-              </DetailItem>
-              <DetailItem>
-                <DetailLabel>Vai trò:</DetailLabel>
-                <DetailValue>{selectedUser.role_name || 'N/A'}</DetailValue>
-              </DetailItem>
-
-              <DetailItem>
-                <DetailLabel>Ngày tạo:</DetailLabel>
-                <DetailValue>{formatDateTime(selectedUser.created_date)}</DetailValue>
-              </DetailItem>
-              <DetailItem>
-                <DetailLabel>Ngày cập nhật:</DetailLabel>
-                <DetailValue>{formatDateTime(selectedUser.updated_date)}</DetailValue>
-              </DetailItem>
-            </DetailSection>
-            <CloseButton onClick={() => setIsDetailModalOpen(false)}>Đóng</CloseButton>
+            <ModalHeader>
+              <ModalTitle>Chi tiết tài khoản</ModalTitle>
+              <CloseButton onClick={() => setIsDetailModalOpen(false)}>
+                ×
+              </CloseButton>
+            </ModalHeader>
+            <DetailItem>
+              <span className="label">Tên tài khoản:</span>
+              <span className="value">{selectedUser.user_name}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Họ và tên:</span>
+              <span className="value">{selectedUser.full_name}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Số điện thoại:</span>
+              <span className="value">{selectedUser.phone || 'N/A'}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Email:</span>
+              <span className="value">{selectedUser.email || 'N/A'}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Trạng thái:</span>
+              <span className="value">
+                <StatusBadge status={selectedUser.status}>
+                  {selectedUser.status}
+                </StatusBadge>
+              </span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Giới tính:</span>
+              <span className="value">{selectedUser.gender || 'N/A'}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Ngày sinh:</span>
+              <span className="value">
+                {formatDate(selectedUser.dob)}
+              </span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Vai trò:</span>
+              <span className="value">{selectedUser.role_name || 'N/A'}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Ngày tạo:</span>
+              <span className="value">{formatDateTime(selectedUser.created_date)}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Ngày cập nhật:</span>
+              <span className="value">{formatDateTime(selectedUser.updated_date)}</span>
+            </DetailItem>
+            <ModalActions>
+              <ActionButton onClick={() => setIsDetailModalOpen(false)}>
+                Đóng
+              </ActionButton>
+            </ModalActions>
           </ModalContent>
-        </ModalOverlay>
+        </Modal>
       )}
     </Container>
   );
