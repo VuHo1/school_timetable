@@ -438,3 +438,117 @@ export const fetchRoles = async (token) => {
     const data = await response.json();
     return data.data_set || [];
 };
+//setting
+export const fetchAppSetting = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/setting/app-setting`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch app settings');
+    const data = await response.json();
+    return data.data_set || [];
+};
+
+export const updateAppSetting = async (token, settingData) => {
+    const response = await fetch(`${API_BASE_URL}/api/setting/app-setting/update`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settingData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update app setting');
+    }
+    return await response.json();
+};
+
+export const fetchSystemLogs = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
+
+    const url = `${API_BASE_URL}/api/log?${queryParams.toString()}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch system logs');
+    }
+    const data = await response.json();
+    return data;
+};
+
+//UserRole
+export const fetchCodeListSYSSTS = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/SYSSTS`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch SYSSTS code list');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+export const updateRole = async (token, roleData) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-role/update`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(roleData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update role');
+    }
+    return await response.json();
+};
+export const createRole = async (token, roleData) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-role/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(roleData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to create role');
+    }
+    return await response.json();
+};
+export const deleteRole = async (token, roleId) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-role/remove/${roleId}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to delete role');
+    }
+    return await response.json();
+};

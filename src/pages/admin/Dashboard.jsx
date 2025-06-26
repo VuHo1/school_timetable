@@ -9,7 +9,7 @@ const Container = styled.div`
 function Dashboard() {
   return (
     <Container>
-      {/* Trang trống theo yêu cầu */}
+      Welcome
     </Container>
   );
 }

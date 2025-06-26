@@ -19,7 +19,7 @@ const Container = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 20px;
+  font-size: 22px;
   font-weight: bold;
   text-align: left;
   color: #333;
@@ -273,7 +273,8 @@ const CloseButton = styled.button`
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
-  align-self: flex-end;
+      margin-top: 8px;
+        margin-left: 397px;
   &:hover {
     background-color: #c82333;
   }
@@ -712,7 +713,7 @@ export default function UserAccount() {
 
   return (
     <Container>
-      <Title>Quản lý tài khoản</Title>
+      <Title>Quản lý tài khoản 👨‍💼</Title>
 
       <SearchSection>
         <SearchInput

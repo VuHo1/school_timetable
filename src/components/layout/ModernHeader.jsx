@@ -6,7 +6,7 @@ import styled from 'styled-components';
 // Page mappings based on abilities (excluding items in avatar dropdown)
 const PAGE_MAPPINGS = {
   'Cấu hình hệ thống': '/admin/setting',
-  'Danh mục dùng chung': '/admin/code_list', 
+  'Danh mục dùng chung': '/admin/code_list',
   'Nhật ký & Giám sát': '/log',
   'Quản lí chức năng': '/admin/user_command',
   'Quản lí tài khoản': '/admin/user_account',
@@ -35,7 +35,7 @@ const Header = styled.header`
   padding: 0 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
-  z-index: 1000;
+  
 `;
 
 const LeftSection = styled.div`
@@ -294,16 +294,16 @@ function ModernHeader() {
   const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [avatarError, setAvatarError] = useState(false);
-  
+
   const menuDropdownRef = useRef(null);
   const avatarDropdownRef = useRef(null);
 
   // Update currentAbilities when abilities change (filter out avatar dropdown items)
   useEffect(() => {
     const storedAbilities = localStorage.getItem('abilities');
-    
+
     let abilitiesToProcess = [];
-    
+
     if (storedAbilities) {
       try {
         const parsedAbilities = JSON.parse(storedAbilities);
@@ -314,16 +314,16 @@ function ModernHeader() {
         console.error('Error parsing abilities from localStorage:', error);
       }
     }
-    
+
     if (!abilitiesToProcess.length && abilities && Array.isArray(abilities) && abilities.length > 0) {
       abilitiesToProcess = abilities;
     }
-    
+
     // Filter out abilities that are available in avatar dropdown
-    const filteredAbilities = abilitiesToProcess.filter(ability => 
+    const filteredAbilities = abilitiesToProcess.filter(ability =>
       ability !== 'Cá nhân' && ability !== 'Thông báo'
     );
-    
+
     setCurrentAbilities(filteredAbilities);
   }, [abilities]);
 
@@ -381,17 +381,17 @@ function ModernHeader() {
         <LeftSection>
           {/* Menu Dropdown */}
           <MenuDropdownContainer ref={menuDropdownRef}>
-                         <MenuButton 
-               onClick={() => setShowMenuDropdown(!showMenuDropdown)}
-             >
-               ☰
-             </MenuButton>
-            
+            <MenuButton
+              onClick={() => setShowMenuDropdown(!showMenuDropdown)}
+            >
+              ☰
+            </MenuButton>
+
             {showMenuDropdown && (
               <MenuDropdown>
                 {currentAbilities && currentAbilities.length > 0 ? (
                   currentAbilities.map((ability, index) => (
-                    <MenuItem 
+                    <MenuItem
                       key={index}
                       onClick={() => handleMenuClick(ability)}
                     >
@@ -431,21 +431,21 @@ function ModernHeader() {
 
         {/* Avatar Dropdown */}
         <RightSection>
-                   <AvatarDropdownContainer ref={avatarDropdownRef}>
-           <AvatarButton onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}>
-             {user?.avatar && !avatarError ? (
-               <Avatar 
-                 src={user.avatar} 
-                 alt="Avatar"
-                 onError={() => setAvatarError(true)}
-               />
-             ) : (
-               <DefaultAvatar>
-                 {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
-               </DefaultAvatar>
-             )}
-           </AvatarButton>
-            
+          <AvatarDropdownContainer ref={avatarDropdownRef}>
+            <AvatarButton onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}>
+              {user?.avatar && !avatarError ? (
+                <Avatar
+                  src={user.avatar}
+                  alt="Avatar"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <DefaultAvatar>
+                  {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
+                </DefaultAvatar>
+              )}
+            </AvatarButton>
+
             {showAvatarDropdown && (
               <AvatarDropdown>
                 <AvatarMenuItem onClick={() => {
@@ -455,7 +455,7 @@ function ModernHeader() {
                   <span>👤</span>
                   <span>Tài khoản</span>
                 </AvatarMenuItem>
-                
+
                 <AvatarMenuItem onClick={() => {
                   navigate('/notification');
                   setShowAvatarDropdown(false);
@@ -463,8 +463,8 @@ function ModernHeader() {
                   <span>🔔</span>
                   <span>Thông báo</span>
                 </AvatarMenuItem>
-                
-                <AvatarMenuItem 
+
+                <AvatarMenuItem
                   className="logout"
                   onClick={handleLogout}
                 >
@@ -477,12 +477,12 @@ function ModernHeader() {
         </RightSection>
       </Header>
 
-      <Overlay 
-        show={showMenuDropdown || showAvatarDropdown} 
+      <Overlay
+        show={showMenuDropdown || showAvatarDropdown}
         onClick={() => {
           setShowMenuDropdown(false);
           setShowAvatarDropdown(false);
-        }} 
+        }}
       />
 
       <Content>
