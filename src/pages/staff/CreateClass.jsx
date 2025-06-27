@@ -175,193 +175,193 @@ const ExampleBox = styled.div`
 `;
 
 function CreateClass() {
-    const { user } = useAuth();
-    const navigate = useNavigate();
-    const [loading, setLoading] = useState(false);
-    const [loadingGrades, setLoadingGrades] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [gradeLevels, setGradeLevels] = useState([]);
-    const [formData, setFormData] = useState({
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [gradeLevels, setGradeLevels] = useState([]);
+  const [formData, setFormData] = useState({
+    class_code: '',
+    quantity: 1,
+    grade_level: []
+  });
+
+  useEffect(() => {
+    loadGradeLevels();
+  }, []);
+
+  const loadGradeLevels = async () => {
+    setLoadingGrades(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const result = await fetchGradeLevels(token);
+      setGradeLevels(result || []);
+    } catch (err) {
+      console.error('Error loading grade levels:', err);
+      setError('Không thể tải danh sách khối học: ' + err.message);
+    } finally {
+      setLoadingGrades(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'quantity' ? parseInt(value) || 1 : value
+    }));
+  };
+
+  const handleGradeLevelChange = (gradeId, checked) => {
+    setFormData(prev => ({
+      ...prev,
+      grade_level: checked
+        ? [...prev.grade_level, gradeId]
+        : prev.grade_level.filter(id => id !== gradeId)
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Validate form
+      if (!formData.class_code.trim()) {
+        throw new Error('Vui lòng nhập mã lớp');
+      }
+      if (formData.grade_level.length === 0) {
+        throw new Error('Vui lòng chọn ít nhất một khối học');
+      }
+      if (formData.quantity < 1 || formData.quantity > 50) {
+        throw new Error('Số lượng lớp phải từ 1 đến 50');
+      }
+
+      const token = localStorage.getItem('authToken');
+      const result = await createClass(token, formData);
+
+      setSuccess('Tạo lớp học thành công!');
+      console.log('Created classes:', result);
+
+      // Reset form
+      setFormData({
         class_code: '',
         quantity: 1,
         grade_level: []
-    });
+      });
 
-    useEffect(() => {
-        loadGradeLevels();
-    }, []);
-
-    const loadGradeLevels = async () => {
-        setLoadingGrades(true);
-        try {
-            const token = localStorage.getItem('authToken');
-            const result = await fetchGradeLevels(token);
-            setGradeLevels(result || []);
-        } catch (err) {
-            console.error('Error loading grade levels:', err);
-            setError('Không thể tải danh sách khối học: ' + err.message);
-        } finally {
-            setLoadingGrades(false);
-        }
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: name === 'quantity' ? parseInt(value) || 1 : value
-        }));
-    };
-
-    const handleGradeLevelChange = (gradeId, checked) => {
-        setFormData(prev => ({
-            ...prev,
-            grade_level: checked 
-                ? [...prev.grade_level, gradeId]
-                : prev.grade_level.filter(id => id !== gradeId)
-        }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-        setSuccess('');
-
-        try {
-            // Validate form
-            if (!formData.class_code.trim()) {
-                throw new Error('Vui lòng nhập mã lớp');
-            }
-            if (formData.grade_level.length === 0) {
-                throw new Error('Vui lòng chọn ít nhất một khối học');
-            }
-            if (formData.quantity < 1 || formData.quantity > 50) {
-                throw new Error('Số lượng lớp phải từ 1 đến 50');
-            }
-
-            const token = localStorage.getItem('authToken');
-            const result = await createClass(token, formData);
-            
-            setSuccess('Tạo lớp học thành công!');
-            console.log('Created classes:', result);
-            
-            // Reset form
-            setFormData({
-                class_code: '',
-                quantity: 1,
-                grade_level: []
-            });
-
-            // Redirect after success
-            setTimeout(() => {
-                navigate('/staff/class');
-            }, 2000);
-
-        } catch (err) {
-            setError(err.message || 'Có lỗi xảy ra khi tạo lớp học');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleBack = () => {
+      // Redirect after success
+      setTimeout(() => {
         navigate('/staff/class');
-    };
+      }, 2000);
 
-    return (
-        <Container>
-            <Header>
-                <BackButton onClick={handleBack}>
-                    ← Quay lại
-                </BackButton>
-                <Title>Tạo lớp học mới</Title>
-            </Header>
+    } catch (err) {
+      setError(err.message || 'Có lỗi xảy ra khi tạo lớp học');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            <FormContainer>
-                {error && <Error>{error}</Error>}
-                {success && <Success>{success}</Success>}
+  const handleBack = () => {
+    navigate('/staff/class');
+  };
 
-                <Form onSubmit={handleSubmit}>
-                    <FormGroup>
-                        <Label htmlFor="class_code">Mã lớp *</Label>
-                        <Input
-                            type="text"
-                            id="class_code"
-                            name="class_code"
-                            value={formData.class_code}
-                            onChange={handleInputChange}
-                            placeholder="Ví dụ: A, B, C, CLC..."
-                            required
-                        />
-                        <HelpText>
-                            Nhập mã lớp như A, B, C, CLC. Hệ thống sẽ tự động tạo mã lớp đầy đủ.
-                        </HelpText>
-                        <ExampleBox>
-                            <strong>Ví dụ:</strong> Nếu chọn mã lớp "A", số lượng 3, khối 10 → Sẽ tạo: 10A01, 10A02, 10A03
-                        </ExampleBox>
-                    </FormGroup>
+  return (
+    <Container>
+      <Header>
+        <BackButton onClick={handleBack}>
+          ← Quay lại
+        </BackButton>
+        <Title>Tạo lớp học mới</Title>
+      </Header>
 
-                    <FormGroup>
-                        <Label htmlFor="quantity">Số lượng lớp *</Label>
-                        <Input
-                            type="number"
-                            id="quantity"
-                            name="quantity"
-                            value={formData.quantity}
-                            onChange={handleInputChange}
-                            min="1"
-                            max="50"
-                            required
-                        />
-                        <HelpText>
-                            Số lượng lớp cần tạo cho mỗi khối học (từ 1 đến 50)
-                        </HelpText>
-                    </FormGroup>
+      <FormContainer>
+        {error && <Error>{error}</Error>}
+        {success && <Success>{success}</Success>}
 
-                    <FormGroup>
-                        <Label>Khối học *</Label>
-                        <CheckboxGroup>
-                            {loadingGrades ? (
-                                <Loading>Đang tải danh sách khối học...</Loading>
-                            ) : gradeLevels.length > 0 ? (
-                                gradeLevels.map(grade => (
-                                    <CheckboxItem key={grade.code_id}>
-                                        <Checkbox
-                                            type="checkbox"
-                                            id={`grade_${grade.code_id}`}
-                                            checked={formData.grade_level.includes(grade.code_id)}
-                                            onChange={(e) => handleGradeLevelChange(grade.code_id, e.target.checked)}
-                                        />
-                                        <CheckboxLabel htmlFor={`grade_${grade.code_id}`}>
-                                            Lớp {grade.code_id} - {grade.caption}
-                                        </CheckboxLabel>
-                                    </CheckboxItem>
-                                ))
-                            ) : (
-                                <div style={{ textAlign: 'center', color: '#666' }}>
-                                    Không có dữ liệu khối học
-                                </div>
-                            )}
-                        </CheckboxGroup>
-                        <HelpText>
-                            Chọn các khối học để tạo lớp. Có thể chọn nhiều khối.
-                        </HelpText>
-                    </FormGroup>
+        <Form onSubmit={handleSubmit}>
+          <FormGroup>
+            <Label htmlFor="class_code">Mã lớp *</Label>
+            <Input
+              type="text"
+              id="class_code"
+              name="class_code"
+              value={formData.class_code}
+              onChange={handleInputChange}
+              placeholder="Ví dụ: A, B, C, CLC..."
+              required
+            />
+            <HelpText>
+              Nhập mã lớp như A, B, C, CLC. Hệ thống sẽ tự động tạo mã lớp đầy đủ.
+            </HelpText>
+            <ExampleBox>
+              <strong>Ví dụ:</strong> Nếu chọn mã lớp "A", số lượng 3, khối 10 → Sẽ tạo: 10A01, 10A02, 10A03
+            </ExampleBox>
+          </FormGroup>
 
-                    <ButtonGroup>
-                        <CancelButton type="button" onClick={handleBack}>
-                            Hủy
-                        </CancelButton>
-                        <SubmitButton type="submit" disabled={loading || loadingGrades}>
-                            {loading ? 'Đang tạo...' : 'Tạo lớp'}
-                        </SubmitButton>
-                    </ButtonGroup>
-                </Form>
-            </FormContainer>
-        </Container>
-    );
+          <FormGroup>
+            <Label htmlFor="quantity">Số lượng lớp *</Label>
+            <Input
+              type="number"
+              id="quantity"
+              name="quantity"
+              value={formData.quantity}
+              onChange={handleInputChange}
+              min="1"
+              max="50"
+              required
+            />
+            <HelpText>
+              Số lượng lớp cần tạo cho mỗi khối học (từ 1 đến 50)
+            </HelpText>
+          </FormGroup>
+
+          <FormGroup>
+            <Label>Khối học *</Label>
+            <CheckboxGroup>
+              {loadingGrades ? (
+                <Loading>Đang tải danh sách khối học...</Loading>
+              ) : gradeLevels.length > 0 ? (
+                gradeLevels.map(grade => (
+                  <CheckboxItem key={grade.code_id}>
+                    <Checkbox
+                      type="checkbox"
+                      id={`grade_${grade.code_id}`}
+                      checked={formData.grade_level.includes(grade.code_id)}
+                      onChange={(e) => handleGradeLevelChange(grade.code_id, e.target.checked)}
+                    />
+                    <CheckboxLabel htmlFor={`grade_${grade.code_id}`}>
+                      {grade.caption}
+                    </CheckboxLabel>
+                  </CheckboxItem>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', color: '#666' }}>
+                  Không có dữ liệu khối học
+                </div>
+              )}
+            </CheckboxGroup>
+            <HelpText>
+              Chọn các khối học để tạo lớp. Có thể chọn nhiều khối.
+            </HelpText>
+          </FormGroup>
+
+          <ButtonGroup>
+            <CancelButton type="button" onClick={handleBack}>
+              Hủy
+            </CancelButton>
+            <SubmitButton type="submit" disabled={loading || loadingGrades}>
+              {loading ? 'Đang tạo...' : 'Tạo lớp'}
+            </SubmitButton>
+          </ButtonGroup>
+        </Form>
+      </FormContainer>
+    </Container>
+  );
 }
 
 export default CreateClass; 

@@ -120,7 +120,7 @@ export const fetchClassSubjects = async (token, classCode) => {
     });
     if (!response.ok) throw new Error('Failed to fetch class subjects');
     const data = await response.json();
-    return data.data;
+    return data.data_set;
 };
 
 export const createClass = async (token, classData) => {
@@ -299,19 +299,19 @@ export const fetchAvailableRooms = async (token) => {
 // Add APIs to fetch all teachers and rooms (not just available)
 export const fetchAllTeachers = async (token, params = {}) => {
     const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit || 100);
     if (params.search) queryParams.append('search', params.search);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.limit) queryParams.append('limit', params.limit);
     if (params.sort) queryParams.append('sort', params.sort);
-
     // Add filters
     if (params.filter) {
         Object.keys(params.filter).forEach(key => {
             queryParams.append(`filter[${key}]`, params.filter[key]);
         });
     }
-
     const url = `${API_BASE_URL}/api/teacher?${queryParams.toString()}`;
+    console.log('[FETCH URL]', url);
+
     const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -319,9 +319,14 @@ export const fetchAllTeachers = async (token, params = {}) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    if (!response.ok) throw new Error('Failed to fetch all teachers');
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch teacher: ${response.status} ${response.statusText}`);
+    }
+
     const data = await response.json();
-    return data.data_set || []; // Trả về mảng data_set
+    return data;
 };
 
 export const fetchAllRooms = async (token, params = {}) => {

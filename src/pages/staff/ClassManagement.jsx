@@ -437,7 +437,7 @@ function ClassManagement() {
         if (result.pagination) {
           setTotalPages(result.pagination.last || 1);
         } else {
-          setTotalPages(Math.ceil((result.data_set.length) / 20));
+          setTotalPages(Math.ceil((result.data_set.length) / 10));
         }
       } else {
         setClasses([]);
@@ -592,23 +592,27 @@ function ClassManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHeaderCell style={{ width: '10%' }} onClick={() => handleSort('class_code')}>
+                    <TableHeaderCell style={{ width: '7%' }} onClick={() => handleSort('class_code')}>
                       Mã lớp
                       <SortIcon>{getSortIcon('class_code')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell style={{ width: '10%' }} onClick={() => handleSort('grade_level')}>
+                    <TableHeaderCell style={{ width: '5%' }} onClick={() => handleSort('grade_level')}>
                       Khối
                       <SortIcon>{getSortIcon('grade_level')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell style={{ width: '30%' }} onClick={() => handleSort('room_name')}>
+                    <TableHeaderCell style={{ width: '7%' }} onClick={() => handleSort('room_code')}>
                       Phòng học
                       <SortIcon>{getSortIcon('room_name')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell style={{ width: '20%' }} onClick={() => handleSort('room_type_name')}>
+                    <TableHeaderCell style={{ width: '16%' }} onClick={() => handleSort('room_name')}>
+                      Tên phòng
+                      <SortIcon>{getSortIcon('room_name')}</SortIcon>
+                    </TableHeaderCell>
+                    <TableHeaderCell style={{ width: '15%' }} onClick={() => handleSort('room_type_name')}>
                       Loại phòng
                       <SortIcon>{getSortIcon('room_type_name')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell style={{ width: '10%' }} onClick={() => handleSort('teacher_full_name')}>
+                    <TableHeaderCell style={{ width: '30%' }} onClick={() => handleSort('teacher_full_name')}>
                       GVCN
                       <SortIcon>{getSortIcon('teacher_full_name')}</SortIcon>
                     </TableHeaderCell>
@@ -621,9 +625,14 @@ function ClassManagement() {
                     <TableRow key={cls.class_code}>
                       <TableCell>{cls.class_code}</TableCell>
                       <TableCell>{cls.grade_level || 'N/A'}</TableCell>
-                      <TableCell>{cls.room_name || 'Chưa xếp phòng'}</TableCell>
+                      <TableCell>{cls.room_code || 'Chưa xếp phòng'}</TableCell>
+                      <TableCell>{cls.room_name || 'N/A'}</TableCell>
                       <TableCell>{cls.room_type_name || 'N/A'}</TableCell>
-                      <TableCell>{cls.teacher_full_name || 'Chưa có GVCN'}</TableCell>
+                      <TableCell>
+                        {cls.teacher_full_name
+                          ? `${cls.teacher_full_name} (${cls.teacher_user_name})`
+                          : 'Chưa có giáo viên chủ nhiệm'}
+                      </TableCell>
                       <TableCell>
                         <StatusBadge status={cls.status}>
                           {cls.status}

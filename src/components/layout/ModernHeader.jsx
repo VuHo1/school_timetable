@@ -36,7 +36,7 @@ const Header = styled.header`
   align-items: center;
   padding: 0 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  position: relative;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -231,6 +231,7 @@ const AvatarMenuItem = styled.div`
 
 const Content = styled.main`
   min-height: calc(100vh - 70px);
+  padding-top: 50px; 
 `;
 
 const Overlay = styled.div.withConfig({

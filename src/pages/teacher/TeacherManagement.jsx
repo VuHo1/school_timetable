@@ -341,20 +341,20 @@ const ScheduleTableElement = styled.table`
 `;
 
 const TimeSlotHeader = styled.th`
-  background: #f8f9fa;
+  background:white;
   border: 1px solid #ddd;
   padding: 12px 8px;
   text-align: center;
   font-weight: 600;
   font-size: 14px;
-  color: #2c3e50;
+  color: black;
   min-width: 100px;
 `;
 
 const DayHeaderCell = styled.th`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: 1px solid rgba(255,255,255,0.2);
+  background: white;
+  color: black;
+  border: 1px solid #ddd;
   padding: 12px 8px;
   text-align: center;
   font-weight: 600;
@@ -365,17 +365,17 @@ const DayHeaderCell = styled.th`
 const ScheduleCell = styled.td.withConfig({
   shouldForwardProp: (prop) => prop !== 'isSelected' && prop !== 'isEditing',
 })`
+  padding: 16px 12px;
+  vertical-align: middle;
+  text-align: center;
   border: 1px solid #ddd;
   padding: 12px 8px;
   text-align: center;
   font-size: 13px;
-  font-weight: 500;
-  height: 50px;
-  cursor: ${props => props.isEditing ? 'pointer' : 'default'};
-  background: ${props => props.isSelected ? '#28a745' : '#dc3545'};
-  color: white;
-  transition: all 0.2s ease;
   white-space: nowrap;
+  cursor: ${props => props.isEditing ? 'pointer' : 'default'};
+  background: ${props => props.isSelected ? '#c6efce' : '#ffc7ce'};
+  color: ${props => props.isSelected ? '#006100' : '#9c0006'};
   
   &:hover {
     opacity: ${props => props.isEditing ? '0.8' : '1'};
@@ -385,7 +385,7 @@ const ScheduleCell = styled.td.withConfig({
 
 
 const Input = styled.input`
-  width: 100%;
+  width: 80%;
   padding: 10px 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -599,6 +599,7 @@ const ActionMenuText = styled.span`
 function TeacherManagement() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -641,39 +642,35 @@ function TeacherManagement() {
     weekly_maximum_day: 0,
   });
 
-  // Fetch teachers from API
   const fetchTeachers = async () => {
+    setLoading(true);
+    setError('');
     try {
-      setLoading(true);
-
       const token = localStorage.getItem('authToken');
-
-      // Special case: if filter is "AVAILABLE", use different endpoint
-
-      // Use fetchAllTeachers from api.js for regular teacher list with enhanced parameters
-      const params = {
+      const params = ({
         page: currentPage,
         limit: 10,
-      };
-
-      // Add search parameter if provided
+      });
       if (searchTerm && searchTerm.trim()) {
         params.search = searchTerm.trim();
       }
-
-      // Add filters if provided
       if (statusFilter) {
         params.filter = params.filter || {};
         params.filter.status = statusFilter;
       }
+      const result = await fetchAllTeachers(token, params);
 
-      const teacherList = await fetchAllTeachers(token, params);
-
-      setTeachers(teacherList || []);
-      setTotalPages(Math.ceil((teacherList?.length || 0) / 20));
-
-      toast.success(`Tải thành công ${teacherList?.length || 0} giáo viên`);
-
+      if (result && result.data_set) {
+        setTeachers(result.data_set);
+        if (result.pagination) {
+          setTotalPages(result.pagination.last || 1);
+        } else {
+          setTotalPages(Math.ceil((result.data_set.length) / 10));
+        }
+      } else {
+        setClasses([]);
+        setTotalPages(1);
+      }
     } catch (error) {
       console.error('Error fetching teachers:', error);
 
@@ -708,7 +705,9 @@ function TeacherManagement() {
     document.addEventListener('mouseleave', handleMouseLeave);
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, []);
-
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
   // Handle click outside to close action menu
   useEffect(() => {
     function handleClickOutside(event) {
@@ -877,7 +876,7 @@ function TeacherManagement() {
   const fetchAvailableSubjects = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/subject?filter[status]=Đang hoạt động&limit=100`, {
+      const response = await fetch(`${API_BASE_URL}/api/subject?filter[status]=Đang hoạt động`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -1404,12 +1403,9 @@ function TeacherManagement() {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+              <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
                 <ActionButton variant="primary" onClick={handleSaveSubjectsLocal}>
-                  Lưu thay đổi
-                </ActionButton>
-                <ActionButton onClick={() => setEditingSubjects(false)}>
-                  Hủy
+                  Xác nhận
                 </ActionButton>
               </div>
             </div>
@@ -1504,7 +1500,7 @@ function TeacherManagement() {
               variant="primary"
               onClick={() => setEditingSchedule(!editingSchedule)}
             >
-              {editingSchedule ? '❌ Hủy' : '✏️ Chỉnh sửa'}
+              {editingSchedule ? 'Hủy' : 'Chỉnh sửa'}
             </ActionButton>
           </div>
 
@@ -1539,7 +1535,7 @@ function TeacherManagement() {
                     >
                       Chọn tất cả T2-T6
                     </ActionButton>
-                    <ActionButton
+                    {/* <ActionButton
                       variant="secondary"
                       style={{ fontSize: '11px', padding: '4px 8px' }}
                       onClick={() => {
@@ -1560,7 +1556,7 @@ function TeacherManagement() {
                       }}
                     >
                       Chỉ ca sáng
-                    </ActionButton>
+                    </ActionButton> */}
                     <ActionButton
                       variant="secondary"
                       style={{ fontSize: '11px', padding: '4px 8px' }}
@@ -1588,7 +1584,7 @@ function TeacherManagement() {
                 <ScheduleTableElement>
                   <thead>
                     <tr>
-                      <TimeSlotHeader>Tiết học</TimeSlotHeader>
+                      <TimeSlotHeader>Tiết</TimeSlotHeader>
                       {Object.keys(dayNames).map(day => (
                         <DayHeaderCell key={day}>
                           {dayNames[day]}
@@ -1636,15 +1632,7 @@ function TeacherManagement() {
 
               {/* Number Inputs */}
               <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-                <FormGroup>
-                  <Label>Tiết tối thiểu/tuần:</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={scheduleData.weekly_minimum_slot}
-                    onChange={(e) => handleNumberChange('weekly_minimum_slot', e.target.value)}
-                  />
-                </FormGroup>
+
 
                 <FormGroup>
                   <Label>Tiết tối đa/tuần:</Label>
@@ -1656,15 +1644,6 @@ function TeacherManagement() {
                   />
                 </FormGroup>
 
-                <FormGroup>
-                  <Label>Tiết tối thiểu/ngày:</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={scheduleData.daily_minimum_slot}
-                    onChange={(e) => handleNumberChange('daily_minimum_slot', e.target.value)}
-                  />
-                </FormGroup>
 
                 <FormGroup>
                   <Label>Tiết tối đa/ngày:</Label>
@@ -1676,16 +1655,6 @@ function TeacherManagement() {
                   />
                 </FormGroup>
 
-                <FormGroup>
-                  <Label>Ngày tối thiểu/tuần:</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="7"
-                    value={scheduleData.weekly_minimum_day}
-                    onChange={(e) => handleNumberChange('weekly_minimum_day', e.target.value)}
-                  />
-                </FormGroup>
 
                 <FormGroup>
                   <Label>Ngày tối đa/tuần:</Label>
@@ -1707,14 +1676,7 @@ function TeacherManagement() {
                   onClick={handleSaveScheduleLocal}
                   disabled={modalLoading}
                 >
-                  {modalLoading ? 'Đang lưu...' : 'Lưu cấu hình'}
-                </ActionButton>
-                <ActionButton
-                  variant="secondary"
-                  onClick={() => setEditingSchedule(false)}
-                  disabled={modalLoading}
-                >
-                  Hủy
+                  {modalLoading ? 'Đang lưu...' : 'Xác nhận'}
                 </ActionButton>
               </div>
             </div>
@@ -1821,11 +1783,6 @@ function TeacherManagement() {
         {activeTab === 'subjects' && renderSubjects()}
         {activeTab === 'schedule' && renderScheduleConfig()}
 
-        <ModalActions>
-          <ActionButton onClick={() => setShowDetailModal(false)}>
-            Đóng
-          </ActionButton>
-        </ModalActions>
       </div>
     );
   };
@@ -1887,7 +1844,7 @@ function TeacherManagement() {
                     <TableCell>{teacher.full_name}</TableCell>
                     <TableCell>{teacher.email}</TableCell>
                     <TableCell>{teacher.phone || 'N/A'}</TableCell>
-                    <TableCell>{teacher.homeroom_class || teacher.class_code || 'Chưa có lớp'}</TableCell>
+                    <TableCell>{teacher.homeroom_class || teacher.hoomroom_class || 'Chưa có lớp'}</TableCell>
                     <TableCell>
                       <StatusBadge status={teacher.status}>
                         {teacher.status}
@@ -1923,7 +1880,7 @@ function TeacherManagement() {
       {totalPages > 1 && (
         <Pagination>
           <PaginationButton
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
             ← Trước
@@ -1937,7 +1894,7 @@ function TeacherManagement() {
               <PaginationButton
                 key={pageNum}
                 active={pageNum === currentPage}
-                onClick={() => setCurrentPage(pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum}
               </PaginationButton>
@@ -1945,10 +1902,10 @@ function TeacherManagement() {
           })}
 
           <PaginationButton
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
-            Tiếp →
+            Sau →
           </PaginationButton>
         </Pagination>
       )}

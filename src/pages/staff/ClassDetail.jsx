@@ -132,10 +132,7 @@ const InfoRow = styled.div`
   padding: 12px 16px;
   border-radius: 8px;
   transition: all 0.3s ease;
-  
-  &:hover {
-    background-color: #f8f9fa;
-  }
+
 `;
 
 const InfoLabel = styled.span`
@@ -144,7 +141,6 @@ const InfoLabel = styled.span`
   min-width: 120px;
   
   &::after {
-    content: ":";
     margin-left: 4px;
   }
 `;
@@ -204,10 +200,6 @@ const SubjectsSection = styled.div`
   border: 1px solid #e9ecef;
   transition: all 0.3s ease;
   
-  &:hover {
-    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
-  }
 `;
 
 const TableContainer = styled.div`
@@ -225,7 +217,27 @@ const Table = styled.table`
 `;
 
 const TableHeader = styled.th`
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: white;
+  padding: 16px 12px;
+  text-align: center;
+  border-bottom: 2px solid #dee2e6;
+  font-weight: 600;
+  color: #495057;
+  
+  &:first-child {
+    border-top-left-radius: 12px;
+  }
+  
+  &:last-child {
+    border-top-right-radius: 12px;
+  }
+`;
+
+const TableRow = styled.tr`
+`;
+
+const TableHeader2 = styled.th`
+  background: white;
   padding: 16px 12px;
   text-align: left;
   border-bottom: 2px solid #dee2e6;
@@ -241,17 +253,18 @@ const TableHeader = styled.th`
   }
 `;
 
-const TableRow = styled.tr`
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background-color: #f8f9fa;
-    transform: scale(1.01);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
+const TableCell = styled.td`
+  padding: 16px 12px;
+  vertical-align: middle;
+  text-align: center;
+  border: 1px solid #ddd;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 13px;
+  white-space: nowrap;
 `;
 
-const TableCell = styled.td`
+const TableCell2 = styled.td`
   padding: 16px 12px;
   border-bottom: 1px solid #f1f3f4;
   vertical-align: middle;
@@ -259,23 +272,6 @@ const TableCell = styled.td`
   &:first-child {
     font-weight: 500;
     color: #2c3e50;
-  }
-`;
-
-const TeacherInfo = styled.div`
-  .teacher-name {
-    font-weight: 600;
-    color: #2c3e50;
-    font-size: 14px;
-  }
-  .teacher-username {
-    font-size: 12px;
-    color: #6c757d;
-    margin-top: 4px;
-    background: #f8f9fa;
-    padding: 2px 8px;
-    border-radius: 12px;
-    display: inline-block;
   }
 `;
 
@@ -483,7 +479,7 @@ function ClassDetail() {
             </InfoRow>
             <InfoRow>
               <InfoLabel>GVCN:</InfoLabel>
-              <InfoValue>{classDetail.teacher_full_name || classDetail.teacher_name || 'Chưa có GVCN'}</InfoValue>
+              <InfoValue>{classDetail.teacher_full_name ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})` : 'Chưa có GV'}</InfoValue>
             </InfoRow>
             <InfoRow>
               <InfoLabel>Trạng thái:</InfoLabel>
@@ -494,11 +490,11 @@ function ClassDetail() {
           <div>
             <InfoRow>
               <InfoLabel>Mã phòng học:</InfoLabel>
-              <InfoValue>{classDetail.room_code || 'N/A'}</InfoValue>
+              <InfoValue>{classDetail.room_code || 'Chưa xếp phòng'}</InfoValue>
             </InfoRow>
             <InfoRow>
-              <InfoLabel>Phòng học:</InfoLabel>
-              <InfoValue>{classDetail.room_name || 'Chưa xếp phòng'}</InfoValue>
+              <InfoLabel>Tên phòng:</InfoLabel>
+              <InfoValue>{classDetail.room_name || 'N/A'}</InfoValue>
             </InfoRow>
             <InfoRow>
               <InfoLabel>Loại phòng:</InfoLabel>
@@ -530,38 +526,23 @@ function ClassDetail() {
             <Table>
               <thead>
                 <tr>
-                  <TableHeader>Mã môn</TableHeader>
-                  <TableHeader>Tên môn</TableHeader>
-                  <TableHeader>Giáo viên</TableHeader>
-                  <TableHeader>Tiết/tuần</TableHeader>
-                  <TableHeader>Tiết liên tiếp</TableHeader>
-                  <TableHeader>Trạng thái</TableHeader>
+                  <TableHeader2 style={{ width: '15%' }}>Mã môn</TableHeader2>
+                  <TableHeader2 style={{ width: '30%' }}>Tên môn</TableHeader2>
+                  <TableHeader2 style={{ width: '25%' }}>Giáo viên</TableHeader2>
+                  <TableHeader2 style={{ width: '15%' }}>Tiết/tuần</TableHeader2>
+                  <TableHeader2 style={{ width: '15%' }}>Tiết liên tiếp tối đa cho phép</TableHeader2>
                 </tr>
               </thead>
               <tbody>
                 {classSubjects.map((subject, index) => (
                   <TableRow key={subject.subject_code || index}>
-                    <TableCell>{subject.subject_code || 'N/A'}</TableCell>
-                    <TableCell>{subject.subject_name || 'N/A'}</TableCell>
-                    <TableCell>
-                      <TeacherInfo>
-                        <div className="teacher-name">
-                          {subject.teacher_name || 'Chưa phân công'}
-                        </div>
-                        {subject.teacher_user_name && (
-                          <div className="teacher-username">
-                            ({subject.teacher_user_name})
-                          </div>
-                        )}
-                      </TeacherInfo>
-                    </TableCell>
-                    <TableCell>{subject.weekly_slot || 0}</TableCell>
-                    <TableCell>{subject.continuous_slot || 0}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={subject.status}>
-                        {subject.status || 'N/A'}
-                      </StatusBadge>
-                    </TableCell>
+                    <TableCell2>{subject.subject_code || 'N/A'}</TableCell2>
+                    <TableCell2>{subject.subject_name || 'N/A'}</TableCell2>
+                    <TableCell2>
+                      {subject.teacher_user_name || 'Chưa phân công'}
+                    </TableCell2>
+                    <TableCell2>{subject.weekly_slot || 0}</TableCell2>
+                    <TableCell2>{subject.continuous_slot || 0}</TableCell2>
                   </TableRow>
                 ))}
               </tbody>
@@ -594,7 +575,7 @@ function ScheduleTable({ config, timeSlots }) {
     'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
   ];
   // Lấy tối đa 8 tiết
-  const slots = timeSlots.slice(0, 8);
+  const slots = timeSlots;
   // Nếu không có config, tạo object với các ngày đều là mảng rỗng
   const safeConfig = config && Object.keys(config).length > 0
     ? config
@@ -614,10 +595,7 @@ function ScheduleTable({ config, timeSlots }) {
           {slots.map((slot, i) => (
             <TableRow key={slot.id || i}>
               <TableCell>
-                <b>{slot.id}</b>
-                <div style={{ fontSize: 12, color: '#888' }}>
-                  {slot.start_time} - {slot.end_time}
-                </div>
+                <b>Tiết {slot.id}</b>
               </TableCell>
               {dayKeys.map((dayKey, d) => {
                 const slotArr = Array.isArray(safeConfig[dayKey]) ? safeConfig[dayKey] : [];
