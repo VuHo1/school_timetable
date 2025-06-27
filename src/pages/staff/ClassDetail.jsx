@@ -144,7 +144,6 @@ const InfoLabel = styled.span`
   min-width: 120px;
   
   &::after {
-    content: ":";
     margin-left: 4px;
   }
 `;
@@ -483,7 +482,7 @@ function ClassDetail() {
             </InfoRow>
             <InfoRow>
               <InfoLabel>GVCN:</InfoLabel>
-              <InfoValue>{classDetail.teacher_full_name || classDetail.teacher_name || 'Chưa có GVCN'}</InfoValue>
+              <InfoValue>{classDetail.teacher_full_name ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})` : 'Chưa có GV'}</InfoValue>
             </InfoRow>
             <InfoRow>
               <InfoLabel>Trạng thái:</InfoLabel>
@@ -494,11 +493,11 @@ function ClassDetail() {
           <div>
             <InfoRow>
               <InfoLabel>Mã phòng học:</InfoLabel>
-              <InfoValue>{classDetail.room_code || 'N/A'}</InfoValue>
+              <InfoValue>{classDetail.room_code || 'Chưa xếp phòng'}</InfoValue>
             </InfoRow>
             <InfoRow>
-              <InfoLabel>Phòng học:</InfoLabel>
-              <InfoValue>{classDetail.room_name || 'Chưa xếp phòng'}</InfoValue>
+              <InfoLabel>Tên phòng:</InfoLabel>
+              <InfoValue>{classDetail.room_name || 'N/A'}</InfoValue>
             </InfoRow>
             <InfoRow>
               <InfoLabel>Loại phòng:</InfoLabel>

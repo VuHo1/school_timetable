@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-    fetchClassDetail,
-    fetchAvailableTeachers,
-    fetchAvailableRooms,
-    fetchAllTeachers,
-    fetchAllRooms,
-    updateClassTeacher,
-    updateClassRoom
+  fetchClassDetail,
+  fetchAvailableTeachers,
+  fetchAvailableRooms,
+  fetchAllTeachers,
+  fetchAllRooms,
+  updateClassTeacher,
+  updateClassRoom
 } from '../../api';
 import styled from 'styled-components';
 
@@ -296,271 +296,269 @@ const Success = styled.div`
 `;
 
 function UpdateClass() {
-    const { classCode } = useParams();
-    const { user } = useAuth();
-    const navigate = useNavigate();
-    
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    
-    const [classDetail, setClassDetail] = useState(null);
-    const [availableTeachers, setAvailableTeachers] = useState([]);
-    const [availableRooms, setAvailableRooms] = useState([]);
-    
-    const [selectedTeacher, setSelectedTeacher] = useState('');
-    const [selectedRoom, setSelectedRoom] = useState('');
+  const { classCode } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        loadData();
-    }, [classCode]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-    const loadData = async () => {
-        setLoading(true);
-        setError('');
-        try {
-            const token = localStorage.getItem('authToken');
-            
-            // Try available first, fallback to all if empty
-            let [classData, teachers, rooms] = await Promise.all([
-                fetchClassDetail(token, classCode),
-                fetchAvailableTeachers(token),
-                fetchAvailableRooms(token)
-            ]);
-            
-            // If no available teachers/rooms, load all
-            if (teachers.length === 0) {
-                console.log('No available teachers, loading all teachers...');
-                teachers = await fetchAllTeachers(token, { limit: 100 });
-            }
-            
-            if (rooms.length === 0) {
-                console.log('No available rooms, loading all rooms...');
-                rooms = await fetchAllRooms(token, { limit: 100 });
-            }
-            
-            console.log('Available Teachers:', teachers);
-            console.log('Available Rooms:', rooms);
-            console.log('Class Data:', classData);
-            
-            setClassDetail(classData);
-            setAvailableTeachers(teachers);
-            setAvailableRooms(rooms);
-            
-            // Set current values
-            setSelectedTeacher(classData.teacher_user_name || '');
-            setSelectedRoom(classData.room_code || '');
-            
-        } catch (err) {
-            console.error('Load data error:', err);
-            setError('Không thể tải dữ liệu: ' + err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const [classDetail, setClassDetail] = useState(null);
+  const [availableTeachers, setAvailableTeachers] = useState([]);
+  const [availableRooms, setAvailableRooms] = useState([]);
 
-    const handleUpdateTeacher = async () => {
-        if (!selectedTeacher) {
-            setError('Vui lòng chọn giáo viên chủ nhiệm');
-            return;
-        }
-        
-        setSaving(true);
-        setError('');
-        setSuccess('');
-        
-        try {
-            const token = localStorage.getItem('authToken');
-            const result = await updateClassTeacher(token, classCode, selectedTeacher);
-            
-            if (result.success) {
-                setSuccess('Cập nhật giáo viên chủ nhiệm thành công!');
-                // Reload class detail
-                const updatedClassData = await fetchClassDetail(token, classCode);
-                setClassDetail(updatedClassData);
-            } else {
-                throw new Error(result.description || 'Cập nhật thất bại');
-            }
-        } catch (err) {
-            setError('Lỗi khi cập nhật giáo viên: ' + err.message);
-        } finally {
-            setSaving(false);
-        }
-    };
+  const [selectedTeacher, setSelectedTeacher] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState('');
 
-    const handleUpdateRoom = async () => {
-        if (!selectedRoom) {
-            setError('Vui lòng chọn phòng học');
-            return;
-        }
-        
-        setSaving(true);
-        setError('');
-        setSuccess('');
-        
-        try {
-            const token = localStorage.getItem('authToken');
-            const result = await updateClassRoom(token, classCode, selectedRoom);
-            
-            if (result.success) {
-                setSuccess('Cập nhật phòng học thành công!');
-                // Reload class detail
-                const updatedClassData = await fetchClassDetail(token, classCode);
-                setClassDetail(updatedClassData);
-            } else {
-                throw new Error(result.description || 'Cập nhật thất bại');
-            }
-        } catch (err) {
-            setError('Lỗi khi cập nhật phòng học: ' + err.message);
-        } finally {
-            setSaving(false);
-        }
-    };
+  useEffect(() => {
+    loadData();
+  }, [classCode]);
 
-    const handleBack = () => {
-        navigate('/staff/class');
-    };
+  const loadData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const token = localStorage.getItem('authToken');
 
-    if (loading) {
-        return (
-            <Container>
-                <Loading>Đang tải dữ liệu...</Loading>
-            </Container>
-        );
+      // Try available first, fallback to all if empty
+      let [classData, teachers, rooms] = await Promise.all([
+        fetchClassDetail(token, classCode),
+        fetchAvailableTeachers(token),
+        fetchAvailableRooms(token)
+      ]);
+
+      // If no available teachers/rooms, load all
+      if (teachers.length === 0) {
+        console.log('No available teachers, loading all teachers...');
+        teachers = await fetchAllTeachers(token, { limit: 100 });
+      }
+
+      if (rooms.length === 0) {
+        console.log('No available rooms, loading all rooms...');
+        rooms = await fetchAllRooms(token, { limit: 100 });
+      }
+
+      console.log('Available Teachers:', teachers);
+      console.log('Available Rooms:', rooms);
+      console.log('Class Data:', classData);
+
+      setClassDetail(classData);
+      setAvailableTeachers(teachers);
+      setAvailableRooms(rooms);
+
+      // Set current values
+      setSelectedTeacher(classData.teacher_user_name || '');
+      setSelectedRoom(classData.room_code || '');
+
+    } catch (err) {
+      console.error('Load data error:', err);
+      setError('Không thể tải dữ liệu: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateTeacher = async () => {
+    if (!selectedTeacher) {
+      setError('Vui lòng chọn giáo viên chủ nhiệm');
+      return;
     }
 
-    if (!classDetail) {
-        return (
-            <Container>
-                <ErrorMessage>Không tìm thấy thông tin lớp học</ErrorMessage>
-            </Container>
-        );
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const result = await updateClassTeacher(token, classCode, selectedTeacher);
+
+      if (result.success) {
+        setSuccess('Cập nhật giáo viên chủ nhiệm thành công!');
+        // Reload class detail
+        const updatedClassData = await fetchClassDetail(token, classCode);
+        setClassDetail(updatedClassData);
+      } else {
+        throw new Error(result.description || 'Cập nhật thất bại');
+      }
+    } catch (err) {
+      setError('Lỗi khi cập nhật giáo viên: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateRoom = async () => {
+    if (!selectedRoom) {
+      setError('Vui lòng chọn phòng học');
+      return;
     }
 
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const result = await updateClassRoom(token, classCode, selectedRoom);
+
+      if (result.success) {
+        setSuccess('Cập nhật phòng học thành công!');
+        // Reload class detail
+        const updatedClassData = await fetchClassDetail(token, classCode);
+        setClassDetail(updatedClassData);
+      } else {
+        throw new Error(result.description || 'Cập nhật thất bại');
+      }
+    } catch (err) {
+      setError('Lỗi khi cập nhật phòng học: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBack = () => {
+    navigate('/staff/class');
+  };
+
+  if (loading) {
     return (
-        <Container>
-            <Header>
-                <BackButton onClick={handleBack}>
-                    Quay lại
-                </BackButton>
-                <Title>Cập nhật lớp học: {classCode}</Title>
-            </Header>
-
-            <FormContainer>
-                {error && <ErrorMessage>{error}</ErrorMessage>}
-                {success && <Success>{success}</Success>}
-
-                <Form>
-                    {/* Update Teacher Section */}
-                    <FormSection>
-                        <SectionTitle>Cập nhật giáo viên chủ nhiệm</SectionTitle>
-                        
-                        <CurrentInfo>
-                            <CurrentLabel>Hiện tại:</CurrentLabel>
-                            <CurrentValue>
-                                {classDetail.teacher_full_name || 'Chưa có GVCN'}
-                                {classDetail.teacher_user_name && ` (${classDetail.teacher_user_name})`}
-                            </CurrentValue>
-                        </CurrentInfo>
-
-                        <FormGroup>
-                            <Label>Chọn giáo viên chủ nhiệm mới:</Label>
-                            <Select
-                                value={selectedTeacher}
-                                onChange={(e) => setSelectedTeacher(e.target.value)}
-                                disabled={saving}
-                            >
-                                <option value="">-- Chọn giáo viên --</option>
-                                {availableTeachers.length > 0 ? (
-                                    availableTeachers.map((teacher) => (
-                                        <option key={teacher.user_name} value={teacher.user_name}>
-                                            {teacher.full_name} ({teacher.user_name})
-                                            {teacher.class_code && ` - Đang dạy: ${teacher.class_code}`}
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option disabled>Không có giáo viên nào</option>
-                                )}
-                            </Select>
-                            {availableTeachers.length === 0 && (
-                                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                    Không có giáo viên available. Vui lòng liên hệ admin để thêm giáo viên.
-                                </div>
-                            )}
-                        </FormGroup>
-
-                        <ButtonGroup>
-                            <SaveButton
-                                type="button"
-                                onClick={handleUpdateTeacher}
-                                disabled={saving || !selectedTeacher || selectedTeacher === classDetail.teacher_user_name}
-                            >
-                                {saving ? 'Đang cập nhật...' : 'Cập nhật GVCN'}
-                            </SaveButton>
-                        </ButtonGroup>
-                    </FormSection>
-
-                    {/* Update Room Section */}
-                    <FormSection>
-                        <SectionTitle>Cập nhật phòng học</SectionTitle>
-                        
-                        <CurrentInfo>
-                            <CurrentLabel>Hiện tại:</CurrentLabel>
-                            <CurrentValue>
-                                {classDetail.room_name || 'Chưa xếp phòng'}
-                                {classDetail.room_code && ` (${classDetail.room_code})`}
-                            </CurrentValue>
-                        </CurrentInfo>
-
-                        <FormGroup>
-                            <Label>Chọn phòng học mới:</Label>
-                            <Select
-                                value={selectedRoom}
-                                onChange={(e) => setSelectedRoom(e.target.value)}
-                                disabled={saving}
-                            >
-                                <option value="">-- Chọn phòng học --</option>
-                                {availableRooms.length > 0 ? (
-                                    availableRooms.map((room) => (
-                                        <option key={room.room_code} value={room.room_code}>
-                                            {room.room_name} ({room.room_code})
-                                            {room.room_type_name && ` - ${room.room_type_name}`}
-                                            {room.class_code && ` - Đang dùng: ${room.class_code}`}
-                                        </option>
-                                    ))
-                                ) : (
-                                    <option disabled>Không có phòng học nào</option>
-                                )}
-                            </Select>
-                            {availableRooms.length === 0 && (
-                                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-                                    Không có phòng học available. Vui lòng liên hệ admin để thêm phòng học.
-                                </div>
-                            )}
-                        </FormGroup>
-
-                        <ButtonGroup>
-                            <SaveButton
-                                type="button"
-                                onClick={handleUpdateRoom}
-                                disabled={saving || !selectedRoom || selectedRoom === classDetail.room_code}
-                            >
-                                {saving ? 'Đang cập nhật...' : 'Cập nhật phòng học'}
-                            </SaveButton>
-                        </ButtonGroup>
-                    </FormSection>
-
-                    {/* Navigation Buttons */}
-                    <ButtonGroup>
-                        <CancelButton type="button" onClick={handleBack}>
-                            Quay lại danh sách
-                        </CancelButton>
-                    </ButtonGroup>
-                </Form>
-            </FormContainer>
-        </Container>
+      <Container>
+        <Loading>Đang tải dữ liệu...</Loading>
+      </Container>
     );
+  }
+
+  if (!classDetail) {
+    return (
+      <Container>
+        <ErrorMessage>Không tìm thấy thông tin lớp học</ErrorMessage>
+      </Container>
+    );
+  }
+
+  return (
+    <Container>
+      <Header>
+        <BackButton onClick={handleBack}>
+          Quay lại
+        </BackButton>
+        <Title>Cập nhật lớp học: {classCode}</Title>
+      </Header>
+
+      <FormContainer>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        {success && <Success>{success}</Success>}
+
+        <Form>
+          {/* Update Teacher Section */}
+          <FormSection>
+            <SectionTitle>Cập nhật giáo viên chủ nhiệm</SectionTitle>
+
+            <CurrentInfo>
+              <CurrentLabel>Hiện tại:</CurrentLabel>
+              <CurrentValue>
+                {classDetail.teacher_full_name ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})` : 'Chưa có GV'}
+              </CurrentValue>
+            </CurrentInfo>
+
+            <FormGroup>
+              <Label>Chọn giáo viên chủ nhiệm mới:</Label>
+              <Select
+                value={selectedTeacher}
+                onChange={(e) => setSelectedTeacher(e.target.value)}
+                disabled={saving}
+              >
+                <option value="">-- Chọn giáo viên --</option>
+                {availableTeachers.length > 0 ? (
+                  availableTeachers.map((teacher) => (
+                    <option key={teacher.user_name} value={teacher.user_name}>
+                      {teacher.full_name} ({teacher.user_name})
+                      {teacher.class_code && ` - Đang dạy: ${teacher.class_code}`}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Không có giáo viên nào</option>
+                )}
+              </Select>
+              {availableTeachers.length === 0 && (
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  Không có giáo viên available. Vui lòng liên hệ admin để thêm giáo viên.
+                </div>
+              )}
+            </FormGroup>
+
+            <ButtonGroup>
+              <SaveButton
+                type="button"
+                onClick={handleUpdateTeacher}
+                disabled={saving || !selectedTeacher || selectedTeacher === classDetail.teacher_user_name}
+              >
+                {saving ? 'Đang cập nhật...' : 'Cập nhật GVCN'}
+              </SaveButton>
+            </ButtonGroup>
+          </FormSection>
+
+          {/* Update Room Section */}
+          <FormSection>
+            <SectionTitle>Cập nhật phòng học</SectionTitle>
+
+            <CurrentInfo>
+              <CurrentLabel>Hiện tại:</CurrentLabel>
+              <CurrentValue>
+                {classDetail.room_name ? `${classDetail.room_name} (${classDetail.room_code})` : 'Chưa xếp phòng'}
+              </CurrentValue>
+            </CurrentInfo>
+
+            <FormGroup>
+              <Label>Chọn phòng học mới:</Label>
+              <Select
+                value={selectedRoom}
+                onChange={(e) => setSelectedRoom(e.target.value)}
+                disabled={saving}
+              >
+                <option value="">-- Chọn phòng học --</option>
+                {availableRooms.length > 0 ? (
+                  availableRooms.map((room) => (
+                    <option key={room.room_code} value={room.room_code}>
+                      {room.room_name} ({room.room_code})
+                      {room.room_type_name && ` - ${room.room_type_name}`}
+                      {room.class_code && ` - Đang dùng: ${room.class_code}`}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Không có phòng học nào</option>
+                )}
+              </Select>
+              {availableRooms.length === 0 && (
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  Không có phòng học available. Vui lòng liên hệ admin để thêm phòng học.
+                </div>
+              )}
+            </FormGroup>
+
+            <ButtonGroup>
+              <SaveButton
+                type="button"
+                onClick={handleUpdateRoom}
+                disabled={saving || !selectedRoom || selectedRoom === classDetail.room_code}
+              >
+                {saving ? 'Đang cập nhật...' : 'Cập nhật phòng học'}
+              </SaveButton>
+            </ButtonGroup>
+          </FormSection>
+
+          {/* Navigation Buttons */}
+          <ButtonGroup>
+            <CancelButton type="button" onClick={handleBack}>
+              Quay lại danh sách
+            </CancelButton>
+          </ButtonGroup>
+        </Form>
+      </FormContainer>
+    </Container>
+  );
 }
 
 export default UpdateClass; 
