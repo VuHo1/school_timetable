@@ -599,6 +599,7 @@ const ActionMenuText = styled.span`
 function TeacherManagement() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -641,39 +642,35 @@ function TeacherManagement() {
     weekly_maximum_day: 0,
   });
 
-  // Fetch teachers from API
   const fetchTeachers = async () => {
+    setLoading(true);
+    setError('');
     try {
-      setLoading(true);
-
       const token = localStorage.getItem('authToken');
-
-      // Special case: if filter is "AVAILABLE", use different endpoint
-
-      // Use fetchAllTeachers from api.js for regular teacher list with enhanced parameters
-      const params = {
+      const params = ({
         page: currentPage,
         limit: 10,
-      };
-
-      // Add search parameter if provided
+      });
       if (searchTerm && searchTerm.trim()) {
         params.search = searchTerm.trim();
       }
-
-      // Add filters if provided
       if (statusFilter) {
         params.filter = params.filter || {};
         params.filter.status = statusFilter;
       }
+      const result = await fetchAllTeachers(token, params);
 
-      const teacherList = await fetchAllTeachers(token, params);
-
-      setTeachers(teacherList || []);
-      setTotalPages(Math.ceil((teacherList?.length || 0) / 20));
-
-      toast.success(`Tải thành công ${teacherList?.length || 0} giáo viên`);
-
+      if (result && result.data_set) {
+        setTeachers(result.data_set);
+        if (result.pagination) {
+          setTotalPages(result.pagination.last || 1);
+        } else {
+          setTotalPages(Math.ceil((result.data_set.length) / 10));
+        }
+      } else {
+        setClasses([]);
+        setTotalPages(1);
+      }
     } catch (error) {
       console.error('Error fetching teachers:', error);
 
@@ -708,7 +705,9 @@ function TeacherManagement() {
     document.addEventListener('mouseleave', handleMouseLeave);
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, []);
-
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
   // Handle click outside to close action menu
   useEffect(() => {
     function handleClickOutside(event) {
@@ -877,7 +876,7 @@ function TeacherManagement() {
   const fetchAvailableSubjects = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/subject?filter[status]=Đang hoạt động&limit=100`, {
+      const response = await fetch(`${API_BASE_URL}/api/subject?filter[status]=Đang hoạt động`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -1887,7 +1886,7 @@ function TeacherManagement() {
                     <TableCell>{teacher.full_name}</TableCell>
                     <TableCell>{teacher.email}</TableCell>
                     <TableCell>{teacher.phone || 'N/A'}</TableCell>
-                    <TableCell>{teacher.homeroom_class || teacher.class_code || 'Chưa có lớp'}</TableCell>
+                    <TableCell>{teacher.homeroom_class || teacher.hoomroom_class || 'Chưa có lớp'}</TableCell>
                     <TableCell>
                       <StatusBadge status={teacher.status}>
                         {teacher.status}
@@ -1923,7 +1922,7 @@ function TeacherManagement() {
       {totalPages > 1 && (
         <Pagination>
           <PaginationButton
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
             ← Trước
@@ -1937,7 +1936,7 @@ function TeacherManagement() {
               <PaginationButton
                 key={pageNum}
                 active={pageNum === currentPage}
-                onClick={() => setCurrentPage(pageNum)}
+                onClick={() => handlePageChange(pageNum)}
               >
                 {pageNum}
               </PaginationButton>
@@ -1945,10 +1944,10 @@ function TeacherManagement() {
           })}
 
           <PaginationButton
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
-            Tiếp →
+            Sau →
           </PaginationButton>
         </Pagination>
       )}
