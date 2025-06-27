@@ -22,10 +22,11 @@ const AnimatedBackground = styled(motion.div)`
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.3) 0%, transparent 70%),
-              radial-gradient(circle at 70% 70%, rgba(236, 72, 153, 0.3) 0%, transparent 70%);
+  background: radial-gradient(circle at 30% 30%, rgba(63, 41, 255, 0.3) 0%, transparent 70%),
+              radial-gradient(circle at 70% 70%, rgba(205, 219, 228, 0.3) 0%, transparent 70%);
   z-index: 0;
 `;
+
 
 const WelcomeCard = styled(motion.div)`
   background: rgba(255, 255, 255, 0.95);
