@@ -31,7 +31,7 @@ function AppRoutes() {
   // Tạo default route dựa trên abilities
   const getDefaultRoute = () => {
 
-    if (!abilities || abilities.length === 0) return '/profile';
+    if (!abilities || abilities.length === 0) return '/admin/dashboard';
 
     // Priority order for default routes (Admin first, then Staff)
     const routePriority = [
@@ -58,7 +58,7 @@ function AppRoutes() {
       }
     }
 
-    return '/profile';
+    return '/admin/dashboard';
   };
 
   const routes = useMemo(() => (

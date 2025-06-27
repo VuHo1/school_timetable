@@ -231,7 +231,6 @@ const AvatarMenuItem = styled.div`
 
 const Content = styled.main`
   min-height: calc(100vh - 70px);
-  padding-top: 50px; 
 `;
 
 const Overlay = styled.div.withConfig({

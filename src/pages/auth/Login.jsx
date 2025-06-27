@@ -166,17 +166,17 @@ function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const success = await login(userName, password);
-            if (success) {
-                showToast('Đăng nhập thành công!', 'success');
+            const response = await login(userName, password);
+            if (response.success) {
+                showToast(response.description || 'Đăng nhập thành công!', 'success');
                 setTimeout(() => {
                     navigate('/admin/dashboard');
                 }, 3000);
             } else {
-                showToast('Đăng nhập thất bại. Vui lòng kiểm tra lại.', 'error');
+                showToast(response.description || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.', 'error');
             }
         } catch (err) {
-            showToast('Đã có lỗi xảy ra khi đăng nhập.', 'error');
+            showToast(err.message || 'Đã có lỗi xảy ra khi đăng nhập.', 'error');
             console.error('Login error:', err.message);
         }
     };
@@ -188,17 +188,17 @@ function Login() {
                 throw new Error('Không nhận được credential từ Google.');
             }
 
-            const success = await signInWithGoogle(credential);
-            if (success) {
-                showToast('Đăng nhập thành công!', 'success');
+            const response = await signInWithGoogle(credential);
+            if (response.success) {
+                showToast(response.description || 'Đăng nhập thành công!', 'success');
                 setTimeout(() => {
                     navigate('/admin/dashboard');
                 }, 3000);
             } else {
-                showToast('Đăng nhập thất bại. Vui lòng kiểm tra lại.', 'error');
+                showToast(response.description || 'Đăng nhập thất bại. Vui lòng kiểm tra lại.', 'error');
             }
         } catch (err) {
-            showToast('Đã có lỗi xảy ra khi đăng nhập bằng Google.', 'error');
+            showToast(err.message || 'Đã có lỗi xảy ra khi đăng nhập bằng Google.', 'error');
             console.error('Google Sign-In error:', err.message);
         }
     };
@@ -215,9 +215,9 @@ function Login() {
                 throw new Error('Email không hợp lệ. Vui lòng nhập email.');
             }
 
-            const body = JSON.stringify(email);
+            const body = JSON.stringify({ email });
 
-                         const response = await fetch(`${(import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online')}/api/auth/reset-password`, {
+            const response = await fetch(`${(import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online')}/api/auth/reset-password`, {
                 method: 'PUT',
                 headers: {
                     'Accept': 'text/plain',
@@ -268,7 +268,6 @@ function Login() {
             type: showPassword ? 'text' : 'password',
             showPasswordIcon: showPassword ? <EyeOff size={16} /> : <Eye size={16} />,
             value: password,
-
             onChange: (e) => setPassword(e.target.value),
         },
     ];
