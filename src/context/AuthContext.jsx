@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Get API base URL with fallback
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
@@ -11,6 +12,7 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [abilities, setAbilities] = useState([]);
     const [isProfileFetched, setIsProfileFetched] = useState(false);
+    const navigate = useNavigate();
 
     const fetchUserProfile = async (token) => {
         if (isProfileFetched) {
@@ -38,12 +40,11 @@ export function AuthProvider({ children }) {
                     const isAvatarChanged = prevUser?.avatar !== data.data.avatar;
                     if (isAvatarChanged || JSON.stringify(prevUser?.data) !== JSON.stringify(data.data)) {
                         console.log('Updating user due to avatar change or other differences:', { ...data.data, token });
-                        return { ...data.data, token }; // Thêm token vào user object
+                        return { ...data.data, token };
                     }
                     return prevUser;
                 });
 
-                // Lưu abilities vào localStorage và state
                 if (data.data.abilities && Array.isArray(data.data.abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(data.data.abilities));
                     setAbilities(data.data.abilities);
@@ -51,14 +52,15 @@ export function AuthProvider({ children }) {
                     setAbilities([]);
                 }
                 setIsProfileFetched(true);
+            } else {
+                throw new Error('Profile fetch unsuccessful');
             }
         } catch (error) {
             console.error('Fetch profile error:', error.message);
-            setUser(null);
+            await logout();
+            navigate('/login');
         } finally {
-            if (loading) {
-                setLoading(false);
-            }
+            setLoading(false);
         }
     };
 
@@ -67,15 +69,8 @@ export function AuthProvider({ children }) {
         const storedRole = localStorage.getItem('role');
         const storedAbilities = localStorage.getItem('abilities');
 
-        if (token && storedRole && !isProfileFetched) {
-            setRole(prevRole => {
-                if (prevRole !== storedRole) {
-                    return storedRole;
-                }
-                return prevRole;
-            });
-
-            // Load abilities từ localStorage nếu có
+        if (token && storedRole) {
+            setRole(prevRole => (prevRole !== storedRole ? storedRole : prevRole));
             if (storedAbilities) {
                 try {
                     const parsedAbilities = JSON.parse(storedAbilities);
@@ -84,14 +79,12 @@ export function AuthProvider({ children }) {
                     console.error('Error parsing stored abilities:', error);
                 }
             }
-
             fetchUserProfile(token);
-        } else if (!token || !storedRole) {
-            if (loading) {
-                setLoading(false);
-            }
+        } else {
+            setLoading(false);
+            navigate('/login');
         }
-    }, []);
+    }, [navigate]);
 
     const login = async (user_name, password) => {
         try {
@@ -114,28 +107,24 @@ export function AuthProvider({ children }) {
 
             const data = await response.json();
             const { token, role_name, abilities } = data.data;
-            const userRole = role_name;
 
             if (token) {
                 localStorage.setItem('authToken', token);
-                localStorage.setItem('role', userRole);
-                setRole(userRole);
-
-                // Set abilities from login response
+                localStorage.setItem('role', role_name);
+                setRole(role_name);
                 if (abilities && Array.isArray(abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(abilities));
                     setAbilities(abilities);
                 }
-
                 await fetchUserProfile(token);
-                return true;
+                return { success: true, description: data.description || 'Đăng nhập thành công' };
             } else {
-                console.error('Invalid role:', role_name);
-                return false;
+                console.error('No token received');
+                return { success: false, description: 'Đăng nhập thất bại: Không nhận được token' };
             }
         } catch (error) {
             console.error('Login error:', error.message);
-            return false;
+            return { success: false, description: error.message || 'Đăng nhập thất bại' };
         } finally {
             setLoading(false);
         }
@@ -162,28 +151,24 @@ export function AuthProvider({ children }) {
 
             const data = await response.json();
             const { token, role_name, abilities } = data.data;
-            const userRole = role_name;
 
             if (token) {
                 localStorage.setItem('authToken', token);
-                localStorage.setItem('role', userRole);
-                setRole(userRole);
-
-                // Set abilities from google signin response
+                localStorage.setItem('role', role_name);
+                setRole(role_name);
                 if (abilities && Array.isArray(abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(abilities));
                     setAbilities(abilities);
                 }
-
                 await fetchUserProfile(token);
-                return true;
+                return { success: true, description: data.description || 'Đăng nhập bằng Google thành công' };
             } else {
-                console.error('Invalid role:', role_name);
-                return false;
+                console.error('No token received');
+                return { success: false, description: 'Đăng nhập bằng Google thất bại: Không nhận được token' };
             }
         } catch (error) {
             console.error('Google Sign-In error:', error.message);
-            return false;
+            return { success: false, description: error.message || 'Đăng nhập bằng Google thất bại' };
         } finally {
             setLoading(false);
         }
@@ -203,7 +188,6 @@ export function AuthProvider({ children }) {
         } catch (error) {
             console.error('Logout API error:', error);
         } finally {
-            // Clear all data
             localStorage.removeItem('authToken');
             localStorage.removeItem('role');
             localStorage.removeItem('abilities');
@@ -238,4 +222,4 @@ export function useAuth() {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
-} 
+}

@@ -30,6 +30,7 @@ const Title = styled.h1`
   font-size: 28px;
   font-weight: 600;
   margin: 0;
+
 `;
 
 const AddButton = styled.button`
@@ -384,8 +385,11 @@ const CloseButton = styled.button`
   border: none;
   font-size: 24px;
   cursor: pointer;
+
+  font-size: 12px;
+      margin-top: 8px;
+        margin-left: 397px;
   color: #666;
-  
   &:hover {
     color: #333;
   }
@@ -832,12 +836,15 @@ export default function UserAccount() {
 
   return (
     <Container>
+
+
       <Header>
         <Title>👨‍💼 Quản lý tài khoản</Title>
         <AddButton onClick={() => setIsCreateModalOpen(true)}>
           + Tạo tài khoản
         </AddButton>
       </Header>
+
 
       <FilterSection>
         <SearchInput

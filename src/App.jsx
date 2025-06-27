@@ -21,6 +21,8 @@ import SubjectManagement from './pages/subject/SubjectManagement';
 import RoomManagement from './pages/room/RoomManagement';
 import TimeslotManagement from './pages/timeslot/TimeslotManagement';
 import Notification from './pages/admin/Notification';
+import SystemError from './pages/admin/SystemError';
+import UserRole from './pages/admin/UserRole'
 import { useMemo } from 'react';
 
 function AppRoutes() {
@@ -28,7 +30,35 @@ function AppRoutes() {
 
   // Tạo default route dựa trên abilities
   const getDefaultRoute = () => {
-    return '/profile';
+
+    if (!abilities || abilities.length === 0) return '/admin/dashboard';
+
+    // Priority order for default routes (Admin first, then Staff)
+    const routePriority = [
+      'Quản lí tài khoản',
+      'Cấu hình hệ thống',
+      'Danh mục dùng chung',
+      'Thời khóa biểu',
+      'Quản lí lớp học',
+      'Cá nhân',
+      'Nhật ký & Giám sát'
+    ];
+
+    for (const priority of routePriority) {
+      if (abilities.includes(priority)) {
+        switch (priority) {
+          case 'Quản lí tài khoản': return '/admin/user_account';
+          case 'Cấu hình hệ thống': return '/admin/setting';
+          case 'Danh mục dùng chung': return '/admin/code_list';
+          case 'Thời khóa biểu': return '/staff/schedule';
+          case 'Quản lí lớp học': return '/staff/class';
+          case 'Cá nhân': return '/profile';
+          case 'Nhật ký & Giám sát': return '/log';
+        }
+      }
+    }
+
+    return '/admin/dashboard';
   };
 
   const routes = useMemo(() => (
@@ -131,12 +161,12 @@ function AppRoutes() {
           } />
           <Route path="/role" element={
             <ProtectedRoute requiredAbility="Quản lí vai trò">
-              <PlaceholderPage title="Quản lí vai trò" icon="👥" />
+              <UserRole title="Quản lí vai trò" icon="👥" />
             </ProtectedRoute>
           } />
           <Route path="/log" element={
             <ProtectedRoute requiredAbility="Nhật ký & Giám sát">
-              <PlaceholderPage title="Nhật ký & Giám sát" icon="📊" />
+              <SystemError title="Nhật ký & Giám sát" icon="📊" />
             </ProtectedRoute>
           } />
 
