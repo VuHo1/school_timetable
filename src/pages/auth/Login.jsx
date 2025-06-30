@@ -182,9 +182,10 @@ function Login() {
                 vapidKey: "BPhsTV8zE59_96oWucSrB8gJM9Wutldm7LcHKdoz3WF0dsEARcP1rCL_bbdMgn6XAbs3GIkFRyZ2ehOPFlofa-k",
                 serviceWorkerRegistration: registration,
             });
-
+            console.log('✅ Lấy FCM token thành công');
             return deviceId;
         } catch (error) {
+            console.error("❌ Lỗi khi lấy FCM token:", error);
             return null;
         }
     };
