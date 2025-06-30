@@ -86,7 +86,7 @@ export function AuthProvider({ children }) {
         }
     }, [navigate]);
 
-    const login = async (user_name, password) => {
+    const login = async (user_name, password, device_id) => {
         try {
             setLoading(true);
             setIsProfileFetched(false);
@@ -96,7 +96,7 @@ export function AuthProvider({ children }) {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ user_name, password }),
+                body: JSON.stringify({ user_name, password, device_id }),
             });
 
             if (!response.ok) {
@@ -123,14 +123,14 @@ export function AuthProvider({ children }) {
                 return { success: false, description: 'Đăng nhập thất bại: Không nhận được token' };
             }
         } catch (error) {
-            console.error('Login error:', error.message);
+            console.error('Login error:', error);
             return { success: false, description: error.message || 'Đăng nhập thất bại' };
         } finally {
             setLoading(false);
         }
     };
 
-    const signInWithGoogle = async (credential) => {
+    const signInWithGoogle = async (token, device_id) => {
         try {
             setLoading(true);
             setIsProfileFetched(false);
@@ -140,7 +140,7 @@ export function AuthProvider({ children }) {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(credential),
+                body: JSON.stringify({ token, device_id }),
             });
 
             if (!response.ok) {
@@ -150,17 +150,17 @@ export function AuthProvider({ children }) {
             }
 
             const data = await response.json();
-            const { token, role_name, abilities } = data.data;
+            const { tokenResponse, role_name, abilities } = data.data;
 
-            if (token) {
-                localStorage.setItem('authToken', token);
+            if (tokenResponse) {
+                localStorage.setItem('authToken', tokenResponse);
                 localStorage.setItem('role', role_name);
                 setRole(role_name);
                 if (abilities && Array.isArray(abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(abilities));
                     setAbilities(abilities);
                 }
-                await fetchUserProfile(token);
+                await fetchUserProfile(tokenResponse);
                 return { success: true, description: data.description || 'Đăng nhập bằng Google thành công' };
             } else {
                 console.error('No token received');

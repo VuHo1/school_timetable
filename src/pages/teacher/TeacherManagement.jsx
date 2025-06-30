@@ -690,24 +690,6 @@ function TeacherManagement() {
       setLoading(false);
     }
   };
-  useEffect(() => {
-    const handleMouseLeave = (event) => {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.relatedTarget)) {
-        setShowStatusDropdown(false);
-      }
-      if (genderDropdownRef.current && !genderDropdownRef.current.contains(event.relatedTarget)) {
-        setShowGenderDropdown(false);
-      }
-      if (roleDropdownRef.current && !roleDropdownRef.current.contains(event.relatedTarget)) {
-        setShowRoleDropdown(false);
-      }
-    };
-    document.addEventListener('mouseleave', handleMouseLeave);
-    return () => document.removeEventListener('mouseleave', handleMouseLeave);
-  }, []);
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
   // Handle click outside to close action menu
   useEffect(() => {
     function handleClickOutside(event) {

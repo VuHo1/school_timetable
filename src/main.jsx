@@ -17,3 +17,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </GoogleOAuthProvider>
   </React.StrictMode>
 );
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  });
+}

@@ -6,6 +6,9 @@ import styled from 'styled-components';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '../../components/ToastProvider';
 import logo from '../../assets/tkb4-1.jpg';
+import { getToken } from "firebase/messaging";
+import { messaging } from "../../firebase/init";
+
 
 const Container = styled.div`
   display: flex;
@@ -153,6 +156,7 @@ const Text = styled.p`
   margin: -1px;
 `;
 
+
 function Login() {
     const [userName, setUserName] = useState('');
     const [password, setPassword] = useState('');
@@ -163,10 +167,32 @@ function Login() {
     const navigate = useNavigate();
     const { showToast } = useToast();
 
+    const getDeviceId = async () => {
+        try {
+            const permission = await Notification.requestPermission();
+            if (Notification.permission === "denied") {
+                alert("Trình duyệt đang chặn quyền thông báo. Vui lòng mở lại quyền trong cài đặt.");
+            }
+            if (permission !== "granted") {
+                return null;
+            }
+            const registration = await navigator.serviceWorker.ready;
+
+            const deviceId = await getToken(messaging, {
+                vapidKey: "BPhsTV8zE59_96oWucSrB8gJM9Wutldm7LcHKdoz3WF0dsEARcP1rCL_bbdMgn6XAbs3GIkFRyZ2ehOPFlofa-k",
+                serviceWorkerRegistration: registration,
+            });
+
+            return deviceId;
+        } catch (error) {
+            return null;
+        }
+    };
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await login(userName, password);
+            const deviceId = await getDeviceId();
+            const response = await login(userName, password, deviceId || "");
             if (response.success) {
                 showToast(response.description || 'Đăng nhập thành công!', 'success');
                 setTimeout(() => {
@@ -187,8 +213,9 @@ function Login() {
             if (!credential) {
                 throw new Error('Không nhận được credential từ Google.');
             }
-
-            const response = await signInWithGoogle(credential);
+            console.log('Google Sign-In credential:', credential);
+            const deviceId = await getDeviceId();
+            const response = await signInWithGoogle(credential, deviceId || "");
             if (response.success) {
                 showToast(response.description || 'Đăng nhập thành công!', 'success');
                 setTimeout(() => {
