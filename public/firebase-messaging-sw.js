@@ -7,7 +7,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDjdugOb3r6B2DPsg4fGMZ6RrTQjDKUKqQ",
   authDomain: "capstoneproject-hast.firebaseapp.com",
   projectId: "capstoneproject-hast",
-  storageBucket: "capstoneproject-hast.firebasestorage.app",
+  storageBucket: "capstoneproject-hast.appspot.com",
   messagingSenderId: "831512899464",
   appId: "1:831512899464:web:dd19ff602a343b7f9b543d",
   measurementId: "G-Y059CVPGQH"
