@@ -304,7 +304,7 @@ function Profile() {
                                         setDob(user.dob ? user.dob.split('T')[0] : '');
                                         setGender(genderOptions.find(opt => opt.caption === user.gender)?.code_id || '');
                                         setIsEditProfile(true);
-                                                }
+                                    }
                                 }}>Sửa hồ sơ</EditButton>
                                 <ForgotButton onClick={() => setIsChangePassword(true)}>Đổi mật khẩu</ForgotButton>
                             </ButtonContainer>

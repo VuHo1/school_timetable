@@ -8,6 +8,7 @@ import {
   blockUser,
   deleteUser,
   fetchRoles,
+  assignUserRole,
 } from '../../api';
 import styled from 'styled-components';
 import DatePicker from 'react-datepicker';
@@ -559,6 +560,9 @@ export default function UserAccount() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [roles, setRoles] = useState([]);
+  const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState(false); // New state for role assignment modal
+  const [selectedRoleId, setSelectedRoleId] = useState(''); // New state for selected role
+  const [selectedUsername, setSelectedUsername] = useState(''); // New state for selected username
   const limit = 10;
 
   // Refs for dropdown visibility
@@ -642,6 +646,11 @@ export default function UserAccount() {
 
   const applyFilters = () => {
     let filteredUsers = [...allUsers];
+    if (!filteredUsers.length) {
+      setUsers([]);
+      setTotalPages(1);
+      return;
+    }
 
     if (searchKeyword) {
       filteredUsers = filteredUsers.filter(user =>
@@ -673,11 +682,16 @@ export default function UserAccount() {
       if (aValue > bValue) return sortOrder === 'ASC' ? 1 : -1;
       return 0;
     });
+    const totalFilteredPages = Math.ceil(filteredUsers.length / limit);
+    // Ensure currentPage is valid for the filtered results
+    if (currentPage > totalFilteredPages && totalFilteredPages > 0) {
+      setCurrentPage(1);
+    }
 
     const startIndex = (currentPage - 1) * limit;
     const endIndex = startIndex + limit;
     setUsers(filteredUsers.slice(startIndex, endIndex));
-    setTotalPages(Math.ceil(filteredUsers.length / limit));
+    setTotalPages(totalFilteredPages || 1);
   };
   const resetPageAndFilter = () => {
     setCurrentPage(1); // Đặt lại về trang 1
@@ -795,6 +809,31 @@ export default function UserAccount() {
     } finally {
       setLoading(false);
     }
+  };
+  const handleAssignRole = async () => {
+    if (!user?.token || !selectedRoleId || !selectedUsername) return;
+    setLoading(true);
+    try {
+      await assignUserRole(user.token, parseInt(selectedRoleId), selectedUsername);
+      toast.showToast('Gán vai trò thành công!', 'success');
+      setIsAssignRoleModalOpen(false);
+      window.location.reload();
+      const updatedData = await fetchUserList(user.token);
+      setAllUsers(updatedData.data_set || []);
+      setSelectedRoleId('');
+      setSelectedUsername('');
+    } catch (error) {
+      console.error('Error assigning role:', error);
+      toast.showToast(error.message || 'Gán vai trò thất bại.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleOpenAssignRoleModal = (user) => {
+    setSelectedUsername(user.user_name);
+    setSelectedRoleId(user.role_id || '');
+    setIsAssignRoleModalOpen(true);
+    setOpenActionMenu(null);
   };
 
   const handleViewDetail = (user) => {
@@ -1000,6 +1039,11 @@ export default function UserAccount() {
                           <ActionMenuText>Chặn</ActionMenuText>
                         </ActionMenuItem>
                         <ActionMenuItem
+                          onClick={() => handleOpenAssignRoleModal(user)} // New action menu item
+                        >
+                          <ActionMenuText>Gán vai trò</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
                           onClick={() => {
                             handleDeleteUser(user.user_name);
                             setOpenActionMenu(null);
@@ -1067,9 +1111,7 @@ export default function UserAccount() {
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Tạo tài khoản mới</ModalTitle>
-              <CloseButton onClick={() => setIsCreateModalOpen(false)}>
-                ×
-              </CloseButton>
+
             </ModalHeader>
             <form onSubmit={handleCreateUser}>
               <FormGroup>
@@ -1173,16 +1215,60 @@ export default function UserAccount() {
           </ModalContent>
         </Modal>
       )}
-
+      {/* Assign Role Modal */}
+      {isAssignRoleModalOpen && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Gán vai trò cho tài khoản</ModalTitle>
+              <CloseButton onClick={() => setIsAssignRoleModalOpen(false)}>×</CloseButton>
+            </ModalHeader>
+            <form onSubmit={(e) => { e.preventDefault(); handleAssignRole(); }}>
+              <FormGroup>
+                <Label>Tên tài khoản</Label>
+                <Input type="text" value={selectedUsername} disabled />
+              </FormGroup>
+              <FormGroup>
+                <Label>Vai trò *</Label>
+                <Select
+                  value={selectedRoleId}
+                  onChange={(e) => setSelectedRoleId(e.target.value)}
+                  required
+                >
+                  <option value="">Chọn vai trò</option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.role_name}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+              <ModalActions>
+                <ActionButton
+                  type="button"
+                  onClick={() => setIsAssignRoleModalOpen(false)}
+                  disabled={loading}
+                >
+                  Hủy
+                </ActionButton>
+                <ActionButton
+                  type="submit"
+                  variant="primary"
+                  disabled={loading || !selectedRoleId}
+                >
+                  {loading ? 'Đang gán...' : 'Gán vai trò'}
+                </ActionButton>
+              </ModalActions>
+            </form>
+          </ModalContent>
+        </Modal>
+      )}
       {/* User Detail Modal */}
       {isDetailModalOpen && selectedUser && (
         <Modal>
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Chi tiết tài khoản</ModalTitle>
-              <CloseButton onClick={() => setIsDetailModalOpen(false)}>
-                ×
-              </CloseButton>
             </ModalHeader>
             <DetailItem>
               <span className="label">Tên tài khoản:</span>
