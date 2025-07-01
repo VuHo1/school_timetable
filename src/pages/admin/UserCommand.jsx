@@ -1,6 +1,4 @@
 
-
-// UserCommand.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ToastProvider';
@@ -13,7 +11,6 @@ import {
 } from '../../api';
 import styled from 'styled-components';
 
-// Styled components remain unchanged (omitted for brevity)
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -585,7 +582,7 @@ const UserCommand = () => {
         setLoading(true);
         try {
             await deleteUserCommand(user.token, commandId);
-            toast.showToast('Xóa chức năng thành công!', 'success');
+            toast.showToast('Thành công thay đổi trạng thái hoạt động!', 'success');
             const updatedData = await fetchUserCommands(user.token, { limit: 1000 });
             setAllCommands(updatedData);
             setCurrentPage(1); // Reset to page 1 after deleting
@@ -854,7 +851,7 @@ const UserCommand = () => {
                     <ModalContent>
                         <ModalHeader>
                             <ModalTitle>Cập nhật chức năng</ModalTitle>
-                            <CloseButton onClick={() => setIsUpdateModalOpen(false)}>×</CloseButton>
+
                         </ModalHeader>
                         <form onSubmit={handleUpdateCommand}>
                             <FormGroup>
@@ -909,7 +906,7 @@ const UserCommand = () => {
                     <ModalContent>
                         <ModalHeader>
                             <ModalTitle>Chi tiết chức năng</ModalTitle>
-                            <CloseButton onClick={() => setIsDetailModalOpen(false)}>×</CloseButton>
+
                         </ModalHeader>
                         <DetailItem>
                             <span className="label">Mã chức năng:</span>
