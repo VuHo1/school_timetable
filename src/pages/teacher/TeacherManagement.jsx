@@ -690,6 +690,9 @@ function TeacherManagement() {
       setLoading(false);
     }
   };
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
   // Handle click outside to close action menu
   useEffect(() => {
     function handleClickOutside(event) {
