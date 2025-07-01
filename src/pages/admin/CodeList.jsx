@@ -564,7 +564,7 @@ export default function CodeList() {
     try {
       const response = await deleteCode(user.token, id);
       console.log('Delete code response:', response);
-      toast.showToast('Xóa mã thành công!', 'success');
+      toast.showToast('Thành công thay đổi trạng thái hoạt động', 'success');
       const updatedData = await fetchCodeList(user.token);
       console.log('Fetched code list after delete:', updatedData);
       setAllCodes(updatedData || []);
@@ -808,14 +808,7 @@ export default function CodeList() {
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Chỉnh sửa mã</ModalTitle>
-              <CloseButton
-                onClick={() => {
-                  setIsEditModalOpen(false);
-                  setSelectedCode(null);
-                }}
-              >
-                ×
-              </CloseButton>
+
             </ModalHeader>
             <form onSubmit={handleUpdateCode}>
               <FormGroup>
