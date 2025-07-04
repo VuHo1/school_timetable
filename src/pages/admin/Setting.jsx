@@ -1,169 +1,237 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ToastProvider';
 import { fetchAppSetting, updateAppSetting } from '../../api';
 import styled from 'styled-components';
 
+// Styled components with updated styles inspired by CodeList.jsx
 const Container = styled.div`
-  padding: 15px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
+  padding: 20px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 70px);
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 `;
 
 const Title = styled.h1`
-  font-size: 22px;
-  font-weight: bold;
-  text-align: left;
-  color: #333;
+  color: #2c3e50;
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+`;
+
+const TableContainer = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 `;
 
 const Table = styled.table`
   width: 100%;
-  background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-collapse: collapse;
 `;
 
-const TableHead = styled.thead``;
-
-const TableHeader = styled.th`
-  padding: 10px;
-  border: 1px solid #dee2e6;
-  text-align: center;
-  background-color: #e9ecef;
-  font-size: 16px;
-  text-align: left;
+const TableHeader = styled.thead`
+  background: #f8f9fa;
 `;
-
-const TableBody = styled.tbody``;
 
 const TableRow = styled.tr`
   &:hover {
-    background-color: #f8f9fa;
+    background: #f8f9fa;
   }
 `;
 
-const TableCell = styled.td`
-  padding: 6px;
-  border: 1px solid #dee2e6;
+const TableHeaderCell = styled.th`
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
   font-size: 14px;
 `;
 
-const EditButton = styled.button`
-  padding: 3px 6px;
-  margin-right: 4px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ModalContent = styled.div`
-  background-color: white;
+const TableCell = styled.td`
   padding: 15px;
-  border-radius: 6px;
-  width: 400px;
-  margin-top: 20px;
-  overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  animation: fadeIn 0.3s ease-in;
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-`;
-
-const ModalTitle = styled.h2`
-  font-size: 16px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
-  text-align: center;
   border-bottom: 1px solid #eee;
+  font-size: 14px;
+  color: #2c3e50;
 `;
 
-const FormGroup = styled.div`
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const Label = styled.label`
-  display: inline-block;
-  width: 100px;
-  font-weight: 600;
-  color: #444;
-  font-size: 13px;
-  text-align: left;
-  flex-shrink: 0;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-  transition: border-color 0.3s ease;
-  &:focus {
-    border-color: #007bff;
-    outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-  }
-  &:hover {
-    border-color: #bbb;
-  }
-`;
-
-const ModalButtonGroup = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-`;
-
-const SubmitButton = styled.button`
-  padding: 6px 12px;
-  background-color: #28a745;
+const EditButton = styled.button`
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 12px;
+  transition: all 0.3s ease;
   &:hover {
-    background-color: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   }
   &:disabled {
-    background-color: #cccccc;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 `;
 
-const CancelButton = styled.button`
-  padding: 6px 12px;
-  background-color: #6c757d;
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+`;
+
+const ModalTitle = styled.h3`
+  color: #2c3e50;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  &:hover {
+    color: #333;
+  }
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 20px;
+`;
+
+const Label = styled.label`
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #2c3e50;
+`;
+
+const Input = styled.input`
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+`;
+
+const ActionButton = styled.button`
+  background: ${(props) =>
+    props.variant === 'primary' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#6c757d'};
   color: white;
   border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 16px;
+  color: #666;
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #666;
+  .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+`;
+
+const Pagination = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  gap: 10px;
+`;
+
+const PaginationButton = styled.button`
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: ${(props) => (props.active ? '#667eea' : 'white')};
+  color: ${(props) => (props.active ? 'white' : '#2c3e50')};
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   &:hover {
-    background-color: #5a6268;
+    background: ${(props) => (props.active ? '#667eea' : '#f8f9fa')};
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
@@ -175,6 +243,8 @@ export default function Setting() {
   const [selectedSetting, setSelectedSetting] = useState(null);
   const [editedValue, setEditedValue] = useState('');
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 10;
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -223,54 +293,95 @@ export default function Setting() {
     }
   };
 
+  // Pagination logic
+  const totalPages = Math.ceil(settings.length / limit);
+  const paginatedSettings = settings.slice((currentPage - 1) * limit, currentPage * limit);
+
   return (
     <Container>
-      <Title>Cấu hình hệ thống ⚙️</Title>
+      <Header>
+        <Title>📋 Cấu hình hệ thống</Title>
+      </Header>
 
-      <Table>
-        <TableHead>
-          <tr>
-            <TableHeader>Tên Cài Đặt</TableHeader>
-            <TableHeader>Giá Trị</TableHeader>
-            <TableHeader>Hành Động</TableHeader>
-          </tr>
-        </TableHead>
-        <TableBody>
-          {loading ? (
-            <tr>
-              <TableCell colSpan="3" style={{ textAlign: 'center', padding: '15px' }}>Đang tải...</TableCell>
-            </tr>
-          ) : settings.length > 0 ? (
-            settings.map((setting) => (
-              <TableRow key={setting.name}>
-                <TableCell>{setting.name}</TableCell>
-                <TableCell>{setting.value}</TableCell>
-                <TableCell>
-                  <EditButton onClick={() => handleEditSetting(setting)} disabled={loading}>
-                    Sửa
-                  </EditButton>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <tr>
-              <TableCell colSpan="3" style={{ textAlign: 'center', padding: '15px' }}>Không có cài đặt nào.</TableCell>
-            </tr>
-          )}
-        </TableBody>
-      </Table>
+      <TableContainer>
+        {loading ? (
+          <LoadingSpinner>🔄 Đang tải dữ liệu...</LoadingSpinner>
+        ) : settings.length === 0 ? (
+          <EmptyState>
+            <div className="icon">⚙️</div>
+            <div>Không tìm thấy cài đặt nào</div>
+          </EmptyState>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell style={{ width: '40%' }}>Tên Cài Đặt</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '40%' }}>Giá Trị</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '20%' }}>Thao tác</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <tbody>
+                {paginatedSettings.map((setting) => (
+                  <TableRow key={setting.name}>
+                    <TableCell>{setting.name}</TableCell>
+                    <TableCell>{setting.value}</TableCell>
+                    <TableCell>
+                      <EditButton onClick={() => handleEditSetting(setting)} disabled={loading}>
+                        Sửa
+                      </EditButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+            {totalPages > 1 && (
+              <Pagination>
+                <PaginationButton
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  ← Trước
+                </PaginationButton>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, currentPage - 2) + i;
+                  if (pageNum > totalPages) return null;
+                  return (
+                    <PaginationButton
+                      key={pageNum}
+                      active={pageNum === currentPage}
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </PaginationButton>
+                  );
+                })}
+                <PaginationButton
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Tiếp →
+                </PaginationButton>
+              </Pagination>
+            )}
+          </>
+        )}
+      </TableContainer>
 
       {isEditModalOpen && selectedSetting && (
-        <ModalOverlay>
+        <Modal>
           <ModalContent>
-            <ModalTitle>Chỉnh Sửa Cài Đặt</ModalTitle>
+            <ModalHeader>
+              <ModalTitle>Chỉnh sửa cài đặt</ModalTitle>
+
+            </ModalHeader>
             <form onSubmit={handleSaveSetting}>
               <FormGroup>
                 <Label>Tên:</Label>
                 <Input
                   type="text"
                   value={selectedSetting.name}
-                  readOnly
+                  disabled
                 />
               </FormGroup>
               <FormGroup>
@@ -279,16 +390,25 @@ export default function Setting() {
                   type="text"
                   value={editedValue}
                   onChange={(e) => setEditedValue(e.target.value)}
+                  placeholder="Nhập giá trị"
                   required
                 />
               </FormGroup>
-              <ModalButtonGroup>
-                <SubmitButton type="submit" disabled={loading}>Lưu</SubmitButton>
-                <CancelButton type="button" onClick={() => setIsEditModalOpen(false)}>Hủy</CancelButton>
-              </ModalButtonGroup>
+              <ModalActions>
+                <ActionButton
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={loading}
+                >
+                  Hủy
+                </ActionButton>
+                <ActionButton type="submit" variant="primary" disabled={loading}>
+                  {loading ? 'Đang cập nhật...' : 'Cập nhật'}
+                </ActionButton>
+              </ModalActions>
             </form>
           </ModalContent>
-        </ModalOverlay>
+        </Modal>
       )}
     </Container>
   );

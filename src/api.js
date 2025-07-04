@@ -572,7 +572,25 @@ export const deleteRole = async (token, roleId) => {
     }
     return await response.json();
 };
-
+export const assignUserRole = async (token, roleId, username) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-role/assign`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            role_id: roleId,
+            user_name: username,
+        }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to assign user role');
+    }
+    return await response.json();
+};
 
 // Subject Management APIs
 export const fetchSubjects = async (token, params = {}) => {
@@ -682,3 +700,140 @@ export const deleteSubject = async (token, subjectCode) => {
     return data;
 };
 
+//Code_List
+// Add a new code
+export const addCode = async (token, codeData) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(codeData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to add code');
+    }
+    return await response.json();
+};
+
+// Update a code
+export const updateCode = async (token, id, caption) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/update`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id, caption }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update code');
+    }
+    return await response.json();
+};
+
+// Delete a code
+export const deleteCode = async (token, id) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/remove/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to delete code');
+    }
+    return await response.json();
+};
+// UserCommand Management APIs
+export const fetchUserCommands = async (token, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.limit) queryParams.append('limit', params.limit);
+
+    const url = `${API_BASE_URL}/api/user-command?${queryParams.toString()}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch user commands');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+
+export const fetchApplications = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-command/application`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch applications');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+
+export const createUserCommand = async (token, commandData) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-command/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(commandData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to create user command');
+    }
+    return await response.json();
+};
+
+export const updateUserCommand = async (token, commandData) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-command/update`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(commandData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update user command');
+    }
+    return await response.json();
+};
+
+export const deleteUserCommand = async (token, commandId) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-command/remove/${commandId}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to delete user command');
+    }
+    return await response.json();
+};

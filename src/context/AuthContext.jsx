@@ -145,26 +145,30 @@ export function AuthProvider({ children }) {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error('Google Sign-In API Error:', errorData);
+                console.error('Google Sign-In API Error:', JSON.stringify(errorData, null, 2));
                 throw new Error(errorData.description || 'Google Sign-In failed');
             }
 
             const data = await response.json();
-            const { tokenResponse, role_name, abilities } = data.data;
 
-            if (tokenResponse) {
-                localStorage.setItem('authToken', tokenResponse);
+
+            const authToken = data.data.token;
+            const role_name = data.data.role_name;
+            const abilities = data.data.abilities;
+
+            if (authToken) {
+                localStorage.setItem('authToken', authToken);
                 localStorage.setItem('role', role_name);
                 setRole(role_name);
                 if (abilities && Array.isArray(abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(abilities));
                     setAbilities(abilities);
                 }
-                await fetchUserProfile(tokenResponse);
+                await fetchUserProfile(authToken);
                 return { success: true, description: data.description || 'Đăng nhập bằng Google thành công' };
             } else {
                 console.error('No token received');
-                return { success: false, description: 'Đăng nhập bằng Google thất bại: Không nhận được token' };
+                return { success: false, description: 'Đăng nhập thất bại: Không nhận được token' };
             }
         } catch (error) {
             console.error('Google Sign-In error:', error.message);
@@ -173,7 +177,6 @@ export function AuthProvider({ children }) {
             setLoading(false);
         }
     };
-
     const logout = async () => {
         try {
             const token = localStorage.getItem('authToken');

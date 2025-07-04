@@ -63,8 +63,23 @@ const ActionButton = styled.button`
 `;
 
 const ViewButton = styled(ActionButton)`
-  background-color: #007bff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const ModalOverlay = styled.div`
@@ -178,155 +193,155 @@ const PageButton = styled.button`
 `;
 
 const formatDateTime = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-    });
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 };
 
 export default function SystemError() {
-    const { user } = useAuth();
-    const toast = useToast();
-    const [allLogs, setAllLogs] = useState([]);
-    const [logs, setLogs] = useState([]);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [selectedLog, setSelectedLog] = useState(null);
+  const { user } = useAuth();
+  const toast = useToast();
+  const [allLogs, setAllLogs] = useState([]);
+  const [logs, setLogs] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
 
-    const limit = 10;
+  const limit = 10;
 
-    useEffect(() => {
-        const fetchLogs = async () => {
-            if (!user?.token) {
-                toast.showToast('Không tìm thấy token xác thực.', 'error');
-                return;
-            }
-            setLoading(true);
-            try {
-                const data = await fetchSystemLogs(user.token, { limit: 1000 });
-                setAllLogs(data.data_set || []);
-            } catch (error) {
-                console.error('Error fetching system logs:', error);
-                toast.showToast('Không thể tải nhật ký hệ thống.', 'error');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchLogs();
-    }, [user, toast]);
-
-    useEffect(() => {
-        const startIndex = (currentPage - 1) * limit;
-        const endIndex = startIndex + limit;
-        setLogs(allLogs.slice(startIndex, endIndex));
-        setTotalPages(Math.ceil(allLogs.length / limit));
-    }, [currentPage, allLogs]);
-
-    const handleViewDetail = (log) => {
-        setSelectedLog(log);
-        setIsDetailModalOpen(true);
+  useEffect(() => {
+    const fetchLogs = async () => {
+      if (!user?.token) {
+        toast.showToast('Không tìm thấy token xác thực.', 'error');
+        return;
+      }
+      setLoading(true);
+      try {
+        const data = await fetchSystemLogs(user.token, { limit: 1000 });
+        setAllLogs(data.data_set || []);
+      } catch (error) {
+        console.error('Error fetching system logs:', error);
+        toast.showToast('Không thể tải nhật ký hệ thống.', 'error');
+      } finally {
+        setLoading(false);
+      }
     };
+    fetchLogs();
+  }, [user, toast]);
 
-    return (
-        <Container>
-            <Title>Nhật ký & Giám sát 📊</Title>
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * limit;
+    const endIndex = startIndex + limit;
+    setLogs(allLogs.slice(startIndex, endIndex));
+    setTotalPages(Math.ceil(allLogs.length / limit));
+  }, [currentPage, allLogs]);
 
-            <Table>
-                <TableHead>
-                    <tr>
-                        <TableHeader>ID</TableHeader>
-                        <TableHeader>Phương Thức</TableHeader>
-                        <TableHeader>Thông Báo</TableHeader>
-                        <TableHeader>Ngày Tạo</TableHeader>
-                        <TableHeader>Hành Động</TableHeader>
-                    </tr>
-                </TableHead>
-                <TableBody>
-                    {loading ? (
-                        <tr>
-                            <TableCell colSpan="5" style={{ textAlign: 'center', padding: '15px' }}>
-                                Đang tải...
-                            </TableCell>
-                        </tr>
-                    ) : logs.length > 0 ? (
-                        logs.map((log) => (
-                            <TableRow key={log.id}>
-                                <TableCell>{log.id}</TableCell>
-                                <TableCell>{log.method}</TableCell>
-                                <TableCell>{log.message}</TableCell>
-                                <TableCell>{formatDateTime(log.created_date)}</TableCell>
-                                <TableCell>
-                                    <ViewButton onClick={() => handleViewDetail(log)}>Xem</ViewButton>
-                                </TableCell>
-                            </TableRow>
-                        ))
-                    ) : (
-                        <tr>
-                            <TableCell colSpan="5" style={{ textAlign: 'center', padding: '15px' }}>
-                                Không có nhật ký nào.
-                            </TableCell>
-                        </tr>
-                    )}
-                </TableBody>
-            </Table>
+  const handleViewDetail = (log) => {
+    setSelectedLog(log);
+    setIsDetailModalOpen(true);
+  };
 
-            <Pagination>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <PageButton
-                        key={page}
-                        active={page === currentPage}
-                        onClick={() => setCurrentPage(page)}
-                    >
-                        {page}
-                    </PageButton>
-                ))}
-            </Pagination>
+  return (
+    <Container>
+      <Title>Nhật ký & Giám sát 📊</Title>
 
-            {isDetailModalOpen && selectedLog && (
-                <ModalOverlay>
-                    <ModalContent>
-                        <ModalTitle>Chi Tiết Nhật Ký</ModalTitle>
-                        <DetailSection>
-                            <DetailItem>
-                                <DetailLabel>ID:</DetailLabel>
-                                <DetailValue>{selectedLog.id}</DetailValue>
-                            </DetailItem>
-                            <DetailItem>
-                                <DetailLabel>Phương Thức:</DetailLabel>
-                                <DetailValue>{selectedLog.method}</DetailValue>
-                            </DetailItem>
-                            <DetailItem>
-                                <DetailLabel>Thông Điệp:</DetailLabel>
-                                <DetailValue>{selectedLog.message}</DetailValue>
-                            </DetailItem>
-                            <DetailItem>
-                                <DetailLabelStackTrace>Stack Trace:</DetailLabelStackTrace>
-                                <DetailValueStackTrace>
-                                    {selectedLog.stack_trace}
-                                </DetailValueStackTrace>
-                            </DetailItem>
-                            <DetailItem>
-                                <DetailLabel>Ngày Tạo:</DetailLabel>
-                                <DetailValue>{formatDateTime(selectedLog.created_date)}</DetailValue>
-                            </DetailItem>
-                            <DetailItem>
-                                <DetailLabel>Ngày Cập nhật:</DetailLabel>
-                                <DetailValue>{formatDateTime(selectedLog.updated_date)}</DetailValue>
-                            </DetailItem>
-                        </DetailSection>
-                        <CloseButton onClick={() => setIsDetailModalOpen(false)}>Đóng</CloseButton>
-                    </ModalContent>
-                </ModalOverlay>
-            )}
-        </Container>
-    );
+      <Table>
+        <TableHead>
+          <tr>
+            <TableHeader>ID</TableHeader>
+            <TableHeader>Phương Thức</TableHeader>
+            <TableHeader>Thông Báo</TableHeader>
+            <TableHeader>Ngày Tạo</TableHeader>
+            <TableHeader>Hành Động</TableHeader>
+          </tr>
+        </TableHead>
+        <TableBody>
+          {loading ? (
+            <tr>
+              <TableCell colSpan="5" style={{ textAlign: 'center', padding: '15px' }}>
+                Đang tải...
+              </TableCell>
+            </tr>
+          ) : logs.length > 0 ? (
+            logs.map((log) => (
+              <TableRow key={log.id}>
+                <TableCell>{log.id}</TableCell>
+                <TableCell>{log.method}</TableCell>
+                <TableCell>{log.message}</TableCell>
+                <TableCell>{formatDateTime(log.created_date)}</TableCell>
+                <TableCell>
+                  <ViewButton onClick={() => handleViewDetail(log)}>Xem</ViewButton>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <tr>
+              <TableCell colSpan="5" style={{ textAlign: 'center', padding: '15px' }}>
+                Không có nhật ký nào.
+              </TableCell>
+            </tr>
+          )}
+        </TableBody>
+      </Table>
+
+      <Pagination>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <PageButton
+            key={page}
+            active={page === currentPage}
+            onClick={() => setCurrentPage(page)}
+          >
+            {page}
+          </PageButton>
+        ))}
+      </Pagination>
+
+      {isDetailModalOpen && selectedLog && (
+        <ModalOverlay>
+          <ModalContent>
+            <ModalTitle>Chi Tiết Nhật Ký</ModalTitle>
+            <DetailSection>
+              <DetailItem>
+                <DetailLabel>ID:</DetailLabel>
+                <DetailValue>{selectedLog.id}</DetailValue>
+              </DetailItem>
+              <DetailItem>
+                <DetailLabel>Phương Thức:</DetailLabel>
+                <DetailValue>{selectedLog.method}</DetailValue>
+              </DetailItem>
+              <DetailItem>
+                <DetailLabel>Thông Điệp:</DetailLabel>
+                <DetailValue>{selectedLog.message}</DetailValue>
+              </DetailItem>
+              <DetailItem>
+                <DetailLabelStackTrace>Stack Trace:</DetailLabelStackTrace>
+                <DetailValueStackTrace>
+                  {selectedLog.stack_trace}
+                </DetailValueStackTrace>
+              </DetailItem>
+              <DetailItem>
+                <DetailLabel>Ngày Tạo:</DetailLabel>
+                <DetailValue>{formatDateTime(selectedLog.created_date)}</DetailValue>
+              </DetailItem>
+              <DetailItem>
+                <DetailLabel>Ngày Cập nhật:</DetailLabel>
+                <DetailValue>{formatDateTime(selectedLog.updated_date)}</DetailValue>
+              </DetailItem>
+            </DetailSection>
+            <CloseButton onClick={() => setIsDetailModalOpen(false)}>Đóng</CloseButton>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+    </Container>
+  );
 }

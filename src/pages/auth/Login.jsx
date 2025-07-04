@@ -227,13 +227,13 @@ function Login() {
             }
         } catch (err) {
             showToast(err.message || 'Đã có lỗi xảy ra khi đăng nhập bằng Google.', 'error');
-            console.error('Google Sign-In error:', err.message);
+            console.error('Google Sign-In error1:', err.message);
         }
     };
 
     const handleGoogleError = () => {
         showToast('Đăng nhập bằng Google thất bại.', 'error');
-        console.error('Google Sign-In error');
+        console.error('Google Sign-In error2');
     };
 
     const handleResetPassword = async (e) => {
