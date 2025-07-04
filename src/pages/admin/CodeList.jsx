@@ -232,16 +232,7 @@ const ModalTitle = styled.h3`
   font-weight: 600;
 `;
 
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-  &:hover {
-    color: #333;
-  }
-`;
+
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
@@ -295,7 +286,20 @@ const ActionButton = styled.button`
     cursor: not-allowed;
   }
 `;
-
+const CloseButton = styled.button`
+  padding: 6px 12px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-top: 8px;
+  margin-left: 620px;
+  &:hover {
+    background-color: #c82333;
+  }
+`;
 const LoadingSpinner = styled.div`
   display: flex;
   justify-content: center;
@@ -752,7 +756,7 @@ export default function CodeList() {
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Thêm mã mới</ModalTitle>
-              <CloseButton onClick={() => setIsCreateModalOpen(false)}>×</CloseButton>
+
             </ModalHeader>
             <form onSubmit={handleCreateCode}>
               <FormGroup>
@@ -888,7 +892,7 @@ export default function CodeList() {
               <span className="value">{formatDate(selectedCode.updated_date)}</span>
             </DetailItem>
             <ModalActions>
-              <ActionButton
+              <CloseButton
                 type="button"
                 onClick={() => {
                   setIsDetailModalOpen(false);
@@ -897,7 +901,7 @@ export default function CodeList() {
                 disabled={loading}
               >
                 Đóng
-              </ActionButton>
+              </CloseButton>
             </ModalActions>
           </ModalContent>
         </Modal>

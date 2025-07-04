@@ -1,160 +1,227 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ToastProvider';
 import { fetchRoles, createRole, updateRole, deleteRole, fetchCodeListSYSSTS } from '../../api';
 import styled from 'styled-components';
 
+// Styled components inspired by UserAccount.jsx
+const StatusBadge = styled.span.withConfig({
+  shouldForwardProp: (prop) => prop !== 'status',
+})`
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: ${(props) => {
+    switch (props.status) {
+      case 'Đang hoạt động':
+        return '#d4edda';
+      case 'Tạm khóa':
+        return '#fff3cd';
+      case 'Ngưng hoạt động':
+        return '#f8d7da';
+      default:
+        return '#e9ecef';
+    }
+  }};
+  color: ${(props) => {
+    switch (props.status) {
+      case 'Đang hoạt động':
+        return '#155724';
+      case 'Tạm khóa':
+        return '#856404';
+      case 'Ngưng hoạt động':
+        return '#721c24';
+      default:
+        return '#6c757d';
+    }
+  }};
+`;
+
 const Container = styled.div`
-  padding: 15px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
+  padding: 20px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 70px);
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
 `;
 
 const Title = styled.h1`
-  font-size: 20px;
-  font-weight: bold;
-  text-align: left;
-  color: #333;
+  color: #2c3e50;
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
 `;
 
 const CreateButton = styled.button`
-  padding: 10px 12px;
-  background-color: #28a745;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 12px;
-  margin-bottom: 15px;
+  transition: all 0.3s ease;
   &:hover {
-    background-color: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   }
   &:disabled {
-    background-color: #cccccc;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 `;
 
+const TableContainer = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+`;
+
 const Table = styled.table`
   width: 100%;
-  background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-collapse: collapse;
 `;
 
-const TableHead = styled.thead``;
-
-const TableHeader = styled.th`
-  padding: 8px;
-  border: 1px solid #dee2e6;
-  text-align: left;
-  background-color: #e9ecef;
-  font-size: 14px;
+const TableHeader = styled.thead`
+  background: #f8f9fa;
 `;
-
-const TableBody = styled.tbody``;
 
 const TableRow = styled.tr`
   &:hover {
-    background-color: #f8f9fa;
+    background: #f8f9fa;
   }
+`;
+
+const TableHeaderCell = styled.th`
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
 `;
 
 const TableCell = styled.td`
-  padding: 10px;
-  border: 1px solid #dee2e6;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
   font-size: 14px;
-  text-align: left;
+  color: #2c3e50;
 `;
 
-const ActionButton = styled.button`
-  padding: 3px 6px;
-  margin-right: 4px;
+const ActionMenuButton = styled.button`
+  background: #4f46e5;
+  color: white;
   border: none;
-  border-radius: 3px;
+  padding: 6px 10px;
+  border-radius: 50%;
+  font-size: 18px;
   cursor: pointer;
-  font-size: 10px;
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
-const ViewButton = styled(ActionButton)`
-  background-color: #007bff;
-  color: white;
-`;
-
-const EditButton = styled(ActionButton)`
-  background-color: #ffc107;
-  color: white;
-`;
-
-const DeleteButton = styled(ActionButton)`
-  background-color: #dc3545;
-  color: white;
-`;
-
-const ModalOverlay = styled.div`
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  transition: background 0.2s ease, transform 0.15s ease;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-`;
-
-const ModalContent = styled.div`
-  background-color: white;
-  padding: 15px;
-  border-radius: 6px;
-  width: 450px;
-  margin-top: 20px;
-  overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  animation: fadeIn 0.3s ease-in;
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  &:hover {
+    background: #4338ca;
+    transform: scale(1.05);
+  }
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
-const ModalTitle = styled.h2`
-  font-size: 16px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 10px;
-  text-align: center;
+const ActionDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  margin-top: 5px;
+  opacity: ${(props) => (props.isOpen ? 1 : 0)};
+  transform: ${(props) => (props.isOpen ? 'translateY(0)' : 'translateY(-10px)')};
+  visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+`;
+
+const ActionMenuItem = styled.div`
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #2c3e50;
+  &:hover {
+    background: #f8f9fa;
+  }
+  &:last-child {
+    border-bottom: none;
+  }
+  ${(props) => props.danger && `
+    color: #e74c3c;
+  `}
+`;
+
+const ActionMenuText = styled.span`
+  font-size: 14px;
+  color: inherit;
+`;
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 500px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
   border-bottom: 1px solid #eee;
 `;
 
-const DetailSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-const DetailItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 6px;
-  background-color: #f9f9f9;
-  border-radius: 3px;
-`;
-
-const DetailLabel = styled.span`
-  font-weight: bold;
-  color: #555;
-  font-size: 12px;
-`;
-
-const DetailValue = styled.span`
-  color: #333;
-  font-size: 12px;
+const ModalTitle = styled.h3`
+  color: #2c3e50;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 `;
 
 const CloseButton = styled.button`
-  padding: 6px 12px;
+ padding: 6px 12px;
   background-color: #dc3545;
   color: white;
   border: none;
@@ -162,120 +229,157 @@ const CloseButton = styled.button`
   cursor: pointer;
   font-size: 12px;
   margin-top: 8px;
-  margin-left: 397px;
+  margin-left: 620px;
   &:hover {
     background-color: #c82333;
   }
 `;
 
-const FormGroup = styled.div`
-  margin-bottom: 12px;
+const DetailSection = styled.div`
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 15px;
+`;
+
+const DetailItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+`;
+
+const DetailLabel = styled.span`
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+`;
+
+const DetailValue = styled.span`
+  color: #666;
+  font-size: 14px;
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 20px;
+  display: flex;
 `;
 
 const Label = styled.label`
-  display: inline-block;
-  width: 100px;
-  font-weight: 600;
-  color: #444;
-  font-size: 13px;
-  text-align: left;
-  flex-shrink: 0;
+  padding-right: 20px;
+  font-weight: 500;
+  margin-top: 10px;
+  color: #2c3e50;
 `;
 
 const Input = styled.input`
-  width: 100%;
-  padding: 8px 12px;
+  box-sizing: border-box;
+  width: 400px;
+  padding: 10px 15px;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-  transition: border-color 0.3s ease;
+  border-radius: 8px;
+  font-size: 14px;
   &:focus {
-    border-color: #007bff;
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-  }
-  &:hover {
-    border-color: #bbb;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 `;
 
 const Select = styled.select`
-  width: 100%;
-  padding: 8px 12px;
+  box-sizing: border-box;
+  width: 405px;
+  padding: 10px 15px;
   border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 13px;
-  transition: border-color 0.3s ease;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
   &:focus {
-    border-color: #007bff;
     outline: none;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-  }
-  &:hover {
-    border-color: #bbb;
+    border-color: #667eea;
   }
 `;
 
 const Checkbox = styled.input`
-  margin-left: 10px;
+  margin-top: 12px;
 `;
 
-const ModalButtonGroup = styled.div`
+const ModalActions = styled.div`
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
-  gap: 8px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
 `;
 
-const SubmitButton = styled.button`
-  padding: 6px 12px;
-  background-color: #28a745;
+const ActionButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant',
+})`
+  background: ${props => props.variant === 'primary' ? '#3498db' : '#666'};
   color: white;
   border: none;
+  padding: 6px 12px;
   border-radius: 4px;
-  cursor: pointer;
   font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
   &:hover {
-    background-color: #218838;
+    opacity: 0.8;
   }
   &:disabled {
-    background-color: #cccccc;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 `;
 
-const CancelButton = styled.button`
-  padding: 6px 12px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  &:hover {
-    background-color: #5a6268;
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 16px;
+  color: #666;
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #666;
+  .icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
   }
 `;
 
 const Pagination = styled.div`
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin-top: 15px;
+  align-items: center;
+  padding: 20px;
+  gap: 10px;
 `;
 
-const PageButton = styled.button`
-  padding: 6px 10px;
-  background-color: ${(props) => (props.active ? '#007bff' : '#fff')};
-  color: ${(props) => (props.active ? '#fff' : '#007bff')};
-  border: 1px solid #007bff;
+const PaginationButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})`
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: ${props => props.active ? '#667eea' : 'white'};
+  color: ${props => props.active ? 'white' : '#2c3e50'};
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   &:hover {
-    background-color: ${(props) => (props.active ? '#0056b3' : '#e7f0fa')};
+    background: ${props => props.active ? '#667eea' : '#f8f9fa'};
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
@@ -308,6 +412,8 @@ export default function UserRole() {
   const [newRole, setNewRole] = useState({ role_name: '', is_teacher: false, status: '' });
   const [editRole, setEditRole] = useState({ id: '', role_name: '' });
   const [statusCodes, setStatusCodes] = useState([]);
+  const [openActionMenu, setOpenActionMenu] = useState(null);
+  const actionMenuRef = useRef(null);
   const limit = 10;
 
   useEffect(() => {
@@ -417,79 +523,138 @@ export default function UserRole() {
   const handleViewDetail = (role) => {
     setSelectedRole(role);
     setIsDetailModalOpen(true);
+    setOpenActionMenu(null);
   };
 
   const handleEditRole = (role) => {
     setEditRole({ id: role.id, role_name: role.role_name });
     setIsEditModalOpen(true);
+    setOpenActionMenu(null);
   };
+
+  const handleActionMenuToggle = (roleId) => {
+    setOpenActionMenu(openActionMenu === roleId ? null : roleId);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setOpenActionMenu(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <Container>
-      <Title>Quản Lý Vai Trò</Title>
-      <CreateButton onClick={() => setIsCreateModalOpen(true)} disabled={loading}>
-        + Tạo Vai Trò
-      </CreateButton>
+      <Header>
+        <Title>📋 Quản Lý Vai Trò</Title>
+        <CreateButton onClick={() => setIsCreateModalOpen(true)} disabled={loading}>
+          + Tạo Vai Trò
+        </CreateButton>
+      </Header>
 
-      <Table>
-        <TableHead>
-          <tr>
-            <TableHeader>ID</TableHeader>
-            <TableHeader>Tên Vai Trò</TableHeader>
-            <TableHeader>Là Giáo Viên</TableHeader>
-            <TableHeader>Trạng Thái</TableHeader>
-            <TableHeader>Ngày Tạo</TableHeader>
-            <TableHeader>Hành Động</TableHeader>
-          </tr>
-        </TableHead>
-        <TableBody>
-          {loading ? (
-            <tr>
-              <TableCell colSpan="6" style={{ textAlign: 'center', padding: '15px' }}>
-                Đang tải...
-              </TableCell>
-            </tr>
-          ) : roles.length > 0 ? (
-            roles.map((role) => (
-              <TableRow key={role.id}>
-                <TableCell>{role.id}</TableCell>
-                <TableCell>{role.role_name}</TableCell>
-                <TableCell>{role.is_teacher ? 'Có' : 'Không'}</TableCell>
-                <TableCell>{role.status}</TableCell>
-                <TableCell>{formatDateTime(role.created_date)}</TableCell>
-                <TableCell>
-                  <ViewButton onClick={() => handleViewDetail(role)}>Xem</ViewButton>
-                  <EditButton onClick={() => handleEditRole(role)}>Sửa</EditButton>
-                  <DeleteButton onClick={() => handleDeleteRole(role.id)}>Xóa</DeleteButton>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <tr>
-              <TableCell colSpan="6" style={{ textAlign: 'center', padding: '15px' }}>
-                Không có vai trò nào.
-              </TableCell>
-            </tr>
-          )}
-        </TableBody>
-      </Table>
-
-      <Pagination>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-          <PageButton
-            key={page}
-            active={page === currentPage}
-            onClick={() => setCurrentPage(page)}
-          >
-            {page}
-          </PageButton>
-        ))}
-      </Pagination>
+      <TableContainer>
+        {loading ? (
+          <LoadingSpinner>🔄 Đang tải dữ liệu...</LoadingSpinner>
+        ) : roles.length === 0 ? (
+          <EmptyState>
+            <div className="icon">📋</div>
+            <div>Không tìm thấy vai trò nào</div>
+          </EmptyState>
+        ) : (
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell style={{ width: '15%' }}>ID</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '25%' }}>Tên Vai Trò</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '15%' }}>Là Giáo Viên</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '15%' }}>Trạng Thái</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '20%' }}>Ngày Tạo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <tbody>
+                {roles.map((role) => (
+                  <TableRow key={role.id}>
+                    <TableCell>{role.id}</TableCell>
+                    <TableCell>{role.role_name}</TableCell>
+                    <TableCell>{role.is_teacher ? 'Có' : 'Không'}</TableCell>
+                    <TableCell><StatusBadge status={role.status}>
+                      {role.status}
+                    </StatusBadge></TableCell>
+                    <TableCell>{formatDateTime(role.created_date)}</TableCell>
+                    <TableCell style={{ position: 'relative' }}>
+                      <ActionMenuButton
+                        onClick={() => handleActionMenuToggle(role.id)}
+                        ref={actionMenuRef}
+                      >
+                        ⋯
+                      </ActionMenuButton>
+                      <ActionDropdown isOpen={openActionMenu === role.id}>
+                        <ActionMenuItem onClick={() => handleViewDetail(role)}>
+                          <ActionMenuText>Xem chi tiết</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem onClick={() => handleEditRole(role)}>
+                          <ActionMenuText>Sửa</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
+                          danger
+                          onClick={() => {
+                            handleDeleteRole(role.id);
+                            setOpenActionMenu(null);
+                          }}
+                        >
+                          <ActionMenuText style={{ color: '#e74c3c' }}>Bật/Tắt trạng thái</ActionMenuText>
+                        </ActionMenuItem>
+                      </ActionDropdown>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </tbody>
+            </Table>
+            {totalPages > 1 && (
+              <Pagination>
+                <PaginationButton
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  ← Trước
+                </PaginationButton>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, currentPage - 2) + i;
+                  if (pageNum > totalPages) return null;
+                  return (
+                    <PaginationButton
+                      key={pageNum}
+                      active={pageNum === currentPage}
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </PaginationButton>
+                  );
+                })}
+                <PaginationButton
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Tiếp →
+                </PaginationButton>
+              </Pagination>
+            )}
+          </>
+        )}
+      </TableContainer>
 
       {isDetailModalOpen && selectedRole && (
-        <ModalOverlay>
+        <Modal>
           <ModalContent>
-            <ModalTitle>Chi Tiết Vai Trò</ModalTitle>
+            <ModalHeader>
+              <ModalTitle>Chi Tiết Vai Trò</ModalTitle>
+
+            </ModalHeader>
             <DetailSection>
               <DetailItem>
                 <DetailLabel>ID:</DetailLabel>
@@ -500,12 +665,12 @@ export default function UserRole() {
                 <DetailValue>{selectedRole.role_name}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Là Giáo Viên:</DetailLabel>
+                <DetailLabel>Giáo Viên:</DetailLabel>
                 <DetailValue>{selectedRole.is_teacher ? 'Có' : 'Không'}</DetailValue>
               </DetailItem>
               <DetailItem>
                 <DetailLabel>Trạng Thái:</DetailLabel>
-                <DetailValue>{selectedRole.status}</DetailValue>
+                <StatusBadge status={selectedRole.status}>{selectedRole.status}</StatusBadge>
               </DetailItem>
               <DetailItem>
                 <DetailLabel>Ngày Tạo:</DetailLabel>
@@ -516,15 +681,26 @@ export default function UserRole() {
                 <DetailValue>{formatDateTime(selectedRole.updated_date)}</DetailValue>
               </DetailItem>
             </DetailSection>
-            <CloseButton onClick={() => setIsDetailModalOpen(false)}>Đóng</CloseButton>
+            <ModalActions>
+              <CloseButton
+                type="button"
+                onClick={() => setIsDetailModalOpen(false)}
+                disabled={loading}
+              >
+                Đóng
+              </CloseButton>
+            </ModalActions>
           </ModalContent>
-        </ModalOverlay>
+        </Modal>
       )}
 
       {isCreateModalOpen && (
-        <ModalOverlay>
+        <Modal>
           <ModalContent>
-            <ModalTitle>Tạo Vai Trò Mới</ModalTitle>
+            <ModalHeader>
+              <ModalTitle>Tạo Vai Trò Mới</ModalTitle>
+
+            </ModalHeader>
             <form onSubmit={handleCreateRole}>
               <FormGroup>
                 <Label>Tên Vai Trò:</Label>
@@ -536,7 +712,7 @@ export default function UserRole() {
                 />
               </FormGroup>
               <FormGroup>
-                <Label>Là Giáo Viên:</Label>
+                <Label>Có phải giáo viên không:</Label>
                 <Checkbox
                   type="checkbox"
                   checked={newRole.is_teacher}
@@ -558,23 +734,38 @@ export default function UserRole() {
                   ))}
                 </Select>
               </FormGroup>
-              <ModalButtonGroup>
-                <SubmitButton type="submit" disabled={loading}>Tạo</SubmitButton>
-                <CancelButton type="button" onClick={() => setIsCreateModalOpen(false)}>Hủy</CancelButton>
-              </ModalButtonGroup>
+              <ModalActions>
+                <ActionButton
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  disabled={loading}
+                >
+                  Hủy
+                </ActionButton>
+                <ActionButton
+                  type="submit"
+                  variant="primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Đang tạo...' : 'Tạo'}
+                </ActionButton>
+              </ModalActions>
             </form>
           </ModalContent>
-        </ModalOverlay>
+        </Modal>
       )}
 
       {isEditModalOpen && editRole.id && (
-        <ModalOverlay>
+        <Modal>
           <ModalContent>
-            <ModalTitle>Chỉnh Sửa Vai Trò</ModalTitle>
+            <ModalHeader>
+              <ModalTitle>Chỉnh Sửa Vai Trò</ModalTitle>
+
+            </ModalHeader>
             <form onSubmit={handleUpdateRole}>
               <FormGroup>
                 <Label>ID:</Label>
-                <Input type="text" value={editRole.id} readOnly />
+                <Input type="text" value={editRole.id} disabled />
               </FormGroup>
               <FormGroup>
                 <Label>Tên Vai Trò:</Label>
@@ -585,13 +776,25 @@ export default function UserRole() {
                   required
                 />
               </FormGroup>
-              <ModalButtonGroup>
-                <SubmitButton type="submit" disabled={loading}>Lưu</SubmitButton>
-                <CancelButton type="button" onClick={() => setIsEditModalOpen(false)}>Hủy</CancelButton>
-              </ModalButtonGroup>
+              <ModalActions>
+                <ActionButton
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={loading}
+                >
+                  Hủy
+                </ActionButton>
+                <ActionButton
+                  type="submit"
+                  variant="primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Đang cập nhật...' : 'Cập nhật'}
+                </ActionButton>
+              </ModalActions>
             </form>
           </ModalContent>
-        </ModalOverlay>
+        </Modal>
       )}
     </Container>
   );

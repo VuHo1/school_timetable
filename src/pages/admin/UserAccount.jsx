@@ -155,7 +155,7 @@ const FilterItem = styled.div`
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'warning' ? '#f39c12' : props.variant === 'success' ? '#28a745' : '#3498db'};
+  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'primary' ? '#3498db' : '#666'};
   color: white;
   border: none;
   padding: 6px 12px;
@@ -356,11 +356,10 @@ const Modal = styled.div`
 
 const ModalContent = styled.div`
   background: white;
+  padding: 20px;
   border-radius: 12px;
-  padding: 30px;
-  max-width: 500px;
-  width: 95%;
-  max-height: 90vh;
+  width:50%;
+  height: 80%;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 `;
@@ -382,39 +381,43 @@ const ModalTitle = styled.h3`
 `;
 
 const CloseButton = styled.button`
-  background: none;
+   padding: 6px 12px;
+  background-color: #dc3545;
+  color: white;
   border: none;
-  font-size: 24px;
+  border-radius: 4px;
   cursor: pointer;
-
   font-size: 12px;
-      margin-top: 8px;
-        margin-left: 397px;
-  color: #666;
+  margin-top: 8px;
+  margin-left: 620px;
   &:hover {
-    color: #333;
+    background-color: #c82333;
   }
 `;
 
 const FormGroup = styled.div`
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
 `;
 
-const Label = styled.label`
-  display: block;
-  margin-bottom: 5px;
+const Label = styled.div`
   font-weight: 500;
   color: #2c3e50;
+  text-align: left;
+  margin-top: 10px;
+  padding-right: 10px;
 `;
 
 const Input = styled.input`
   box-sizing: border-box;
-  width: 100%;
-  padding: 10px 15px;
+  width: 510px;
+  margin-left:10px;
+  padding: 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 14px;
-
+  
   &:focus {
     outline: none;
     border-color: #667eea;
@@ -424,7 +427,7 @@ const Input = styled.input`
 
 const Select = styled.select`
   box-sizing: border-box;
-  width: 100%;
+  width: 510px;
   padding: 10px 15px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -450,7 +453,7 @@ const SelectMenu = styled.select`
   }
 `;
 const DatePickerWrapper = styled.div`
-  width: 100%;
+  width: 510px;
   & .react-datepicker-wrapper {
     width: 100%;
   }
@@ -1146,17 +1149,12 @@ export default function UserAccount() {
               </FormGroup>
               <FormGroup>
                 <Label>Ngày sinh *</Label>
-                {/* <Input
-                  type="date"
-                  value={newUser.dob}
-                  onChange={(e) => setNewUser({ ...newUser, dob: e.target.value })}
-                  required
-                /> */}
+
                 <DatePickerWrapper>
                   <DatePicker
                     selected={newUser.dob ? new Date(newUser.dob) : null}
                     onChange={(date) => {
-                      // Lưu ngày dưới dạng chuỗi YYYY-MM-DD
+
                       const formattedDate = date ? formatLocalDate(date) : '';
                       setNewUser({ ...newUser, dob: formattedDate });
                     }}
@@ -1221,7 +1219,7 @@ export default function UserAccount() {
           <ModalContent>
             <ModalHeader>
               <ModalTitle>Gán vai trò cho tài khoản</ModalTitle>
-              <CloseButton onClick={() => setIsAssignRoleModalOpen(false)}>×</CloseButton>
+
             </ModalHeader>
             <form onSubmit={(e) => { e.preventDefault(); handleAssignRole(); }}>
               <FormGroup>
@@ -1317,9 +1315,9 @@ export default function UserAccount() {
               <span className="value">{formatDateTime(selectedUser.updated_date)}</span>
             </DetailItem>
             <ModalActions>
-              <ActionButton onClick={() => setIsDetailModalOpen(false)}>
+              <CloseButton onClick={() => setIsDetailModalOpen(false)}>
                 Đóng
-              </ActionButton>
+              </CloseButton>
             </ModalActions>
           </ModalContent>
         </Modal>

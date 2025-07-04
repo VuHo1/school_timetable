@@ -326,13 +326,17 @@ const ModalTitle = styled.h3`
 `;
 
 const CloseButton = styled.button`
-  background: none;
+  padding: 6px 12px;
+  background-color: #dc3545;
+  color: white;
   border: none;
-  font-size: 24px;
+  border-radius: 4px;
   cursor: pointer;
-  color: #666;
+  font-size: 12px;
+  margin-top: 8px;
+  margin-left: 620px;
   &:hover {
-    color: #333;
+    background-color: #c82333;
   }
 `;
 
@@ -747,7 +751,7 @@ const UserCommand = () => {
                                                     onClick={() => handleDeleteCommand(command.command_id)}
                                                     style={{ color: '#e74c3c' }}
                                                 >
-                                                    <ActionMenuText style={{ color: '#e74c3c' }}>Xóa</ActionMenuText>
+                                                    <ActionMenuText style={{ color: '#e74c3c' }}>Bật/Tắt trạng thái</ActionMenuText>
                                                 </ActionMenuItem>
                                             </ActionDropdown>
                                         </TableCell>
@@ -794,7 +798,7 @@ const UserCommand = () => {
                     <ModalContent>
                         <ModalHeader>
                             <ModalTitle>Tạo chức năng mới</ModalTitle>
-                            <CloseButton onClick={() => setIsCreateModalOpen(false)}>×</CloseButton>
+
                         </ModalHeader>
                         <form onSubmit={handleCreateCommand}>
                             <FormGroup>
@@ -935,9 +939,9 @@ const UserCommand = () => {
                             <span className="value">{formatDateTime(selectedCommand.updated_date)}</span>
                         </DetailItem>
                         <ModalActions>
-                            <ActionButton onClick={() => setIsDetailModalOpen(false)}>
+                            <CloseButton onClick={() => setIsDetailModalOpen(false)}>
                                 Đóng
-                            </ActionButton>
+                            </CloseButton>
                         </ModalActions>
                     </ModalContent>
                 </Modal>
