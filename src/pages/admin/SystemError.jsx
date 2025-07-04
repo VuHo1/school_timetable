@@ -95,7 +95,7 @@ const ModalContent = styled.div`
   background-color: white;
   padding: 15px;
   border-radius: 6px;
-  width: 680px;
+  width: 60%;
   margin-top: 20px;
   overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -128,33 +128,17 @@ const DetailItem = styled.div`
   background-color: #f9f9f9;
   border-radius: 3px;
 `;
-
-const DetailLabelStackTrace = styled.p`
-  font-weight: bold;
-  color: #555;
-  font-size: 12px;
-  text-align: left;
-  margin-right: 10px;
-  
-`;
-
-const DetailValueStackTrace = styled.p`
-  color: #333;
-  font-size: 12px;
-  text-align: right;
-`;
 const DetailLabel = styled.p`
   font-weight: bold;
   color: #555;
   font-size: 12px;
-  
-  
+  text-align: left;
 `;
 
 const DetailValue = styled.p`
   color: #333;
   font-size: 12px;
-  
+  text-align: right;
 `;
 
 const CloseButton = styled.button`
@@ -259,10 +243,10 @@ export default function SystemError() {
         <TableHead>
           <tr>
             <TableHeader>ID</TableHeader>
-            <TableHeader>Phương Thức</TableHeader>
-            <TableHeader>Thông Báo</TableHeader>
-            <TableHeader>Ngày Tạo</TableHeader>
-            <TableHeader>Hành Động</TableHeader>
+            <TableHeader>Phương thức</TableHeader>
+            <TableHeader>Thông báo</TableHeader>
+            <TableHeader>Ngày tạo</TableHeader>
+            <TableHeader>Hành động</TableHeader>
           </tr>
         </TableHead>
         <TableBody>
@@ -309,32 +293,32 @@ export default function SystemError() {
       {isDetailModalOpen && selectedLog && (
         <ModalOverlay>
           <ModalContent>
-            <ModalTitle>Chi Tiết Nhật Ký</ModalTitle>
+            <ModalTitle>Chi tiết nhật ký</ModalTitle>
             <DetailSection>
               <DetailItem>
-                <DetailLabel>ID:</DetailLabel>
+                <DetailLabel style={{ width: '30%' }}>ID:</DetailLabel>
                 <DetailValue>{selectedLog.id}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Phương Thức:</DetailLabel>
+                <DetailLabel style={{ width: '30%' }}>Phương thức:</DetailLabel>
                 <DetailValue>{selectedLog.method}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Thông Điệp:</DetailLabel>
+                <DetailLabel style={{ width: '30%' }}>Thông điệp:</DetailLabel>
                 <DetailValue>{selectedLog.message}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabelStackTrace>Stack Trace:</DetailLabelStackTrace>
-                <DetailValueStackTrace>
+                <DetailLabel style={{ width: '30%' }}>Stack Trace:</DetailLabel>
+                <DetailValue>
                   {selectedLog.stack_trace}
-                </DetailValueStackTrace>
+                </DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Ngày Tạo:</DetailLabel>
+                <DetailLabel style={{ width: '30%' }}>Ngày tạo:</DetailLabel>
                 <DetailValue>{formatDateTime(selectedLog.created_date)}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Ngày Cập nhật:</DetailLabel>
+                <DetailLabel style={{ width: '30%' }}>Ngày cập nhật:</DetailLabel>
                 <DetailValue>{formatDateTime(selectedLog.updated_date)}</DetailValue>
               </DetailItem>
             </DetailSection>

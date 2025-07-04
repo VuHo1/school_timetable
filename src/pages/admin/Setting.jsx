@@ -316,8 +316,8 @@ export default function Setting() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell style={{ width: '40%' }}>Tên Cài Đặt</TableHeaderCell>
-                  <TableHeaderCell style={{ width: '40%' }}>Giá Trị</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '40%' }}>Tên cấu hình</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '40%' }}>Giá trị</TableHeaderCell>
                   <TableHeaderCell style={{ width: '20%' }}>Thao tác</TableHeaderCell>
                 </TableRow>
               </TableHeader>
@@ -377,7 +377,7 @@ export default function Setting() {
             </ModalHeader>
             <form onSubmit={handleSaveSetting}>
               <FormGroup>
-                <Label>Tên:</Label>
+                <Label>Tên cấu hình:</Label>
                 <Input
                   type="text"
                   value={selectedSetting.name}
@@ -385,7 +385,7 @@ export default function Setting() {
                 />
               </FormGroup>
               <FormGroup>
-                <Label>Giá Trị:</Label>
+                <Label>Giá trị:</Label>
                 <Input
                   type="text"
                   value={editedValue}
