@@ -108,7 +108,7 @@ export function AuthProvider({ children }) {
             const data = await response.json();
             const { token, role_name, abilities } = data.data;
 
-            if (token) {
+            if (data.success) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', role_name);
                 setRole(role_name);
@@ -120,7 +120,7 @@ export function AuthProvider({ children }) {
                 return { success: true, description: data.description || 'Đăng nhập thành công' };
             } else {
                 console.error('No token received');
-                return { success: false, description: 'Đăng nhập thất bại: Không nhận được token' };
+                return { success: false, description: data.description || 'Đăng nhập thất bại: Không nhận được token' };
             }
         } catch (error) {
             console.error('Login error:', error);
@@ -156,7 +156,7 @@ export function AuthProvider({ children }) {
             const role_name = data.data.role_name;
             const abilities = data.data.abilities;
 
-            if (authToken) {
+            if (data.success) {
                 localStorage.setItem('authToken', authToken);
                 localStorage.setItem('role', role_name);
                 setRole(role_name);
@@ -168,7 +168,7 @@ export function AuthProvider({ children }) {
                 return { success: true, description: data.description || 'Đăng nhập bằng Google thành công' };
             } else {
                 console.error('No token received');
-                return { success: false, description: 'Đăng nhập thất bại: Không nhận được token' };
+                return { success: false, description: data.description || 'Đăng nhập thất bại: Không nhận được token' };
             }
         } catch (error) {
             console.error('Google Sign-In error:', error.message);
