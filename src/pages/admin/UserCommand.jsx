@@ -454,7 +454,7 @@ const UserCommand = () => {
     const actionMenuRef = useRef(null);
 
     const statusOptions = [
-        { value: '', label: 'Tất cả Trạng thái' },
+        { value: '', label: 'Tất cả trạng thái' },
         { value: 'Đang hoạt động', label: 'Đang hoạt động' },
         { value: 'Ngưng hoạt động', label: 'Ngưng hoạt động' },
     ];
@@ -759,38 +759,38 @@ const UserCommand = () => {
                                 ))}
                             </tbody>
                         </Table>
-                        {totalPages > 1 && (
-                            <Pagination>
-                                <PaginationButton
-                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    ← Trước
-                                </PaginationButton>
-                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                    const pageNum = Math.max(1, currentPage - 2) + i;
-                                    if (pageNum > totalPages) return null;
-                                    return (
-                                        <PaginationButton
-                                            key={pageNum}
-                                            active={pageNum === currentPage}
-                                            onClick={() => setCurrentPage(pageNum)}
-                                        >
-                                            {pageNum}
-                                        </PaginationButton>
-                                    );
-                                })}
-                                <PaginationButton
-                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    Tiếp →
-                                </PaginationButton>
-                            </Pagination>
-                        )}
+
                     </>
                 )}
-            </TableContainer>
+            </TableContainer>{totalPages > 1 && (
+                <Pagination>
+                    <PaginationButton
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        ← Trước
+                    </PaginationButton>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const pageNum = Math.max(1, currentPage - 2) + i;
+                        if (pageNum > totalPages) return null;
+                        return (
+                            <PaginationButton
+                                key={pageNum}
+                                active={pageNum === currentPage}
+                                onClick={() => setCurrentPage(pageNum)}
+                            >
+                                {pageNum}
+                            </PaginationButton>
+                        );
+                    })}
+                    <PaginationButton
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Tiếp →
+                    </PaginationButton>
+                </Pagination>
+            )}
 
             {/* Create Command Modal */}
             {isCreateModalOpen && (

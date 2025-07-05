@@ -596,7 +596,7 @@ export const assignUserRole = async (token, roleId, username) => {
 export const fetchSubjects = async (token, params = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit || 20);
+    if (params.limit) queryParams.append('limit', params.limit || 10);
     if (params.search) queryParams.append('search', params.search);
     if (params.sort) queryParams.append('sort', params.sort);
 
@@ -608,7 +608,13 @@ export const fetchSubjects = async (token, params = {}) => {
     }
 
     const url = `${API_BASE_URL}/api/subject?${queryParams.toString()}`;
-
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
     if (!response.ok) throw new Error('Failed to fetch subjects');
     const data = await response.json();
     return data; // Return full response for pagination

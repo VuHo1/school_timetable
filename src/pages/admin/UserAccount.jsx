@@ -589,7 +589,7 @@ export default function UserAccount() {
   ];
 
   const statusOptions = [
-    { value: '', label: 'Tất cả Trạng thái' },
+    { value: '', label: 'Tất cả trạng thái' },
     { value: 'Đang hoạt động', label: 'Đang hoạt động' },
     { value: 'Tạm khóa', label: 'Tạm khóa' },
     { value: 'Ngưng hoạt động', label: 'Ngưng hoạt động' },

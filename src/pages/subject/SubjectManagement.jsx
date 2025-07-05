@@ -379,7 +379,7 @@ function SubjectManagement() {
       const token = localStorage.getItem('authToken');
       const params = {
         page: currentPage,
-        limit: 20,
+        limit: 10,
         sort: 'subject_code'
       };
 
@@ -389,7 +389,7 @@ function SubjectManagement() {
 
       if (gradeFilter || statusFilter) {
         params.filter = {};
-        if (gradeFilter) params.filter.grade = gradeFilter;
+        if (gradeFilter) params.filter.grade_level_id = gradeFilter;
         if (statusFilter) params.filter.status = statusFilter;
       }
 
@@ -399,7 +399,6 @@ function SubjectManagement() {
       setSubjects(subjectList);
       setTotalPages(Math.ceil((data.pagination?.total || subjectList.length || 0) / 20));
 
-      toast.success(`Tải thành công ${subjectList.length} môn học`);
 
     } catch (error) {
       console.error('Error fetching subjects:', error);
@@ -681,7 +680,7 @@ function SubjectManagement() {
             </FormGroup>
 
             <FormGroup>
-              <Label>Giới hạn đồng thời</Label>
+              <Label>Giới hạn cùng thời điểm</Label>
               <Input
                 type="number"
                 min="0"
@@ -786,15 +785,15 @@ function SubjectManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>Mã môn</TableHeaderCell>
-                  <TableHeaderCell>Tên môn</TableHeaderCell>
-                  <TableHeaderCell>Khối</TableHeaderCell>
-                  <TableHeaderCell>Tiết/tuần</TableHeaderCell>
-                  <TableHeaderCell>Tiết liên tiếp</TableHeaderCell>
-                  <TableHeaderCell>Học online</TableHeaderCell>
-                  <TableHeaderCell>Giới hạn</TableHeaderCell>
-                  <TableHeaderCell>Trạng thái</TableHeaderCell>
-                  <TableHeaderCell>Thao tác</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Mã môn</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '20%' }}>Tên môn</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Khối</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Tiết/tuần</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Tiết liên tiếp</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Học online</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Giới hạn</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <tbody>
@@ -802,7 +801,7 @@ function SubjectManagement() {
                   <TableRow key={subject.subject_code}>
                     <TableCell>{subject.subject_code}</TableCell>
                     <TableCell>{subject.subject_name}</TableCell>
-                    <TableCell>{subject.grade}</TableCell>
+                    <TableCell>{subject.grade_level}</TableCell>
                     <TableCell>{subject.weekly_slot}</TableCell>
                     <TableCell>{subject.continuous_slot}</TableCell>
                     <TableCell>
@@ -841,7 +840,7 @@ function SubjectManagement() {
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
-                  « Trước
+                  ← Trước
                 </PaginationButton>
 
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -858,7 +857,7 @@ function SubjectManagement() {
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
-                  Sau »
+                  Tiếp →
                 </PaginationButton>
               </Pagination>
             )}
