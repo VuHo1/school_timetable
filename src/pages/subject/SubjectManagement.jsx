@@ -397,7 +397,7 @@ function SubjectManagement() {
       const subjectList = data.data_set || data.data || [];
 
       setSubjects(subjectList);
-      setTotalPages(Math.ceil((data.pagination?.total || subjectList.length || 0) / 20));
+      setTotalPages(Math.ceil((data.pagination?.total || subjectList.length || 0) / 10));
 
 
     } catch (error) {
