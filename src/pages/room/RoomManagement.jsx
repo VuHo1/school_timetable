@@ -316,6 +316,7 @@ function RoomManagement() {
   const [typeFilter, setTypeFilter] = useState('');
   const [openActionMenu, setOpenActionMenu] = useState(null);
   const actionMenuRef = useRef(null);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
   // Room type mapping
   const getRoomTypeName = (type) => {
     const typeMap = {
@@ -348,7 +349,7 @@ function RoomManagement() {
         params.append('filter[room_type]', typeFilter);
       }
 
-      const response = await fetch(`/api/room?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/api/room?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
@@ -374,7 +375,7 @@ function RoomManagement() {
       }
 
       setRooms(roomList);
-      setTotalPages(Math.ceil((data.pagination?.total || roomList.length || 0) / 20));
+      setTotalPages(Math.ceil((data.pagination?.total || roomList.length || 0) / 10));
 
 
     } catch (error) {
