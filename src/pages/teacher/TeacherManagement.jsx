@@ -1890,7 +1890,7 @@ function TeacherManagement() {
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
-            Sau →
+            Tiếp →
           </PaginationButton>
         </Pagination>
       )}
