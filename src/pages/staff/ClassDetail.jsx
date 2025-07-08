@@ -199,7 +199,7 @@ const SubjectsSection = styled.div`
   padding: 32px;
   border: 1px solid #e9ecef;
   transition: all 0.3s ease;
-  
+  margin-bottom: 32px;
 `;
 
 const TableContainer = styled.div`
@@ -553,15 +553,6 @@ function ClassDetail() {
             <p>Lớp học chưa có môn học nào được phân công.</p>
           </NoSubjects>
         )}
-
-        {classDetail.created_date && (
-          <Metadata>
-            <p><strong>Ngày tạo:</strong> {new Date(classDetail.created_date).toLocaleDateString('vi-VN')}</p>
-            {classDetail.modified_date && (
-              <p><strong>Ngày cập nhật:</strong> {new Date(classDetail.modified_date).toLocaleDateString('vi-VN')}</p>
-            )}
-          </Metadata>
-        )}
       </SubjectsSection>
     </Container>
   );
@@ -600,7 +591,7 @@ function ScheduleTable({ config, timeSlots }) {
               {dayKeys.map((dayKey, d) => {
                 const slotArr = Array.isArray(safeConfig[dayKey]) ? safeConfig[dayKey] : [];
                 // So sánh với String(slot.id)
-                const isAvailable = slotArr.includes(String(slot.id));
+                const isAvailable = !slotArr.includes(String(slot.id));
                 return (
                   <TableCell
                     key={d}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
 import {
@@ -6,11 +6,11 @@ import {
   createSubject,
   updateSubject,
   deleteSubject,
-  fetchGradeLevels
+  fetchGradeLevels,
+  fetchSubjectCodeList
 } from '../../api';
 
 // Get API base URL with fallback
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
 
 // Styled Components
 const Container = styled.div`
@@ -126,28 +126,6 @@ const TableHeaderCell = styled.th`
   font-size: 14px;
 `;
 
-const ActionButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'variant',
-})`
-  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'warning' ? '#f39c12' : '#3498db'};
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  margin-right: 5px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    opacity: 0.8;
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
 
 const StatusBadge = styled.span.withConfig({
   shouldForwardProp: (prop) => prop !== 'status',
@@ -340,6 +318,96 @@ const ModalActions = styled.div`
   gap: 10px;
 `;
 
+const ActionButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'variant',
+})`
+  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'primary' ? '#3498db' : '#666'};
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  margin-right: 5px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    opacity: 0.8;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const ActionMenuButton = styled.button`
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    background: #4338ca;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const ActionDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  margin-top: 5px;
+  opacity: ${(props) => (props.isOpen ? 1 : 0)};
+  transform: ${(props) => (props.isOpen ? 'translateY(0)' : 'translateY(-10px)')};
+  visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+`;
+
+const ActionMenuItem = styled.div`
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #2c3e50;
+  
+  &:hover {
+    background: #f8f9fa;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const ActionMenuText = styled.span`
+  font-size: 14px;
+  color: #2c3e50;
+`;
+
 function SubjectManagement() {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -354,7 +422,8 @@ function SubjectManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
-
+  const [openActionMenu, setOpenActionMenu] = useState(null);
+  const actionMenuRef = useRef(null);
   // Form data
   const [formData, setFormData] = useState({
     subject_code: '',
@@ -370,7 +439,6 @@ function SubjectManagement() {
   // Master data
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjectCodes, setSubjectCodes] = useState([]);
-
   // Fetch subjects from API
   const fetchSubjects = async () => {
     try {
@@ -397,20 +465,11 @@ function SubjectManagement() {
       const subjectList = data.data_set || data.data || [];
 
       setSubjects(subjectList);
-      setTotalPages(Math.ceil((data.pagination?.total || subjectList.length || 0) / 10));
+      setTotalPages(data.pagination.last);
 
 
     } catch (error) {
-      console.error('Error fetching subjects:', error);
-
-      if (error.message.includes('401')) {
-        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else if (error.message.includes('403')) {
-        toast.error('Bạn không có quyền truy cập chức năng này.');
-      } else {
-        toast.error('Không thể tải danh sách môn học. Vui lòng thử lại.');
-      }
-
+      toast.error(error.message);
       setSubjects([]);
     } finally {
       setLoading(false);
@@ -425,28 +484,11 @@ function SubjectManagement() {
       // Fetch grade levels
       const grades = await fetchGradeLevels(token);
       setGradeLevels(grades || []);
-
-      // Fetch subject codes
-      const response = await fetch(`${API_BASE_URL}/api/code-list/SUBJECT`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'text/plain',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSubjectCodes(data.data_set || []);
-      }
+      const subjectCodeList = await fetchSubjectCodeList(token);
+      setSubjectCodes(subjectCodeList || []);
 
     } catch (error) {
-      console.error('Error fetching master data:', error);
-      // Use fallback data
-      setGradeLevels([
-        { code_id: '10', caption: 'Khối 10' },
-        { code_id: '11', caption: 'Khối 11' },
-        { code_id: '12', caption: 'Khối 12' }
-      ]);
+      toast.error(error.message);
     }
   };
 
@@ -606,6 +648,19 @@ function SubjectManagement() {
     fetchMasterData();
   }, []);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setOpenActionMenu(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleActionMenuToggle = (subject_code) => {
+    setOpenActionMenu(openActionMenu === subject_code ? null : subject_code);
+  };
   // Create/Edit Modal Component
   const SubjectModal = ({ isEdit = false }) => (
     <ModalOverlay onClick={(e) => e.target === e.currentTarget && (isEdit ? setShowEditModal(false) : setShowCreateModal(false))}>
@@ -815,19 +870,37 @@ function SubjectManagement() {
                         {subject.status}
                       </StatusBadge>
                     </TableCell>
-                    <TableCell>
-                      <ActionButton
-                        onClick={() => handleEdit(subject)}
-                        variant="warning"
+                    <TableCell style={{ position: 'relative' }}>
+                      <ActionMenuButton
+                        onClick={() => handleActionMenuToggle(subject.subject_code)}
+                        ref={actionMenuRef}
                       >
-                        Sửa
-                      </ActionButton>
-                      <ActionButton
-                        onClick={() => handleDelete(subject.subject_code)}
-                        variant="danger"
-                      >
-                        Xóa
-                      </ActionButton>
+                        ⋯
+                      </ActionMenuButton>
+                      <ActionDropdown isOpen={openActionMenu === subject.subject_code}>
+                        <ActionMenuItem onClick={() => {
+                          setOpenActionMenu(subject.subject_code);
+                        }}>
+                          <ActionMenuText>Xem chi tiết</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
+                          onClick={() => {
+                            handleEdit(subject);
+                            setOpenActionMenu(subject.subject_code);
+                          }}
+                        >
+                          <ActionMenuText>Cập nhật</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
+                          onClick={() => {
+                            handleDelete(subject.subject_code);
+                            setOpenActionMenu(subject.subject_code);
+                          }}
+                          style={{ color: '#e74c3c' }}
+                        >
+                          <ActionMenuText style={{ color: '#e74c3c' }}>Bật/Tắt trạng thái</ActionMenuText>
+                        </ActionMenuItem>
+                      </ActionDropdown>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -868,7 +941,7 @@ function SubjectManagement() {
       {/* Modals */}
       {showCreateModal && <SubjectModal />}
       {showEditModal && <SubjectModal isEdit />}
-    </Container>
+    </Container >
   );
 }
 

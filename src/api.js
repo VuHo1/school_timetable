@@ -168,8 +168,21 @@ export const fetchGradeLevels = async (token) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    if (!response.ok) throw new Error('Failed to fetch grade levels');
     const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.description);
+    return data.data_set;
+};
+
+export const fetchSubjectCodeList = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/SUBJECT`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.description);
     return data.data_set;
 };
 
@@ -648,8 +661,8 @@ export const fetchSubjects = async (token, params = {}) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    if (!response.ok) throw new Error('Failed to fetch subjects');
     const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.description);
     return data; // Return full response for pagination
 };
 

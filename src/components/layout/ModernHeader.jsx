@@ -24,7 +24,7 @@ const PAGE_MAPPINGS = {
 const Container = styled.div`
   min-height: 100vh;
   background-color: #f5f5f5;
-  overflow-x: hidden;
+  overflow-x: none;
   position: sticky;
 `;
 
