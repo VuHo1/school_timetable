@@ -194,12 +194,45 @@ export const fetchTimeSlots = async (token) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    if (!response.ok) throw new Error('Failed to fetch time slots');
     const data = await response.json();
-    console.log('API /api/time-slot response:', data);
-    return data.data_set;
+    if (!response.ok || !data.success) {
+        throw new Error(data.description);
+    }
+    return data.data_set || []; // Trả về mảng data_set, dùng [] nếu không có
 };
 
+export const createTimeSlot = async (token, request) => {
+    const response = await fetch(`${API_BASE_URL}/api/time-slot/add`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify(request),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description);
+    }
+    return true;
+};
+export const updateTimeSlot = async (token, request) => {
+    const response = await fetch(`${API_BASE_URL}/api/time-slot/update`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify(request),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description);
+    }
+    return true;
+};
 // Code list APIs
 export const fetchCodeList = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/code-list`, {

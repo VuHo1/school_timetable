@@ -606,7 +606,7 @@ export default function CodeList() {
   return (
     <Container>
       <Header>
-        <Title>📋 Quản lý Danh sách Mã</Title>
+        <Title>📋 Danh mục dùng chung</Title>
         <AddButton onClick={() => setIsCreateModalOpen(true)}>
           + Thêm mã mới
         </AddButton>
