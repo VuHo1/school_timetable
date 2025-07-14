@@ -168,8 +168,21 @@ export const fetchGradeLevels = async (token) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    if (!response.ok) throw new Error('Failed to fetch grade levels');
     const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.description);
+    return data.data_set;
+};
+
+export const fetchSubjectCodeList = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/SUBJECT`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.description);
     return data.data_set;
 };
 
@@ -194,12 +207,45 @@ export const fetchTimeSlots = async (token) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    if (!response.ok) throw new Error('Failed to fetch time slots');
     const data = await response.json();
-    console.log('API /api/time-slot response:', data);
-    return data.data_set;
+    if (!response.ok || !data.success) {
+        throw new Error(data.description);
+    }
+    return data.data_set || []; // Trả về mảng data_set, dùng [] nếu không có
 };
 
+export const createTimeSlot = async (token, request) => {
+    const response = await fetch(`${API_BASE_URL}/api/time-slot/add`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify(request),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description);
+    }
+    return true;
+};
+export const updateTimeSlot = async (token, request) => {
+    const response = await fetch(`${API_BASE_URL}/api/time-slot/update`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain'
+        },
+        body: JSON.stringify(request),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description);
+    }
+    return true;
+};
 // Code list APIs
 export const fetchCodeList = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/code-list`, {
@@ -596,7 +642,7 @@ export const assignUserRole = async (token, roleId, username) => {
 export const fetchSubjects = async (token, params = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit || 20);
+    if (params.limit) queryParams.append('limit', params.limit || 10);
     if (params.search) queryParams.append('search', params.search);
     if (params.sort) queryParams.append('sort', params.sort);
 
@@ -608,9 +654,15 @@ export const fetchSubjects = async (token, params = {}) => {
     }
 
     const url = `${API_BASE_URL}/api/subject?${queryParams.toString()}`;
-
-    if (!response.ok) throw new Error('Failed to fetch subjects');
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
     const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.description);
     return data; // Return full response for pagination
 };
 

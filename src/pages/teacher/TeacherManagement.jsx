@@ -1496,7 +1496,7 @@ function TeacherManagement() {
               <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                   <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
-                    Click vào các ô để chọn tiết học mà giáo viên có thể dạy
+                    Chọn các tiết tránh
                   </p>
                   <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
                     <ActionButton
@@ -1589,7 +1589,7 @@ function TeacherManagement() {
                           {Object.keys(dayNames).map(day => {
                             const currentSlots = scheduleData[day] ? scheduleData[day].split('|').filter(Boolean) : [];
                             const slotCode = String(slot.time_slot_code);
-                            const isSelected = currentSlots.includes(slotCode);
+                            const isSelected = !currentSlots.includes(slotCode);
 
                             return (
                               <ScheduleCell
@@ -1702,7 +1702,7 @@ function TeacherManagement() {
                                 }
 
                                 const slotCode = String(slot.time_slot_code);
-                                const hasSlot = slots.includes(slotCode);
+                                const hasSlot = !slots.includes(slotCode);
 
                                 return (
                                   <ScheduleCell
@@ -1890,7 +1890,7 @@ function TeacherManagement() {
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
-            Sau →
+            Tiếp →
           </PaginationButton>
         </Pagination>
       )}

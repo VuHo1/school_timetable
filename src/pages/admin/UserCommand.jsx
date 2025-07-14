@@ -454,7 +454,7 @@ const UserCommand = () => {
     const actionMenuRef = useRef(null);
 
     const statusOptions = [
-        { value: '', label: 'Tất cả Trạng thái' },
+        { value: '', label: 'Tất cả trạng thái' },
         { value: 'Đang hoạt động', label: 'Đang hoạt động' },
         { value: 'Ngưng hoạt động', label: 'Ngưng hoạt động' },
     ];
@@ -655,7 +655,7 @@ const UserCommand = () => {
                     type="text"
                     value={searchKeyword}
                     onChange={handleSearchChange}
-                    placeholder="Tìm kiếm theo ID, tên chức năng, ứng dụng..."
+                    placeholder="Tìm kiếm theo ID, tên chức năng, phân loại..."
                 />
                 <SelectMenu
                     value={`${sortField}:${sortOrder}`}
@@ -678,7 +678,7 @@ const UserCommand = () => {
                         setCurrentPage(1);
                     }}
                 >
-                    <option value="">Tất cả Ứng dụng</option>
+                    <option value="">Tất cả</option>
                     {applications.map((app) => (
                         <option key={app.application} value={app.application}>
                             {app.application}
@@ -713,11 +713,11 @@ const UserCommand = () => {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHeaderCell style={{ width: '15%' }}>Mã chức năng</TableHeaderCell>
-                                    <TableHeaderCell style={{ width: '30%' }}>Tên chức năng</TableHeaderCell>
-                                    <TableHeaderCell style={{ width: '25%' }}>Ứng dụng</TableHeaderCell>
-                                    <TableHeaderCell style={{ width: '15%' }}>Trạng thái</TableHeaderCell>
-                                    <TableHeaderCell style={{ width: '15%' }}>Thao tác</TableHeaderCell>
+                                    <TableHeaderCell style={{ width: '20%' }}>Mã chức năng</TableHeaderCell>
+                                    <TableHeaderCell style={{ width: '35%' }}>Tên chức năng</TableHeaderCell>
+                                    <TableHeaderCell style={{ width: '25%' }}>Phân loại</TableHeaderCell>
+                                    <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
+                                    <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
                                 </TableRow>
                             </TableHeader>
                             <tbody>
@@ -759,38 +759,38 @@ const UserCommand = () => {
                                 ))}
                             </tbody>
                         </Table>
-                        {totalPages > 1 && (
-                            <Pagination>
-                                <PaginationButton
-                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    ← Trước
-                                </PaginationButton>
-                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                    const pageNum = Math.max(1, currentPage - 2) + i;
-                                    if (pageNum > totalPages) return null;
-                                    return (
-                                        <PaginationButton
-                                            key={pageNum}
-                                            active={pageNum === currentPage}
-                                            onClick={() => setCurrentPage(pageNum)}
-                                        >
-                                            {pageNum}
-                                        </PaginationButton>
-                                    );
-                                })}
-                                <PaginationButton
-                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    Tiếp →
-                                </PaginationButton>
-                            </Pagination>
-                        )}
+
                     </>
                 )}
-            </TableContainer>
+            </TableContainer>{totalPages > 1 && (
+                <Pagination>
+                    <PaginationButton
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        ← Trước
+                    </PaginationButton>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const pageNum = Math.max(1, currentPage - 2) + i;
+                        if (pageNum > totalPages) return null;
+                        return (
+                            <PaginationButton
+                                key={pageNum}
+                                active={pageNum === currentPage}
+                                onClick={() => setCurrentPage(pageNum)}
+                            >
+                                {pageNum}
+                            </PaginationButton>
+                        );
+                    })}
+                    <PaginationButton
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                        Tiếp →
+                    </PaginationButton>
+                </Pagination>
+            )}
 
             {/* Create Command Modal */}
             {isCreateModalOpen && (
@@ -822,13 +822,13 @@ const UserCommand = () => {
                                 />
                             </FormGroup>
                             <FormGroup>
-                                <Label>Ứng dụng *</Label>
+                                <Label>Phân loại *</Label>
                                 <Select
                                     value={newCommand.application}
                                     onChange={(e) => setNewCommand({ ...newCommand, application: e.target.value })}
                                     required
                                 >
-                                    <option value="">Chọn ứng dụng</option>
+                                    <option value="">Chọn phân loại</option>
                                     {applications.map((app) => (
                                         <option key={app.application} value={app.application}>
                                             {app.application}
@@ -877,13 +877,13 @@ const UserCommand = () => {
                                 />
                             </FormGroup>
                             <FormGroup>
-                                <Label>Ứng dụng *</Label>
+                                <Label>Phân loại *</Label>
                                 <Select
                                     value={updateCommand.application}
                                     onChange={(e) => setUpdateCommand({ ...updateCommand, application: e.target.value })}
                                     required
                                 >
-                                    <option value="">Chọn ứng dụng</option>
+                                    <option value="">Chọn phân loại</option>
                                     {applications.map((app) => (
                                         <option key={app.application} value={app.application}>
                                             {app.application}
@@ -896,7 +896,7 @@ const UserCommand = () => {
                                     Hủy
                                 </ActionButton>
                                 <ActionButton type="submit" variant="primary" disabled={loading}>
-                                    {loading ? 'Đang cập nhật...' : 'Cập nhật chức năng'}
+                                    {loading ? 'Đang cập nhật...' : 'Xác nhận'}
                                 </ActionButton>
                             </ModalActions>
                         </form>
@@ -921,7 +921,7 @@ const UserCommand = () => {
                             <span className="value">{selectedCommand.command_name}</span>
                         </DetailItem>
                         <DetailItem>
-                            <span className="label">Ứng dụng:</span>
+                            <span className="label">Phân loại:</span>
                             <span className="value">{selectedCommand.application}</span>
                         </DetailItem>
                         <DetailItem>

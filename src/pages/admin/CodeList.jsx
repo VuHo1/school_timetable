@@ -380,13 +380,13 @@ export default function CodeList() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterCodeName, setFilterCodeName] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [sortField, setSortField] = useState('code_id');
+  const [sortField, setSortField] = useState('code_name');
   const [sortOrder, setSortOrder] = useState('ASC');
   const [codeNameOptions, setCodeNameOptions] = useState([
-    { value: '', label: 'Tất cả Mã loại' },
+    { value: '', label: 'Tất cả' },
   ]);
   const [statusOptions] = useState([
-    { value: '', label: 'Tất cả Trạng thái' },
+    { value: '', label: 'Tất cả' },
     { value: 'Đang hoạt động', label: 'Đang hoạt động' },
     { value: 'Ngưng hoạt động', label: 'Ngưng hoạt động' },
   ]);
@@ -431,7 +431,7 @@ export default function CodeList() {
         setAllCodes(data || []);
         const uniqueCodeNames = [...new Set(data.map((code) => code.code_name))];
         setCodeNameOptions([
-          { value: '', label: 'Tất cả Mã loại' },
+          { value: '', label: 'Tất cả' },
           ...uniqueCodeNames.map((name) => ({ value: name, label: name })),
         ]);
       } catch (error) {
@@ -519,7 +519,7 @@ export default function CodeList() {
       setCurrentPage(1);
       const uniqueCodeNames = [...new Set(updatedData.map((code) => code.code_name))];
       setCodeNameOptions([
-        { value: '', label: 'Tất cả Mã loại' },
+        { value: '', label: 'Tất cả' },
         ...uniqueCodeNames.map((name) => ({ value: name, label: name })),
       ]);
     } catch (error) {
@@ -576,7 +576,7 @@ export default function CodeList() {
       setCurrentPage(1);
       const uniqueCodeNames = [...new Set(updatedData.map((code) => code.code_name))];
       setCodeNameOptions([
-        { value: '', label: 'Tất cả Mã loại' },
+        { value: '', label: 'Tất cả' },
         ...uniqueCodeNames.map((name) => ({ value: name, label: name })),
       ]);
     } catch (error) {
@@ -717,38 +717,38 @@ export default function CodeList() {
                 ))}
               </tbody>
             </Table>
-            {totalPages > 1 && (
-              <Pagination>
-                <PaginationButton
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  ← Trước
-                </PaginationButton>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = Math.max(1, currentPage - 2) + i;
-                  if (pageNum > totalPages) return null;
-                  return (
-                    <PaginationButton
-                      key={pageNum}
-                      active={pageNum === currentPage}
-                      onClick={() => setCurrentPage(pageNum)}
-                    >
-                      {pageNum}
-                    </PaginationButton>
-                  );
-                })}
-                <PaginationButton
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                >
-                  Tiếp →
-                </PaginationButton>
-              </Pagination>
-            )}
+
           </>
         )}
-      </TableContainer>
+      </TableContainer>{totalPages > 1 && (
+        <Pagination>
+          <PaginationButton
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            ← Trước
+          </PaginationButton>
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const pageNum = Math.max(1, currentPage - 2) + i;
+            if (pageNum > totalPages) return null;
+            return (
+              <PaginationButton
+                key={pageNum}
+                active={pageNum === currentPage}
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </PaginationButton>
+            );
+          })}
+          <PaginationButton
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Tiếp →
+          </PaginationButton>
+        </Pagination>
+      )}
 
       {/* Create Code Modal */}
       {isCreateModalOpen && (

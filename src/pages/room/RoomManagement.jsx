@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
 
@@ -116,10 +116,11 @@ const TableHeaderCell = styled.th`
   font-size: 14px;
 `;
 
+
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'warning' ? '#f39c12' : '#3498db'};
+  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'primary' ? '#3498db' : '#666'};
   color: white;
   border: none;
   padding: 6px 12px;
@@ -132,6 +133,78 @@ const ActionButton = styled.button.withConfig({
   &:hover {
     opacity: 0.8;
   }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const ActionMenuButton = styled.button`
+  background: #4f46e5;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    background: #4338ca;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const ActionDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  margin-top: 5px;
+  opacity: ${(props) => (props.isOpen ? 1 : 0)};
+  transform: ${(props) => (props.isOpen ? 'translateY(0)' : 'translateY(-10px)')};
+  visibility: ${(props) => (props.isOpen ? 'visible' : 'hidden')};
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+`;
+
+const ActionMenuItem = styled.div`
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  color: #2c3e50;
+  
+  &:hover {
+    background: #f8f9fa;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const ActionMenuText = styled.span`
+  font-size: 14px;
+  color: #2c3e50;
 `;
 
 const StatusBadge = styled.span.withConfig({
@@ -241,7 +314,9 @@ function RoomManagement() {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
-
+  const [openActionMenu, setOpenActionMenu] = useState(null);
+  const actionMenuRef = useRef(null);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
   // Room type mapping
   const getRoomTypeName = (type) => {
     const typeMap = {
@@ -260,7 +335,7 @@ function RoomManagement() {
       // Build query parameters according to API documentation
       const params = new URLSearchParams({
         page: currentPage,
-        limit: 20,
+        limit: 10,
         sort: 'room_code'
       });
 
@@ -274,7 +349,7 @@ function RoomManagement() {
         params.append('filter[room_type]', typeFilter);
       }
 
-      const response = await fetch(`/api/room?${params}`, {
+      const response = await fetch(`${API_BASE_URL}/api/room?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json',
@@ -300,9 +375,8 @@ function RoomManagement() {
       }
 
       setRooms(roomList);
-      setTotalPages(Math.ceil((data.pagination?.total || roomList.length || 0) / 20));
+      setTotalPages(Math.ceil((data.pagination?.total || roomList.length || 0) / 10));
 
-      toast.success(`Tải thành công ${roomList.length} phòng học`);
 
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -323,7 +397,9 @@ function RoomManagement() {
       setLoading(false);
     }
   };
-
+  const handleActionMenuToggle = (roomId) => {
+    setOpenActionMenu(openActionMenu === roomId ? null : roomId);
+  };
   // Handle room deletion
   const handleDelete = async (roomCode) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa phòng học này?')) {
@@ -420,13 +496,12 @@ function RoomManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell>Mã phòng</TableHeaderCell>
-                  <TableHeaderCell>Tên phòng</TableHeaderCell>
-                  <TableHeaderCell>Loại phòng</TableHeaderCell>
-                  <TableHeaderCell>Lớp được phân</TableHeaderCell>
-                  <TableHeaderCell>Trạng thái phân công</TableHeaderCell>
-                  <TableHeaderCell>Trạng thái</TableHeaderCell>
-                  <TableHeaderCell>Thao tác</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Mã phòng</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '30%' }}>Tên phòng</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '30%' }}>Loại phòng</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Lớp được phân</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <tbody>
@@ -434,43 +509,38 @@ function RoomManagement() {
                   <TableRow key={room.room_code}>
                     <TableCell>{room.room_code}</TableCell>
                     <TableCell>{room.room_name}</TableCell>
+                    <TableCell>{room.room_type}</TableCell>
+                    <TableCell>{room.use_by_class || 'Chưa phân'}</TableCell>
                     <TableCell>
-                      <RoomTypeBadge type={room.room_type}>
-                        {getRoomTypeName(room.room_type)}
-                      </RoomTypeBadge>
-                    </TableCell>
-                    <TableCell>{room.assigned_class || 'Chưa phân'}</TableCell>
-                    <TableCell>
-                      <AssignedBadge assigned={!!room.assigned_class}>
-                        {room.assigned_class ? 'Đã phân' : 'Trống'}
-                      </AssignedBadge>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={room.status}>
-                        {room.status}
+                      <StatusBadge status={room.room_status}>
+                        {room.room_status}
                       </StatusBadge>
                     </TableCell>
-                    <TableCell>
-                      <ActionButton
-                        variant="primary"
-                        onClick={() => toast.success('Chức năng xem chi tiết đang phát triển')}
+                    <TableCell style={{ position: 'relative' }}>
+                      <ActionMenuButton
+                        onClick={() => handleActionMenuToggle(room.id)}
+                        ref={actionMenuRef}
                       >
-                        Xem
-                      </ActionButton>
-                      <ActionButton
-                        variant="warning"
-                        onClick={() => toast.success('Chức năng chỉnh sửa đang phát triển')}
-                      >
-                        Sửa
-                      </ActionButton>
-                      <ActionButton
-                        variant="danger"
-                        onClick={() => handleDelete(room.room_code)}
-                        disabled={!!room.assigned_class}
-                        title={room.assigned_class ? 'Không thể xóa phòng đã được phân lớp' : ''}
-                      >
-                        Xóa
-                      </ActionButton>
+                        ⋯
+                      </ActionMenuButton>
+                      <ActionDropdown isOpen={openActionMenu === room.id}>
+                        <ActionMenuItem
+                          onClick={() => toast.success('Chức năng đang phát triển')}
+                        >
+                          <ActionMenuText>Xem chi tiết</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
+                          onClick={() => toast.success('Chức năng đang phát triển')}
+                        >
+                          <ActionMenuText>Cập nhật</ActionMenuText>
+                        </ActionMenuItem>
+                        <ActionMenuItem
+                          onClick={() => toast.success('Chức năng đang phát triển')}
+                          style={{ color: '#e74c3c' }}
+                        >
+                          <ActionMenuText style={{ color: '#e74c3c' }}>Bật/Tắt trạng thái</ActionMenuText>
+                        </ActionMenuItem>
+                      </ActionDropdown>
                     </TableCell>
                   </TableRow>
                 ))}

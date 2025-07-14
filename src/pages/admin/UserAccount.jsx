@@ -358,8 +358,7 @@ const ModalContent = styled.div`
   background: white;
   padding: 20px;
   border-radius: 12px;
-  width:50%;
-  height: 80%;
+  width:auto;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 `;
@@ -590,7 +589,7 @@ export default function UserAccount() {
   ];
 
   const statusOptions = [
-    { value: '', label: 'Tất cả Trạng thái' },
+    { value: '', label: 'Tất cả trạng thái' },
     { value: 'Đang hoạt động', label: 'Đang hoạt động' },
     { value: 'Tạm khóa', label: 'Tạm khóa' },
     { value: 'Ngưng hoạt động', label: 'Ngưng hoạt động' },
