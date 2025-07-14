@@ -176,7 +176,7 @@ const ActionButton = styled.button.withConfig({
 `;
 
 const ActionMenuButton = styled.button`
-  background: #4f46e5; /* Indigo-600 */
+  background: #4f46e5;
   color: white;
   border: none;
   padding: 6px 10px;
