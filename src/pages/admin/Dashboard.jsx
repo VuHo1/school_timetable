@@ -2,11 +2,9 @@ import React from 'react';
 import { useAuth } from '../../context/AuthContext';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-
-// Styled components with vibrant, colorful design
 const Container = styled.div`
   min-height: calc(100vh - 70px);
-  background: linear-gradient(135deg, #6b7280 0%, #3b82f6 50%, #ec4899 100%);
+  background: linear-gradient(135deg, #e0f7fa 0%, #90caf9 50%, #e3f2fd 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -22,11 +20,9 @@ const AnimatedBackground = styled(motion.div)`
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 30% 30%, rgba(63, 41, 255, 0.3) 0%, transparent 70%),
-              radial-gradient(circle at 70% 70%, rgba(205, 219, 228, 0.3) 0%, transparent 70%);
+  background: #f2f2f2;
   z-index: 0;
 `;
-
 
 const WelcomeCard = styled(motion.div)`
   background: rgba(255, 255, 255, 0.95);
@@ -48,7 +44,7 @@ const WelcomeCard = styled(motion.div)`
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg, #3b82f6, #ec4899, #f59e0b);
+    background: linear-gradient(45deg, #aed6eb, #6795d0, #c9e0f4);
     z-index: -1;
     border-radius: 1.5rem;
     animation: gradientBorder 3s linear infinite;
@@ -66,17 +62,16 @@ const WelcomeCard = styled(motion.div)`
 const Title = styled(motion.h1)`
   font-size: 2rem;
   font-weight: 800;
-  color: #214476;
+  color: #030556;
   margin-bottom: 1.5rem;
-  background: linear-gradient(to right, #3b82f6, #ec4899);
+  background: linear-gradient(45deg, #aed6eb, #6795d0, #c9e0f4);
   -webkit-background-clip: text;
   background-clip: text;
-  
 `;
 
 const Subtitle = styled(motion.p)`
   font-size: 1.5rem;
-  color: #f2f8ff;
+  color: #181b1c;
   margin-bottom: 2rem;
   line-height: 1.6;
 `;
@@ -85,21 +80,21 @@ const RoleBadge = styled(motion.div)`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(45deg, #3b82f6, #ec4899);
-  color: white;
+  background: linear-gradient(45deg, #aed6eb, #6795d0, #c9e0f4);
+  color:  #000000;
   font-size: 1.1rem;
   font-weight: 600;
   padding: 0.75rem 2rem;
   border-radius: 9999px;
   margin-top: 1.5rem;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 15px rgba(66, 165, 245, 0.4);
 `;
 
 const Sparkle = styled(motion.div)`
   position: absolute;
   width: 10px;
   height: 10px;
-  background: #f59e0b;
+  background: #4dd0e1;
   border-radius: 50%;
   z-index: 2;
 `;
@@ -107,7 +102,6 @@ const Sparkle = styled(motion.div)`
 function Dashboard() {
   const { role, user } = useAuth();
 
-  // Animation variants for sparkles
   const sparkleVariants = {
     animate: (i) => ({
       x: [0, Math.random() * 100 - 50, 0],
@@ -141,7 +135,6 @@ function Dashboard() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
-        {/* Sparkle effects */}
         {[...Array(5)].map((_, i) => (
           <Sparkle
             key={i}
@@ -173,7 +166,7 @@ function Dashboard() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.6 }}
-          whileHover={{ scale: 1.05, boxShadow: '0 6px 20px rgba(59, 130, 246, 0.5)' }}
+          whileHover={{ scale: 1.05, boxShadow: '0 6px 20px rgba(66, 165, 245, 0.5)' }}
         >
           Vai trò: {role}
         </RoleBadge>

@@ -29,7 +29,7 @@ const Container = styled.div`
 `;
 
 const Header = styled.header`
-  background: #e53e3e;
+  background: linear-gradient(45deg, #aed6eb, #6795d0, #c9e0f4);
   height: 70px;
   display: flex;
   justify-content: space-between;
@@ -42,7 +42,6 @@ const Header = styled.header`
   right: 0;
   z-index: 1000;
 `;
-
 
 const LeftSection = styled.div`
   display: flex;
@@ -128,7 +127,7 @@ const Logo = styled.div`
 
 const LogoMain = styled.div`
   background: white;
-  color: #e53e3e;
+  color: #1e88e5;
   padding: 6px 12px;
   border-radius: 6px;
   font-weight: 800;
@@ -142,7 +141,6 @@ const LogoSub = styled.div`
   margin-top: 2px;
   letter-spacing: 1px;
 `;
-
 
 const RightSection = styled.div`
   display: flex;
@@ -182,7 +180,7 @@ const DefaultAvatar = styled.div`
   height: 40px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #42a5f5 0%, #64b5f6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -260,10 +258,8 @@ function ModernHeader() {
   const menuDropdownRef = useRef(null);
   const avatarDropdownRef = useRef(null);
 
-  // Update currentAbilities when abilities change (filter out avatar dropdown items)
   useEffect(() => {
     const storedAbilities = localStorage.getItem('abilities');
-
     let abilitiesToProcess = [];
 
     if (storedAbilities) {
@@ -281,7 +277,6 @@ function ModernHeader() {
       abilitiesToProcess = abilities;
     }
 
-    // Filter out abilities that are available in avatar dropdown
     const filteredAbilities = abilitiesToProcess.filter(ability =>
       ability !== 'Cá nhân' && ability !== 'Thông báo'
     );
@@ -289,7 +284,6 @@ function ModernHeader() {
     setCurrentAbilities(filteredAbilities);
   }, [abilities]);
 
-  // Handle clicks outside dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuDropdownRef.current && !menuDropdownRef.current.contains(event.target)) {
@@ -341,22 +335,13 @@ function ModernHeader() {
     <Container>
       <Header>
         <LeftSection>
-          {/* Menu Dropdown */}
           <MenuDropdownContainer ref={menuDropdownRef}>
-            <MenuButton
-              onClick={() => setShowMenuDropdown(!showMenuDropdown)}
-            >
-              ☰
-            </MenuButton>
-
+            <MenuButton onClick={() => setShowMenuDropdown(!showMenuDropdown)}>☰</MenuButton>
             {showMenuDropdown && (
               <MenuDropdown>
-                {currentAbilities && currentAbilities.length > 0 ? (
+                {currentAbilities.length > 0 ? (
                   currentAbilities.map((ability, index) => (
-                    <MenuItem
-                      key={index}
-                      onClick={() => handleMenuClick(ability)}
-                    >
+                    <MenuItem key={index} onClick={() => handleMenuClick(ability)}>
                       <MenuIcon>{getMenuIcon(ability)}</MenuIcon>
                       <MenuText>{ability}</MenuText>
                     </MenuItem>
@@ -371,25 +356,17 @@ function ModernHeader() {
             )}
           </MenuDropdownContainer>
 
-          {/* Logo */}
           <Logo>
             <LogoMain>TKB</LogoMain>
             <LogoSub>THỜI KHÓA BIỂU</LogoSub>
           </Logo>
         </LeftSection>
 
-        {/* Search Section */}
-
-        {/* Avatar Dropdown */}
         <RightSection>
           <AvatarDropdownContainer ref={avatarDropdownRef}>
             <AvatarButton onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}>
               {user?.avatar && !avatarError ? (
-                <Avatar
-                  src={user.avatar}
-                  alt="Avatar"
-                  onError={() => setAvatarError(true)}
-                />
+                <Avatar src={user.avatar} alt="Avatar" onError={() => setAvatarError(true)} />
               ) : (
                 <DefaultAvatar>
                   {user?.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
@@ -399,26 +376,15 @@ function ModernHeader() {
 
             {showAvatarDropdown && (
               <AvatarDropdown>
-                <AvatarMenuItem onClick={() => {
-                  navigate('/profile');
-                  setShowAvatarDropdown(false);
-                }}>
+                <AvatarMenuItem onClick={() => { navigate('/profile'); setShowAvatarDropdown(false); }}>
                   <span>👤</span>
                   <span>Tài khoản</span>
                 </AvatarMenuItem>
-
-                <AvatarMenuItem onClick={() => {
-                  navigate('/notification');
-                  setShowAvatarDropdown(false);
-                }}>
+                <AvatarMenuItem onClick={() => { navigate('/notification'); setShowAvatarDropdown(false); }}>
                   <span>🔔</span>
                   <span>Thông báo</span>
                 </AvatarMenuItem>
-
-                <AvatarMenuItem
-                  className="logout"
-                  onClick={handleLogout}
-                >
+                <AvatarMenuItem className="logout" onClick={handleLogout}>
                   <span>🚪</span>
                   <span>Đăng xuất</span>
                 </AvatarMenuItem>
@@ -428,13 +394,7 @@ function ModernHeader() {
         </RightSection>
       </Header>
 
-      <Overlay
-        show={showMenuDropdown || showAvatarDropdown}
-        onClick={() => {
-          setShowMenuDropdown(false);
-          setShowAvatarDropdown(false);
-        }}
-      />
+      <Overlay show={showMenuDropdown || showAvatarDropdown} onClick={() => { setShowMenuDropdown(false); setShowAvatarDropdown(false); }} />
 
       <Content>
         <Outlet />
@@ -443,4 +403,4 @@ function ModernHeader() {
   );
 }
 
-export default ModernHeader; 
+export default ModernHeader;
