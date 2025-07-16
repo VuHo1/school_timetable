@@ -48,7 +48,7 @@ const DropdownMenu = styled.div`
 
 const DropdownItem = styled.div`
     padding: 8px 12px;
-    font-size: 14px;
+    font-size: 16px;
     color: #2d3748;
     cursor: pointer;
     &:hover {
@@ -65,9 +65,9 @@ const Input = styled.input`
     padding: 10px;
     border: 1px solid #e2e8f0;
     border-radius: 6px; 
-    font-size: 14px;
+    font-size: 16px;
     color: #333;
-    width: 100%;
+    width:100%;
     box-sizing: border-box;
     &:focus {
         outline: none;
@@ -81,12 +81,12 @@ const Input = styled.input`
 
 const DialogError = styled.p`
     color: #e3342f;
-    font-size: 12px;
+    font-size: 15px;
     margin-top: 4px;
     margin-bottom: 0;
 `;
 const Container = styled.div`
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
     padding: 20px;
 `;
@@ -104,7 +104,7 @@ const ErrorMessage = styled.p`
 `;
 
 const InfoMessage = styled.p`
-    font-size: 14px;
+    font-size: 16px;
     color: #4a5568;
     margin-bottom: 16px;
 `;
@@ -136,14 +136,19 @@ const FormGroup = styled.div`
     margin-bottom: 16px;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    justify-content: flex-start;
     gap: 8px;
+`;
+const FormGroup1 = styled.div`
+    margin-bottom: 16px;
+    
 `;
 
 const Label = styled.label`
-    font-size: 14px;
+    font-size: 16px;
     color: #4a5568;
     margin-bottom: 4px;
+    margin-right: auto;
     display: block;
 `;
 
@@ -151,7 +156,8 @@ const Select = styled.select`
     padding: 8px;
     border: 1px solid #e2e8f0;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 16px;
+    width: 100%;
     color: #333;
     &:focus {
         outline: none;
@@ -164,11 +170,43 @@ const Button = styled.button`
     color: white;
     padding: 8px 16px;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 16px;
     cursor: pointer;
     border: none;
     &:hover {
         background: #3182ce;
+    }
+    &:disabled {
+        background: #a0aec0;
+        cursor: not-allowed;
+    }
+`;
+const ButtonAdd = styled.button`
+    background: #14924c;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    &:hover {
+        background: #178b34;
+    }
+    &:disabled {
+        background: #a0aec0;
+        cursor: not-allowed;
+    }
+`;
+const ButtonDelete = styled.button`
+    background: #cb3c20;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    &:hover {
+        background: #b7271d;
     }
     &:disabled {
         background: #a0aec0;
@@ -184,9 +222,10 @@ const NavButton = styled(Button)`
 const CheckboxLabel = styled.label`
     display: flex;
     align-items: center;
-    font-size: 14px;
+    font-size: 16px;
     color: #4a5568;
     margin-right: 16px;
+    margin-top: 15px;
 `;
 
 const Checkbox = styled.input`
@@ -204,7 +243,7 @@ const Dialog = styled.div`
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     width: 90%;
-    max-width: 500px;
+    max-width: 700px;
 `;
 
 const DialogOverlay = styled.div`
@@ -237,7 +276,7 @@ const Modal = styled.div`
     left: 50%;
     transform: translate(-50%, -50%);
     background: white;
-    padding: 20px;
+    padding: 30px;
     border-radius: 4px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
@@ -259,18 +298,17 @@ const ModalOverlay = styled.div`
 
 const ModalContent = styled.div`
     margin-bottom: 16px;
-    
 `;
 
 const ModalEntry = styled.div`
-    padding: 8px;
+    padding: 10px;
     border-bottom: 1px solid #e2e8f0;
     &:last-child {
         border-bottom: none;
     }
     p {
         margin: 0;
-        font-size: 15px;
+        font-size: 16px;
         color: #4a5568;
         margin-bottom: 8px;
     }
@@ -314,7 +352,7 @@ const TimetableWrapper = styled.div`
 const Table = styled.table`
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    font-size: 16px;
 `;
 
 const Th = styled.th`
@@ -339,7 +377,7 @@ const Entry = styled.div`
     }
     p {
         margin: 0;
-        font-size: 12px;
+        font-size: 15px;
         color: #4a5568;
     }
     &:hover{
@@ -348,13 +386,13 @@ const Entry = styled.div`
 `;
 
 const LoadingMessage = styled.p`
-    font-size: 14px;
+    font-size: 16px;
     color: #4a5568;
     margin-top: 8px;
 `;
 
 const PeriodText = styled.p`
-    font-size: 14px;
+    font-size: 16px;
     color: #4a5568;
     margin-bottom: 8px;
 `;
@@ -372,10 +410,11 @@ const SlotModal = ({ entries, onClose, viewMode }) => (
                         <p><b>Môn:</b> {entry.subject_name}</p>
                         <p><b>Giáo viên:</b> {entry.teacher_user_name}</p>
                         <p><b>Phòng:</b> {entry.room_code}</p>
-                        <p><b>Tiết:</b> {entry.time_slot_id} ({entry.start_time} - {entry.end_time})</p>
+                        <p><b>Tiết:</b> {entry.time_slot_id}</p>
 
                         {viewMode !== 'Base' && (
                             <>
+                                <p><b>Từ:</b> {entry.start_time} <b>đến</b> {entry.end_time}</p>
                                 <p><b>Phản hồi:</b>
                                     {' '}
                                     {entry.feedback && entry.feedback.trim() !== ''
@@ -525,17 +564,12 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                     <DialogOverlay onClick={() => setIsEditDialogOpen(false)} />
                     <Dialog>
                         <SubHeading>Đổi tên thời khóa biểu mẫu</SubHeading>
-                        <FormGroup>
-
-
-                            <Input
-                                type="text"
-                                value={editScheduleName}
-                                onChange={(e) => setEditScheduleName(e.target.value)}
-                                placeholder="Nhập tên thời khóa biểu"
-                            />
-
-                        </FormGroup>
+                        <Input
+                            type="text"
+                            value={editScheduleName}
+                            onChange={(e) => setEditScheduleName(e.target.value)}
+                            placeholder="Nhập tên thời khóa biểu"
+                        />
                         <DialogButtonGroup>
                             <CancelButton onClick={() => setIsEditDialogOpen(false)}>
                                 Hủy
@@ -674,19 +708,10 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
             <SubHeading>
                 Thời khóa biểu {viewMode === 'Applied' ? `đang áp dụng` : viewMode === 'Personal' ? `của tôi` : 'mẫu'}
             </SubHeading>
-            {(viewMode === 'Base' && data.length > 100) && (
-                <InfoMessage>
-                    Có quá nhiều dữ liệu ({data.length} mục). Vui lòng dùng bộ lọc theo (Lớp/Giáo viên) để lọc chi tiết hơn.
-                </InfoMessage>
-            )}
             {data.length === 0 && (
                 <InfoMessage>
-                    Không có lịch học trong khoảng thời gian: {scheduleDescription || 'chưa xác định'}.
+                    Không có lịch học trong khoảng thời gian: {scheduleDescription}.
                 </InfoMessage>
-            )}
-            {timeSlots.length === 0 && <InfoMessage>Không có dữ liệu tiết học.</InfoMessage>}
-            {dateColumns.length === 0 && data.length > 0 && selectedOption && (
-                <InfoMessage>Không thể hiển thị ngày do dữ liệu không hợp lệ.</InfoMessage>
             )}
             {data.length > 0 && timeSlots.length > 0 && dateColumns.length > 0 && (
                 <Table>
@@ -1160,7 +1185,7 @@ export default function ViewSchedule() {
                             Thời khóa biểu của tôi
                         </Button>
                         <div>
-                            <Label>Bộ lọc</Label>
+
                             <Select value={baseType} onChange={(e) => handleBaseTypeChange(e.target.value)}>
                                 <option value="All">Tất cả</option>
                                 <option value="Class">Lớp</option>
@@ -1169,7 +1194,6 @@ export default function ViewSchedule() {
                         </div>
                         {baseType !== 'All' && (
                             <div>
-                                <Label>{baseType === 'Class' ? 'Chọn Lớp' : 'Chọn Giáo Viên'}</Label>
                                 <Select
                                     value={baseCode}
                                     onChange={async (e) => {
@@ -1237,12 +1261,7 @@ export default function ViewSchedule() {
                         <Button onClick={() => handleViewMode('Base')}>
                             Quay lại
                         </Button>
-                        <Button onClick={() => setIsApplyDialogOpen(true)} disabled={isLoading}> {/* NEW: Nút mở dialog áp dụng */}
-                            Thêm thời khóa biểu
-                        </Button>
-                        <Button onClick={() => setIsRemoveDialogOpen(true)} disabled={isLoading}> {/* NEW: Nút mở dialog xóa */}
-                            Xóa thời khóa biểu
-                        </Button>
+
                         <NavButton
                             onClick={handlePrevPeriod}
                             disabled={isLoading}
@@ -1250,7 +1269,6 @@ export default function ViewSchedule() {
                             {'<'}
                         </NavButton>
                         <div>
-                            <Label>Khoảng thời gian</Label>
                             <PeriodText>{scheduleDescription}</PeriodText>
                         </div>
                         <NavButton
@@ -1259,21 +1277,16 @@ export default function ViewSchedule() {
                         >
                             {'>'}
                         </NavButton>
-                        <div>
-                            <Label>Chế độ xem</Label>
-                            <Select
-                                value={selectedOption}
-                                onChange={(e) => handleOptionChange(e.target.value)}
-                                disabled={isLoading}
-                            >
-                                <option value="Daily">Ngày</option>
-                                <option value="Weekly">Tuần</option>
-                            </Select>
-                        </div>
+                        <ButtonAdd onClick={() => setIsApplyDialogOpen(true)} disabled={isLoading}> {/* NEW: Nút mở dialog áp dụng */}
+                            Thêm thời khóa biểu
+                        </ButtonAdd>
+                        <ButtonDelete onClick={() => setIsRemoveDialogOpen(true)} disabled={isLoading}> {/* NEW: Nút mở dialog xóa */}
+                            Xóa thời khóa biểu
+                        </ButtonDelete>
                         {viewMode === 'Applied' && (
                             <>
                                 <div>
-                                    <Label>Bộ lọc</Label>
+
                                     <Select value={appliedType} onChange={(e) => handleAppliedTypeChange(e.target.value)}>
                                         <option value="All">Tất Cả</option>
                                         <option value="Class">Lớp</option>
@@ -1282,7 +1295,7 @@ export default function ViewSchedule() {
                                 </div>
                                 {appliedType !== 'All' && (
                                     <div>
-                                        <Label>{appliedType === 'Class' ? 'Chọn Lớp' : 'Chọn Giáo Viên'}</Label>
+
                                         <Select
                                             value={appliedCode}
                                             onChange={(e) => handleAppliedCodeChange(e.target.value)}
@@ -1305,6 +1318,7 @@ export default function ViewSchedule() {
                                 )}
                             </>
                         )}
+
                     </FormGroup>
                     <Timetable
                         data={timetableData}
@@ -1325,7 +1339,7 @@ export default function ViewSchedule() {
                             }} />
                             <Dialog>
                                 <SubHeading>Thêm thời khóa biểu</SubHeading>
-                                <FormGroup>
+                                <FormGroup1>
                                     <Label>Mẫu thời khóa biểu</Label>
                                     <Select
                                         value={applyScheduleId}
@@ -1341,8 +1355,8 @@ export default function ViewSchedule() {
                                             </option>
                                         ))}
                                     </Select>
-                                </FormGroup>
-                                <FormGroup>
+                                </FormGroup1>
+                                <FormGroup1>
                                     <Label>Ngày bắt đầu</Label>
                                     <Input
                                         type="date"
@@ -1352,8 +1366,8 @@ export default function ViewSchedule() {
                                             setApplyDateError('');
                                         }}
                                     />
-                                </FormGroup>
-                                <FormGroup>
+                                </FormGroup1>
+                                <FormGroup1>
                                     <Label>Ngày kết thúc</Label>
                                     <Input
                                         type="date"
@@ -1363,7 +1377,7 @@ export default function ViewSchedule() {
                                             setApplyDateError('');
                                         }}
                                     />
-                                </FormGroup>
+                                </FormGroup1>
                                 <FormGroup>
                                     <CheckboxLabel>
                                         <Checkbox
@@ -1403,7 +1417,7 @@ export default function ViewSchedule() {
                             }} />
                             <Dialog>
                                 <SubHeading>Xóa thời khóa biểu đang áp dụng</SubHeading>
-                                <FormGroup>
+                                <FormGroup1>
                                     <Label>Ngày bắt đầu</Label>
                                     <Input
                                         type="date"
@@ -1413,8 +1427,8 @@ export default function ViewSchedule() {
                                             setRemoveDateError('');
                                         }}
                                     />
-                                </FormGroup>
-                                <FormGroup>
+                                </FormGroup1>
+                                <FormGroup1>
                                     <Label>Ngày kết thúc</Label>
                                     <Input
                                         type="date"
@@ -1424,7 +1438,7 @@ export default function ViewSchedule() {
                                             setRemoveDateError('');
                                         }}
                                     />
-                                </FormGroup>
+                                </FormGroup1>
                                 {removeDateError && <DialogError>{removeDateError}</DialogError>}
                                 <DialogButtonGroup>
                                     <CancelButton onClick={() => {
