@@ -31,32 +31,6 @@ function AppRoutes() {
   // Tạo default route dựa trên abilities
   const getDefaultRoute = () => {
 
-    if (!abilities || abilities.length === 0) return '/admin/dashboard';
-
-    // Priority order for default routes (Admin first, then Staff)
-    const routePriority = [
-      'Quản lí tài khoản',
-      'Cấu hình hệ thống',
-      'Danh mục dùng chung',
-      'Thời khóa biểu',
-      'Quản lí lớp học',
-      'Cá nhân',
-      'Nhật ký & Giám sát'
-    ];
-
-    for (const priority of routePriority) {
-      if (abilities.includes(priority)) {
-        switch (priority) {
-          case 'Quản lí tài khoản': return '/admin/user_account';
-          case 'Cấu hình hệ thống': return '/admin/setting';
-          case 'Danh mục dùng chung': return '/admin/code_list';
-          case 'Thời khóa biểu': return '/staff/schedule';
-          case 'Quản lí lớp học': return '/staff/class';
-          case 'Cá nhân': return '/profile';
-          case 'Nhật ký & Giám sát': return '/log';
-        }
-      }
-    }
 
     return '/admin/dashboard';
   };

@@ -372,7 +372,7 @@ function ModernHeader() {
           </MenuDropdownContainer>
 
           {/* Logo */}
-          <Logo>
+          <Logo onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
             <LogoMain>TKB</LogoMain>
             <LogoSub>THỜI KHÓA BIỂU</LogoSub>
           </Logo>

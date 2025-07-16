@@ -889,3 +889,241 @@ export const deleteUserCommand = async (token, commandId) => {
     }
     return await response.json();
 };
+
+export const fetchBaseSchedules = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/base`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch base schedules');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+
+export const fetchScheduleDetails = async (token, scheduleId, code = null, type = 'All') => {
+    const queryParams = new URLSearchParams();
+    if (code) queryParams.append('code', code);
+    if (type) queryParams.append('type', type);
+
+    const url = `${API_BASE_URL}/api/schedule/base/${scheduleId}?${queryParams.toString()}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch schedule details');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+
+export const fetchTimeTable = async (token, { code, type = 'All', option = 'Weekly', current = 0 }) => {
+    const queryParams = new URLSearchParams();
+    if (code) queryParams.append('code', code);
+    if (type) queryParams.append('type', type);
+    if (option) queryParams.append('option', option);
+    if (current !== null && current !== undefined) queryParams.append('current', current);
+
+    const url = `${API_BASE_URL}/api/schedule/time-table?${queryParams.toString()}`;
+    console.log('[fetchTimeTable] URL:', url);
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        console.log('[fetchTimeTable] Response status:', response.status, 'Headers:', Object.fromEntries(response.headers));
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('[fetchTimeTable] Error:', errorData);
+            throw new Error(errorData.description || `Lỗi khi gọi API: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log('[fetchTimeTable] Response data:', data);
+
+        return {
+            success: data.success ?? true,
+            data_set: Array.isArray(data.data_set) ? data.data_set : [],
+            description: data.description || 'Không có mô tả',
+            pagination: data.pagination || { current: Number(current), last: 1, next: null, previous: null, total: 0 }
+        };
+    } catch (err) {
+        console.error('[fetchTimeTable] Exception:', err);
+        throw err;
+    }
+};
+
+export const fetchMyTimeTable = async (token, { option = 'Weekly', current = 0 }) => {
+    const queryParams = new URLSearchParams();
+    if (option) queryParams.append('option', option);
+    if (current !== null && current !== undefined) queryParams.append('current', current);
+
+    const url = `${API_BASE_URL}/api/schedule/my-time-table?${queryParams.toString()}`;
+    console.log('[fetchMyTimeTable] URL:', url);
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        console.log('[fetchMyTimeTable] Response status:', response.status, 'Headers:', Object.fromEntries(response.headers));
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('[fetchMyTimeTable] Error:', errorData);
+            throw new Error(errorData.description || `Lỗi khi gọi API: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log('[fetchMyTimeTable] Response data:', data);
+
+        return {
+            success: data.success ?? true,
+            data_set: Array.isArray(data.data_set) ? data.data_set : [],
+            description: data.description || 'Không có mô tả',
+            pagination: data.pagination || { current: Number(current), last: 1, next: null, previous: null, total: 0 }
+        };
+    } catch (err) {
+        console.error('[fetchMyTimeTable] Exception:', err);
+        throw err;
+    }
+};
+
+export const addSchedule = async (token, scheduleData) => {
+    console.log('[addSchedule] Gọi API thêm thời khóa biểu:', scheduleData);
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/schedule/add`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(scheduleData),
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+            throw new Error(data.description || 'Failed to add schedule');
+        }
+        return {
+            success: data.success ?? true,
+            description: data.description || 'Thêm thời khóa biểu thành công',
+            data: data.data || '',
+            data_set: data.data_set || []
+        };
+    } catch (err) {
+        console.error('[addSchedule] Exception:', err);
+        throw new Error(err.message || 'Lỗi không xác định khi thêm thời khóa biểu');
+    }
+};
+
+export const generateSchedule = async (token, { option, use_class_config }) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/generate`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            option,
+            use_class_config,
+        }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to generate schedule');
+    }
+    const data = await response.json();
+    return data;
+};
+
+
+export const updateBaseSchedule = async (token, { id, schedule_name }) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/base/update`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            id,
+            schedule_name,
+        }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update base schedule');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const removeTimeTable = async (token, { begin_date, end_date }) => {
+    console.log(`[removeTimeTable] Gọi API xóa thời khóa biểu với begin_date=${begin_date}, end_date=${end_date}`);
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/remove`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                begin_date,
+                end_date,
+            }),
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+            throw new Error(data.description || 'Failed to remove timetable');
+        }
+        return {
+            success: data.success ?? true,
+            description: data.description || 'Xóa thời khóa biểu thành công',
+            data: data.data || '',
+            data_set: data.data_set || []
+        };
+    } catch (err) {
+        console.error('[removeTimeTable] Exception:', err);
+        throw new Error(err.message || 'Lỗi không xác định khi xóa thời khóa biểu');
+    }
+};
+export const deleteBaseSchedule = async (token, scheduleId) => {
+    console.log(`[deleteBaseSchedule] Gọi API xóa scheduleId=${scheduleId}`);
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/schedule/base/remove/${scheduleId}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+            throw new Error(data.description);
+        }
+
+        return {
+            success: data.success ?? true,
+            description: data.description,
+            data: data.data || '',
+            data_set: data.data_set || []
+        };
+    } catch (err) {
+        throw new Error(err.message || 'Lỗi không xác định khi xóa mẫu thời khóa biểu');
+    }
+};
