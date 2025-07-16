@@ -280,9 +280,10 @@ const Modal = styled.div`
     border-radius: 4px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     z-index: 1000;
-    max-width: 900px;
     max-height: 80vh;
+    max-width: 80vh;
     overflow-y: auto;
+    min-width: 40vh;
 `;
 
 const ModalOverlay = styled.div`
@@ -311,6 +312,9 @@ const ModalEntry = styled.div`
         font-size: 16px;
         color: #4a5568;
         margin-bottom: 8px;
+        word-wrap: break-word; /* Tự động ngắt từ nếu quá dài */
+        white-space: normal;
+        max-width:80vh;
     }
 `;
 
