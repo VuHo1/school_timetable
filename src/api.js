@@ -1028,8 +1028,7 @@ export const addSchedule = async (token, scheduleData) => {
         throw new Error(err.message || 'Lỗi không xác định khi thêm thời khóa biểu');
     }
 };
-
-export const generateSchedule = async (token, { option, use_class_config }) => {
+export const generateSchedule = async (token, { schedule_name, semester_id, option, use_class_config }) => {
     const response = await fetch(`${API_BASE_URL}/api/schedule/generate`, {
         method: 'POST',
         headers: {
@@ -1038,6 +1037,8 @@ export const generateSchedule = async (token, { option, use_class_config }) => {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+            schedule_name: schedule_name || '',
+            semester_id: parseInt(semester_id),
             option,
             use_class_config,
         }),
@@ -1049,7 +1050,6 @@ export const generateSchedule = async (token, { option, use_class_config }) => {
     const data = await response.json();
     return data;
 };
-
 
 export const updateBaseSchedule = async (token, { id, schedule_name }) => {
     const response = await fetch(`${API_BASE_URL}/api/schedule/base/update`, {
@@ -1125,5 +1125,93 @@ export const deleteBaseSchedule = async (token, scheduleId) => {
         };
     } catch (err) {
         throw new Error(err.message || 'Lỗi không xác định khi xóa mẫu thời khóa biểu');
+    }
+};
+export const fetchSemesters = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/semester`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch semesters');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+export const addSemester = async (token, { semester_name, start_date, end_date }) => {
+    const response = await fetch(`${API_BASE_URL}/api/semester/add`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain',
+        },
+        body: JSON.stringify({ semester_name, start_date, end_date }),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description || 'Failed to add semester');
+    }
+
+    return {
+        success: data.success,
+        description: data.description,
+        data: data.data,
+        data_set: data.data_set,
+        pagination: data.pagination,
+    };
+};
+
+export const removeSemester = async (token, semesterId) => {
+    const response = await fetch(`${API_BASE_URL}/api/semester/remove/${semesterId}`, {
+        method: 'DELETE',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'text/plain',
+        },
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description || 'Failed to remove semester');
+    }
+
+    return {
+        success: data.success,
+        description: data.description,
+        data: data.data,
+        data_set: data.data_set,
+        pagination: data.pagination,
+    };
+};
+export const getDatesInUse = async (token, semesterId) => {
+    console.log(`[getDatesInUse] Gọi API lấy ngày đã có lịch với semesterId=${semesterId}`);
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/schedule/date-in-use/${semesterId}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'text/plain',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+            throw new Error(data.description || 'Failed to fetch dates in use');
+        }
+        return {
+            success: data.success ?? true,
+            description: data.description || 'Lấy ngày đã có lịch thành công',
+            data: data.data || '',
+            data_set: Array.isArray(data.data_set) ? data.data_set : [],
+            pagination: data.pagination
+        };
+    } catch (err) {
+        console.error('[getDatesInUse] Exception:', err);
+        throw new Error(err.message || 'Lỗi không xác định khi lấy ngày đã có lịch');
     }
 };

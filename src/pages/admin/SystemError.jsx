@@ -128,6 +128,13 @@ const DetailItem = styled.div`
   background-color: #f9f9f9;
   border-radius: 3px;
 `;
+const DetailItem2 = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  padding: 6px;
+  background-color: #f9f9f9;
+  border-radius: 3px;
+`;
 const DetailLabel = styled.p`
   font-weight: bold;
   color: #555;
@@ -150,7 +157,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   font-size: 12px;
   margin-top: 8px;
-  margin-left: 620px;
+
   &:hover {
     background-color: #c82333;
   }
@@ -322,7 +329,7 @@ export default function SystemError() {
                 <DetailValue>{formatDateTime(selectedLog.updated_date)}</DetailValue>
               </DetailItem>
             </DetailSection>
-            <CloseButton onClick={() => setIsDetailModalOpen(false)}>Đóng</CloseButton>
+            <DetailItem2><CloseButton onClick={() => setIsDetailModalOpen(false)}>Đóng</CloseButton></DetailItem2>
           </ModalContent>
         </ModalOverlay>
       )}

@@ -1,0 +1,28 @@
+/* Ngày hiện tại màu xanh dương */
+.react-datepicker__day--today {
+    color: #1e90ff !important;
+    /* Xanh dương */
+    font-weight: bold;
+}
+
+/* Ngày đã có lịch (dựa trên excludeDates) màu xanh lá */
+.react-datepicker__day--excluded {
+    color: #28a745 !important;
+    /* Xanh lá */
+    font-weight: bold;
+}
+
+/* Ngày thuộc tháng khác màu xám */
+.react-datepicker__day--outside-month {
+    color: #a0aec0 !important;
+    /* Xám */
+    opacity: 0.5;
+}
+
+/* Ngăn hover effect trên các ngày bị vô hiệu hóa */
+.react-datepicker__day--disabled:hover,
+.react-datepicker__day--excluded:hover {
+    background-color: #fff !important;
+    /* Giữ nền trắng */
+    cursor: not-allowed !important;
+}
