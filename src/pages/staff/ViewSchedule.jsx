@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
+import '../../styles/date.css'
+import { FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft, FaArrowRight, FaTimes, FaCheck, FaEllipsisH } from 'react-icons/fa';
 import {
     fetchBaseSchedules,
     fetchScheduleDetails,
@@ -14,356 +16,480 @@ import {
     updateBaseSchedule,
     addSchedule,
     removeTimeTable,
-
+    fetchSemesters,
+    addSemester,
+    removeSemester,
+    getDatesInUse,
 } from '../../api';
 import { useAuth } from '../../context/AuthContext';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
+const Spinner = styled.div`
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  animation: spin 0.8s linear infinite;
+  margin: 20px auto;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
 
 const DropdownButton = styled.button`
-    background: #4f46e5;
+  background: #4f46e5;
   color: white;
   border: none;
-  padding: 6px 10px;
+  padding: 6px;
   border-radius: 50%;
   font-size: 18px;
   cursor: pointer;
-  width: 26px;
-  height: 26px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #4338ca;
+  }
 `;
 
 const DropdownMenu = styled.div`
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    min-width: 120px;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 140px;
+  overflow: hidden;
+  animation: fadeIn 0.2s ease-in;
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 `;
 
 const DropdownItem = styled.div`
-    padding: 8px 12px;
-    font-size: 14px;
-    color: #2d3748;
-    cursor: pointer;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  ${({ danger }) => danger && `
+    color: #dc2626;
     &:hover {
-        background: #edf2f7;
+      background: #fef2f2;
     }
-    ${({ danger }) => danger && `
-        color: #e3342f;
-        &:hover {
-            background: #fef2f2;
-        }
-    `}
+  `}
 `;
+
 const Input = styled.input`
-    padding: 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px; 
-    font-size: 14px;
-    color: #333;
-    width: 100%;
-    box-sizing: border-box;
-    &:focus {
-        outline: none;
-        border-color: #4299e1;
-        box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.2); 
-    }
-    &::placeholder {
-        color: #a0aec0; 
-    }
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1f2937;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  &::placeholder {
+    color: #9ca3af;
+  }
 `;
 
 const DialogError = styled.p`
-    color: #e3342f;
-    font-size: 12px;
-    margin-top: 4px;
-    margin-bottom: 0;
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 8px;
+  margin-bottom: 0;
+  font-weight: 500;
 `;
+
 const Container = styled.div`
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 32px;
+  background: #f9fafb;
+  min-height: 100vh;
 `;
 
 const Heading = styled.h1`
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 24px;
-    color: #333;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 32px;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 `;
 
 const ErrorMessage = styled.p`
-    color: #e3342f;
-    margin-bottom: 16px;
+  color: #dc2626;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
 const InfoMessage = styled.p`
-    font-size: 14px;
-    color: #4a5568;
-    margin-bottom: 16px;
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 20px;
+  font-weight: 500;
 `;
 
 const Grid = styled.div`
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-    @media (min-width: 768px) {
-        grid-template-columns: 1fr 2fr;
-    }
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 2fr;
+  }
 `;
 
 const TemplateListWrapper = styled.div`
-    background: #f7fafc;
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
 `;
 
 const SubHeading = styled.h2`
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 16px;
-    color: #2d3748;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
 const FormGroup = styled.div`
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const FormGroup1 = styled.div`
+  margin-bottom: 20px;
 `;
 
 const Label = styled.label`
-    font-size: 14px;
-    color: #4a5568;
-    margin-bottom: 4px;
-    display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 8px;
+  display: block;
 `;
 
 const Select = styled.select`
-    padding: 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    font-size: 14px;
-    color: #333;
-    &:focus {
-        outline: none;
-        border-color: #4299e1;
-    }
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1f2937;
+  width: 100%;
+  background: white;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
 `;
 
 const Button = styled.button`
-    background: #4299e1;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-size: 14px;
-    cursor: pointer;
-    border: none;
-    &:hover {
-        background: #3182ce;
-    }
-    &:disabled {
-        background: #a0aec0;
-        cursor: not-allowed;
-    }
+  background: #3b82f6;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: #2563eb;
+  }
+
+  &:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+`;
+
+const ButtonAdd = styled(Button)`
+  background: #10b981;
+  &:hover {
+    background: #059669;
+  }
+`;
+
+const ButtonDelete = styled(Button)`
+  background: #ef4444;
+  &:hover {
+    background: #dc2626;
+  }
 `;
 
 const NavButton = styled(Button)`
-    padding: 8px 12px;
-    font-size: 16px;
+  padding: 10px 14px;
+  font-size: 16px;
 `;
 
 const CheckboxLabel = styled.label`
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-    color: #4a5568;
-    margin-right: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #374151;
+  margin-right: 16px;
+  margin-top: 12px;
+  font-weight: 500;
 `;
 
 const Checkbox = styled.input`
-    margin-right: 8px;
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
 `;
 
 const Dialog = styled.div`
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    width: 90%;
-    max-width: 500px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  width: 90%;
+  max-width: 600px;
+  border: 1px solid #e5e7eb;
 `;
 
 const DialogOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  animation: fadeIn 0.2s ease-in;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 `;
 
 const DialogButtonGroup = styled.div`
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
 `;
 
 const CancelButton = styled(Button)`
-    background: #e2e8f0;
-    color: #2d3748;
-    &:hover {
-        background: #cbd5e0;
-    }
+  background: #e5e7eb;
+  color: #1f2937;
+  &:hover {
+    background: #d1d5db;
+  }
 `;
+
 const Modal = styled.div`
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    max-width: 900px;
-    max-height: 80vh;
-    overflow-y: auto;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  max-height: 80vh;
+  max-width: 600px;
+  overflow-y: auto;
+  min-width: 320px;
+  border: 1px solid #e5e7eb;
 `;
 
 const ModalOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
 `;
 
 const ModalContent = styled.div`
-    margin-bottom: 16px;
-    
+  margin-bottom: 20px;
 `;
 
 const ModalEntry = styled.div`
-    padding: 8px;
-    border-bottom: 1px solid #e2e8f0;
-    &:last-child {
-        border-bottom: none;
-    }
-    p {
-        margin: 0;
-        font-size: 15px;
-        color: #4a5568;
-        margin-bottom: 8px;
-    }
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  &:last-child {
+    border-bottom: none;
+  }
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.5;
+  }
 `;
 
 const CloseButton = styled(Button)`
-    background: #e3342f;
-    &:hover {
-        background: #c53030;
-    }
+  background: #ef4444;
+  &:hover {
+    background: #dc2626;
+  }
 `;
 
-
 const TemplateList = styled.ul`
-    list-style: none;
-    padding: 0;
+  list-style: none;
+  padding: 0;
 `;
 
 const TemplateItem = styled.li.withConfig({
     shouldForwardProp: (prop) => !['isOnUse', 'isSelected'].includes(prop)
 })`
-    padding: 8px;
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    background: ${props => props.isSelected ? '#c6f6d5' : props.isOnUse ? '#f0fff4' : 'white'};
-    &:hover {
-        background: ${props => props.isSelected ? '#c6f6d5' : '#ebf8ff'};
-    }
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  background: ${props => props.isSelected ? '#d1fae5' : props.isOnUse ? '#ecfdf5' : 'white'};
+  transition: background 0.2s ease, transform 0.1s ease;
+
+  &:hover {
+    background: ${props => props.isSelected ? '#d1fae5' : '#eff6ff'};
+    transform: translateY(-2px);
+  }
 `;
 
 const TimetableWrapper = styled.div`
-    background: white;
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  overflow-x: auto;
 `;
 
 const Table = styled.table`
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
 `;
 
 const Th = styled.th`
-    border: 1px solid #e2e8f0;
-    padding: 8px;
-    background: #edf2f7;
-    color: #2d3748;
-    text-align: left;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
+  color: #1f2937;
+  text-align: left;
+  font-weight: 600;
 `;
 
 const Td = styled.td`
-    border: 1px solid #e2e8f0;
-    padding: 8px;
-    vertical-align: top;
+  border: 1px solid #e5e7eb;
+  padding: 12px;
+  vertical-align: top;
 `;
 
 const Entry = styled.div`
-    margin-bottom: 8px;
-        border-bottom: 1px solid rgb(226, 232, 240);
-    &:last-child {
-        margin-bottom: 0;
-    }
-    p {
-        margin: 0;
-        font-size: 12px;
-        color: #4a5568;
-    }
-    &:hover{
-        background: #d9dfef;
-    }
+  margin-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+
+  &:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+  }
+  p {
+    margin: 0;
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.5;
+  }
+  &:hover {
+    background: #eff6ff;
+  }
 `;
 
 const LoadingMessage = styled.p`
-    font-size: 14px;
-    color: #4a5568;
-    margin-top: 8px;
+  font-size: 14px;
+  color: #4b5563;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
 const PeriodText = styled.p`
-    font-size: 14px;
-    color: #4a5568;
-    margin-bottom: 8px;
+  font-size: 14px;
+  color: #4b5563;
+  margin-bottom: 12px;
+  font-weight: 500;
 `;
+
 const SlotModal = ({ entries, onClose, viewMode }) => (
     <>
         <ModalOverlay onClick={onClose} />
-
         <Modal>
-            <SubHeading>Thông tin chi tiết</SubHeading>
+            <SubHeading>
+                <FaCalendarAlt /> Thông tin chi tiết
+            </SubHeading>
             <ModalContent>
                 {entries.map((entry) => (
                     <ModalEntry key={entry.id}>
@@ -372,37 +498,195 @@ const SlotModal = ({ entries, onClose, viewMode }) => (
                         <p><b>Môn:</b> {entry.subject_name}</p>
                         <p><b>Giáo viên:</b> {entry.teacher_user_name}</p>
                         <p><b>Phòng:</b> {entry.room_code}</p>
-                        <p><b>Tiết:</b> {entry.time_slot_id} ({entry.start_time} - {entry.end_time})</p>
-
+                        <p><b>Tiết:</b> {entry.time_slot_id}</p>
                         {viewMode !== 'Base' && (
                             <>
+                                <p><b>Từ:</b> {entry.start_time} <b>đến</b> {entry.end_time}</p>
                                 <p><b>Phản hồi:</b>
                                     {' '}
                                     {entry.feedback && entry.feedback.trim() !== ''
                                         ? entry.feedback
                                         : 'Chưa có phản hồi'}
                                 </p>
-
-                                <p><b>Trạng thái:</b> {entry.status}</p><p style={{ color: entry.is_holiday ? 'red' : 'green' }}>
+                                <p><b>Trạng thái:</b> {entry.status}</p>
+                                <p style={{ color: entry.is_holiday ? 'red' : 'green' }}>
                                     <b>{entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}</b>
                                 </p>
                             </>
                         )}
-
                     </ModalEntry>
                 ))}
             </ModalContent>
             <DialogButtonGroup>
-                <CloseButton onClick={onClose}>Đóng</CloseButton>
+                <CloseButton onClick={onClose}>
+                    <FaTimes /> Đóng
+                </CloseButton>
             </DialogButtonGroup>
         </Modal>
-
     </>
 );
+
+const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast }) => {
+    const [isAddSemesterDialogOpen, setIsAddSemesterDialogOpen] = useState(false);
+    const [newSemesterName, setNewSemesterName] = useState('');
+    const [newSemesterStartDate, setNewSemesterStartDate] = useState('');
+    const [newSemesterEndDate, setNewSemesterEndDate] = useState('');
+    const [semesterError, setSemesterError] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleAddSemester = async () => {
+        if (!newSemesterName.trim()) {
+            setSemesterError('Tên học kỳ không được để trống');
+            showToast('Tên học kỳ không được để trống', 'error');
+            return;
+        }
+        if (!newSemesterStartDate || !newSemesterEndDate) {
+            setSemesterError('Vui lòng nhập đầy đủ ngày bắt đầu và ngày kết thúc');
+            showToast('Vui lòng nhập đầy đủ ngày bắt đầu và ngày kết thúc', 'error');
+            return;
+        }
+        if (new Date(newSemesterStartDate) > new Date(newSemesterEndDate)) {
+            setSemesterError('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc');
+            showToast('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc', 'error');
+            return;
+        }
+
+        try {
+            setIsGenerating(true);
+            const response = await addSemester(token, {
+                semester_name: newSemesterName,
+                start_date: new Date(newSemesterStartDate).toISOString().split('T')[0],
+                end_date: new Date(newSemesterEndDate).toISOString().split('T')[0],
+            });
+            showToast(response.description, response.success ? 'success' : 'error');
+            if (response.success) {
+                const newSemesters = await fetchSemesters(token);
+                setSemesters(newSemesters);
+                setIsAddSemesterDialogOpen(false);
+                setNewSemesterName('');
+                setNewSemesterStartDate('');
+                setNewSemesterEndDate('');
+                setSemesterError('');
+            } else {
+                setSemesterError(response.description);
+            }
+        } catch (err) {
+            const errorMessage = err.message || 'Lỗi khi tạo học kỳ';
+            setSemesterError(errorMessage);
+            showToast(errorMessage, 'error');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    return (
+        <div>
+            <ButtonAdd onClick={() => setIsAddSemesterDialogOpen(true)} disabled={isGenerating}>
+                <FaPlus /> Tạo học kỳ mới
+            </ButtonAdd>
+            <SubHeading>
+                <FaCalendarAlt /> Danh sách học kỳ
+            </SubHeading>
+            <Table>
+                <thead>
+                    <tr>
+                        <Th>Tên</Th>
+                        <Th>Ngày bắt đầu</Th>
+                        <Th>Ngày kết thúc</Th>
+                        <Th>Hành động</Th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {semesters.map((semester) => (
+                        <tr key={semester.id}>
+                            <Td>{semester.semester_name}</Td>
+                            <Td>{new Date(semester.start_date).toLocaleDateString('vi-VN')}</Td>
+                            <Td>{new Date(semester.end_date).toLocaleDateString('vi-VN')}</Td>
+                            <Td>
+                                <ButtonDelete
+                                    onClick={() => onDelete(semester.id)}
+                                    disabled={isGenerating}
+                                >
+                                    <FaTrash /> Xóa
+                                </ButtonDelete>
+                            </Td>
+                        </tr>
+                    ))}
+                </tbody>
+            </Table>
+            {isAddSemesterDialogOpen && (
+                <>
+                    <DialogOverlay onClick={() => {
+                        setIsAddSemesterDialogOpen(false);
+                        setNewSemesterName('');
+                        setNewSemesterStartDate('');
+                        setNewSemesterEndDate('');
+                        setSemesterError('');
+                    }} />
+                    <Dialog>
+                        <SubHeading>
+                            <FaPlus /> Tạo học kỳ mới
+                        </SubHeading>
+                        <FormGroup1>
+                            <Label>Tên học kỳ</Label>
+                            <Input
+                                type="text"
+                                value={newSemesterName}
+                                onChange={(e) => setNewSemesterName(e.target.value)}
+                                placeholder="Nhập tên học kỳ"
+                                disabled={isGenerating}
+                            />
+                        </FormGroup1>
+                        <FormGroup1>
+                            <Label>Ngày bắt đầu</Label>
+                            <Input
+                                type="date"
+                                value={newSemesterStartDate}
+                                onChange={(e) => setNewSemesterStartDate(e.target.value)}
+                                disabled={isGenerating}
+                            />
+                        </FormGroup1>
+                        <FormGroup1>
+                            <Label>Ngày kết thúc</Label>
+                            <Input
+                                type="date"
+                                value={newSemesterEndDate}
+                                onChange={(e) => setNewSemesterEndDate(e.target.value)}
+                                disabled={isGenerating}
+                            />
+                        </FormGroup1>
+                        {semesterError && <DialogError>{semesterError}</DialogError>}
+                        <DialogButtonGroup>
+                            <CancelButton
+                                onClick={() => {
+                                    setIsAddSemesterDialogOpen(false);
+                                    setNewSemesterName('');
+                                    setNewSemesterStartDate('');
+                                    setNewSemesterEndDate('');
+                                    setSemesterError('');
+                                }}
+                                disabled={isGenerating}
+                            >
+                                <FaTimes /> Hủy
+                            </CancelButton>
+                            <Button onClick={handleAddSemester} disabled={isGenerating}>
+                                <FaCheck /> Tạo
+                            </Button>
+                        </DialogButtonGroup>
+                    </Dialog>
+                </>
+            )}
+        </div>
+    );
+};
+
 const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selectedScheduleId }) => {
     const { showToast } = useToast();
     const [option, setOption] = useState('Default');
     const [useClassConfig, setUseClassConfig] = useState(true);
+    const [scheduleName, setScheduleName] = useState('');
+    const [semesterId, setSemesterId] = useState('');
+    const [semesters, setSemesters] = useState([]);
     const [error, setError] = useState(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -412,15 +696,41 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
     const [isDeleting, setIsDeleting] = useState(false);
     const [dropdownOpenId, setDropdownOpenId] = useState(null);
 
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const semestersData = await fetchSemesters(token);
+                setSemesters(semestersData);
+            } catch (err) {
+                showToast(`Lỗi khi tải danh sách học kỳ: ${err.message}`, 'error');
+            }
+        };
+        if (token) {
+            fetchData();
+        }
+    }, [token, showToast]);
+
     const handleGenerate = async () => {
+        if (!semesterId) {
+            setError('Vui lòng chọn học kỳ');
+            showToast('Vui lòng chọn học kỳ', 'error');
+            return;
+        }
         setIsGenerating(true);
         try {
-            await generateSchedule(token, { option, use_class_config: useClassConfig });
+            await generateSchedule(token, {
+                schedule_name: scheduleName.trim(),
+                semester_id: semesterId,
+                option,
+                use_class_config: useClassConfig,
+            });
             showToast('Tạo mẫu mới thành công', 'success');
             const newTemplates = await fetchBaseSchedules(token);
             onGenerate(newTemplates);
             setError(null);
             setIsDialogOpen(false);
+            setScheduleName('');
+            setSemesterId('');
         } catch (err) {
             setError(err.message);
             showToast(`Lỗi: ${err.message}`, 'error');
@@ -428,6 +738,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
             setIsGenerating(false);
         }
     };
+
     const handleDelete = async (scheduleId) => {
         setIsDeleting(true);
         try {
@@ -453,7 +764,6 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
         setDropdownOpenId(null);
     };
 
-
     const handleUpdate = async () => {
         if (!editScheduleName.trim()) {
             showToast('Tên thời khóa biểu không được để trống', 'error');
@@ -472,30 +782,72 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
             showToast(`Lỗi: ${err.message}`, 'error');
         }
     };
+
     const toggleDropdown = (scheduleId) => {
         setDropdownOpenId(dropdownOpenId === scheduleId ? null : scheduleId);
     };
 
     return (
         <TemplateListWrapper>
-            <SubHeading>Mẫu thời khóa biểu</SubHeading>
-            {error && <ErrorMessage>{error}</ErrorMessage>}
+            <SubHeading>
+                <FaCalendarAlt /> Mẫu thời khóa biểu
+            </SubHeading>
+            {error && <ErrorMessage><FaTimes /> {error}</ErrorMessage>}
             <Button onClick={() => setIsDialogOpen(true)} disabled={isGenerating}>
-                Tạo mẫu thời khóa biểu mới
+                <FaPlus /> Tạo mẫu thời khóa biểu mới
             </Button>
             {isDialogOpen && (
                 <>
-                    <DialogOverlay onClick={() => setIsDialogOpen(false)} />
+                    <DialogOverlay onClick={() => {
+                        setIsDialogOpen(false);
+                        setScheduleName('');
+                        setSemesterId('');
+                        setError(null);
+                    }} />
                     <Dialog>
-                        <SubHeading>Tạo mẫu thời khóa biểu mới</SubHeading>
+                        <SubHeading>
+                            <FaPlus /> Tạo mẫu thời khóa biểu mới
+                        </SubHeading>
+                        <FormGroup1>
+                            <Label>Tên thời khóa biểu (để trống để sinh ngẫu nhiên)</Label>
+                            <Input
+                                type="text"
+                                value={scheduleName}
+                                onChange={(e) => setScheduleName(e.target.value)}
+                                placeholder="Nhập tên thời khóa biểu (tùy chọn)"
+                                disabled={isGenerating}
+                            />
+                        </FormGroup1>
+                        <FormGroup1>
+                            <Label>Học kỳ</Label>
+                            <Select
+                                value={semesterId}
+                                onChange={(e) => {
+                                    setSemesterId(e.target.value);
+                                    setError(null);
+                                }}
+                                disabled={isGenerating}
+                            >
+                                <option value="">-- Chọn học kỳ --</option>
+                                {semesters.map((semester) => (
+                                    <option key={semester.id} value={semester.id}>
+                                        {semester.semester_name} ({new Date(semester.start_date).toLocaleDateString('vi-VN')} - {new Date(semester.end_date).toLocaleDateString('vi-VN')})
+                                    </option>
+                                ))}
+                            </Select>
+                        </FormGroup1>
                         <FormGroup>
                             <div>
-                                <Label>Chọn Phương Thức</Label>
-                                <Select value={option} onChange={(e) => setOption(e.target.value)} disabled={isGenerating}>
+                                <Label>Phương thức xếp lịch</Label>
+                                <Select
+                                    value={option}
+                                    onChange={(e) => setOption(e.target.value)}
+                                    disabled={isGenerating}
+                                >
                                     <option value="Default">Ngẫu nhiên</option>
-                                    <option value="FrontLoad">Ưu tiên xếp các tiết vào đầu tuần</option>
-                                    <option value="SpreadEven">Phân bổ đều tiết học</option>
-                                    <option value="BackLoad">Ưu tiên xếp tiết vào cuối tuần</option>
+                                    <option value="FrontLoad">Dồn đầu tuần</option>
+                                    <option value="SpreadEven">Dàn đều</option>
+                                    <option value="BackLoad">Dồn cuối tuần</option>
                                 </Select>
                             </div>
                             <CheckboxLabel>
@@ -505,16 +857,24 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                     onChange={(e) => setUseClassConfig(e.target.checked)}
                                     disabled={isGenerating}
                                 />
-                                Sử dụng GVBM đã cấu hình cho lớp
+                                Sử dụng cấu hình giáo viên bộ môn mặc định
                             </CheckboxLabel>
                         </FormGroup>
-                        {isGenerating && <LoadingMessage>Đang tạo mẫu mới...</LoadingMessage>}
+                        {isGenerating && <Spinner />}
                         <DialogButtonGroup>
-                            <CancelButton onClick={() => setIsDialogOpen(false)} disabled={isGenerating}>
-                                Hủy
+                            <CancelButton
+                                onClick={() => {
+                                    setIsDialogOpen(false);
+                                    setScheduleName('');
+                                    setSemesterId('');
+                                    setError(null);
+                                }}
+                                disabled={isGenerating}
+                            >
+                                <FaTimes /> Hủy
                             </CancelButton>
                             <Button onClick={handleGenerate} disabled={isGenerating}>
-                                Tạo
+                                <FaCheck /> Tạo
                             </Button>
                         </DialogButtonGroup>
                     </Dialog>
@@ -524,24 +884,21 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                 <>
                     <DialogOverlay onClick={() => setIsEditDialogOpen(false)} />
                     <Dialog>
-                        <SubHeading>Đổi tên thời khóa biểu mẫu</SubHeading>
-                        <FormGroup>
-
-
-                            <Input
-                                type="text"
-                                value={editScheduleName}
-                                onChange={(e) => setEditScheduleName(e.target.value)}
-                                placeholder="Nhập tên thời khóa biểu"
-                            />
-
-                        </FormGroup>
+                        <SubHeading>
+                            <FaEdit /> Đổi tên thời khóa biểu mẫu
+                        </SubHeading>
+                        <Input
+                            type="text"
+                            value={editScheduleName}
+                            onChange={(e) => setEditScheduleName(e.target.value)}
+                            placeholder="Nhập tên thời khóa biểu"
+                        />
                         <DialogButtonGroup>
                             <CancelButton onClick={() => setIsEditDialogOpen(false)}>
-                                Hủy
+                                <FaTimes /> Hủy
                             </CancelButton>
                             <Button onClick={handleUpdate}>
-                                Cập nhật
+                                <FaCheck /> Cập nhật
                             </Button>
                         </DialogButtonGroup>
                     </Dialog>
@@ -559,14 +916,13 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                             <span>
                                 {template.schedule_name} {template.is_on_use && '(Đang áp dụng)'}
                             </span>
-
                             <DropdownButton
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     toggleDropdown(template.id);
                                 }}
                             >
-                                ⋯
+                                <FaEllipsisH />
                             </DropdownButton>
                             {dropdownOpenId === template.id && (
                                 <DropdownMenu>
@@ -576,7 +932,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                             handleEdit(template.id, template.schedule_name);
                                         }}
                                     >
-                                        Đổi tên
+                                        <FaEdit /> Đổi tên
                                     </DropdownItem>
                                     <DropdownItem
                                         danger
@@ -585,12 +941,11 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                             handleDelete(template.id);
                                         }}
                                     >
-                                        Xóa
+                                        <FaTrash /> Xóa
                                     </DropdownItem>
                                 </DropdownMenu>
                             )}
                         </div>
-
                     </TemplateItem>
                 ))}
             </TemplateList>
@@ -635,36 +990,28 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                 date: firstDate,
                 label: `${dayOfWeekMap[entry.day_of_week] || entry.day_of_week_str} (${new Date(firstDate).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})`
             }] : [];
-        } else {
-            const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 1 && entry.day_of_week <= 7);
-            const uniqueDates = [...new Set(validDetails.map(entry => entry.date.split('T')[0]))].sort();
-            console.log('Weekly uniqueDates:', uniqueDates);
-
-            if (uniqueDates.length === 0) {
-                console.warn('No valid dates found in data_set');
-                return [];
-            }
-
-            const days = [
-                { id: 1, label: 'Thứ 2', date: null },
-                { id: 2, label: 'Thứ 3', date: null },
-                { id: 3, label: 'Thứ 4', date: null },
-                { id: 4, label: 'Thứ 5', date: null },
-                { id: 5, label: 'Thứ 6', date: null },
-                { id: 6, label: 'Thứ 7', date: null },
-                { id: 7, label: 'Chủ nhật', date: null }
-            ];
-
-            uniqueDates.forEach(date => {
-                const entry = validDetails.find(e => e.date.split('T')[0] === date);
-                if (entry && entry.day_of_week >= 1 && entry.day_of_week <= 7) {
-                    days[entry.day_of_week - 1].date = date;
-                    days[entry.day_of_week - 1].label = `${dayOfWeekMap[entry.day_of_week] || entry.day_of_week_str} (${new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})`
-                }
-            });
-
-            return days.filter(day => day.date !== null);
         }
+        const days = [
+            { id: 1, label: 'Thứ 2', date: null },
+            { id: 2, label: 'Thứ 3', date: null },
+            { id: 3, label: 'Thứ 4', date: null },
+            { id: 4, label: 'Thứ 5', date: null },
+            { id: 5, label: 'Thứ 6', date: null },
+            { id: 6, label: 'Thứ 7', date: null },
+            { id: 7, label: 'Chủ nhật', date: null }
+        ];
+        const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 1 && entry.day_of_week <= 7);
+        const uniqueDates = [...new Set(validDetails.map(entry => entry.date.split('T')[0]))].sort();
+        console.log('Weekly uniqueDates:', uniqueDates);
+
+        uniqueDates.forEach(date => {
+            const entry = validDetails.find(e => e.date.split('T')[0] === date);
+            if (entry && entry.day_of_week >= 1 && entry.day_of_week <= 7) {
+                days[entry.day_of_week - 1].date = date;
+                days[entry.day_of_week - 1].label = `${dayOfWeekMap[entry.day_of_week] || entry.day_of_week_str} (${new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})`
+            }
+        });
+        return days;
     };
 
     const dateColumns = getDateColumns(data);
@@ -674,19 +1021,10 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
             <SubHeading>
                 Thời khóa biểu {viewMode === 'Applied' ? `đang áp dụng` : viewMode === 'Personal' ? `của tôi` : 'mẫu'}
             </SubHeading>
-            {(viewMode === 'Base' && data.length > 100) && (
-                <InfoMessage>
-                    Có quá nhiều dữ liệu ({data.length} mục). Vui lòng dùng bộ lọc theo (Lớp/Giáo viên) để lọc chi tiết hơn.
-                </InfoMessage>
-            )}
             {data.length === 0 && (
                 <InfoMessage>
-                    Không có lịch học trong khoảng thời gian: {scheduleDescription || 'chưa xác định'}.
+                    Không có lịch học : {scheduleDescription}.
                 </InfoMessage>
-            )}
-            {timeSlots.length === 0 && <InfoMessage>Không có dữ liệu tiết học.</InfoMessage>}
-            {dateColumns.length === 0 && data.length > 0 && selectedOption && (
-                <InfoMessage>Không thể hiển thị ngày do dữ liệu không hợp lệ.</InfoMessage>
             )}
             {data.length > 0 && timeSlots.length > 0 && dateColumns.length > 0 && (
                 <Table>
@@ -709,24 +1047,23 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                                         }
                                         return entry.time_slot_id === slot.id && entry.date?.split('T')[0] === col.date;
                                     });
-                                    const maxDisplay = 3; // Giới hạn số entries hiển thị
+                                    const maxDisplay = 3;
                                     const displayedEntries = entries.slice(0, maxDisplay);
                                     return (
                                         <Td key={col.date || col.id}>
                                             {displayedEntries.map((entry) => (
                                                 <Entry
                                                     key={entry.id}
-                                                    onClick={() => setModalEntries([entry])} // Mở modal cho riêng entry
+                                                    onClick={() => setModalEntries([entry])}
                                                     style={{ cursor: 'pointer' }}
                                                 >
                                                     <p>Lớp: {entry.class_code}</p>
                                                     <p>GV: {entry.teacher_user_name}</p>
                                                 </Entry>
                                             ))}
-                                            {entries.length === 0 && <p>Trống</p>}
                                             {entries.length > maxDisplay && (
                                                 <Button
-                                                    onClick={() => setModalEntries(entries)} // Mở modal cho tất cả entries
+                                                    onClick={() => setModalEntries(entries)}
                                                     style={{ marginTop: '8px', fontSize: '12px', padding: '4px 8px' }}
                                                 >
                                                     +{entries.length - maxDisplay} Xem thêm
@@ -746,6 +1083,7 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
         </TimetableWrapper>
     );
 };
+
 export default function ViewSchedule() {
     const { user, loading } = useAuth();
     const { showToast } = useToast();
@@ -768,16 +1106,21 @@ export default function ViewSchedule() {
     const [classes, setClasses] = useState([]);
     const [teachers, setTeachers] = useState([]);
     const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
+    const [applySemesterId, setApplySemesterId] = useState('');
     const [applyScheduleId, setApplyScheduleId] = useState('');
-    const [applyBeginDate, setApplyBeginDate] = useState('');
-    const [applyEndDate, setApplyEndDate] = useState('');
+    const [applyBeginDate, setApplyBeginDate] = useState(null);
+    const [applyEndDate, setApplyEndDate] = useState(null);
     const [applyDateError, setApplyDateError] = useState('');
+    const [forceAssign, setForceAssign] = useState(false);
     const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
     const [removeBeginDate, setRemoveBeginDate] = useState('');
     const [removeEndDate, setRemoveEndDate] = useState('');
     const [removeDateError, setRemoveDateError] = useState('');
-    const [forceAssign, setForceAssign] = useState(true);
+    const [semesters, setSemesters] = useState([]);
+    const [datesInUse, setDatesInUse] = useState([]);
+
     const token = user?.token;
+
     useEffect(() => {
         if (!token || loading) return;
 
@@ -785,16 +1128,24 @@ export default function ViewSchedule() {
         const fetchData = async () => {
             try {
                 setIsLoading(true);
-                const templatesData = await fetchBaseSchedules(token);
-                setTemplates(templatesData);
-                const timeSlotsData = await fetchTimeSlots(token);
-                setTimeSlots(timeSlotsData);
-                const classesData = await fetchClasses(token);
-                setClasses(classesData.data_set || []);
-                const teachersData = await fetchAvailableTeachers(token);
-                setTeachers(teachersData);
-                if (viewMode !== 'Base') {
-                    await fetchTimetableData(viewMode, selectedCurrent);
+                if (viewMode === 'Semesters') {
+                    const semestersData = await fetchSemesters(token);
+                    setSemesters(semestersData);
+                } else {
+                    const templatesData = await fetchBaseSchedules(token);
+                    console.log('[fetchBaseSchedules] Templates:', templatesData);
+                    setTemplates(templatesData);
+                    const timeSlotsData = await fetchTimeSlots(token);
+                    setTimeSlots(timeSlotsData);
+                    const classesData = await fetchClasses(token);
+                    setClasses(classesData.data_set || []);
+                    const teachersData = await fetchAvailableTeachers(token);
+                    setTeachers(teachersData);
+                    const semestersData = await fetchSemesters(token);
+                    setSemesters(semestersData);
+                    if (viewMode !== 'Base') {
+                        await fetchTimetableData(viewMode, selectedCurrent);
+                    }
                 }
             } catch (err) {
                 console.error('[useEffect] Error:', err);
@@ -880,11 +1231,10 @@ export default function ViewSchedule() {
         setTimetableData([]);
         setScheduleDescription('');
         setError(null);
-        if (mode !== 'Base') {
+        setSelectedScheduleId(null);
+        setScheduleDetails([]);
+        if (mode !== 'Base' && mode !== 'Semesters') {
             await fetchTimetableData(mode, 0);
-        } else {
-            setScheduleDetails([]);
-            setSelectedScheduleId(null);
         }
     };
 
@@ -1071,37 +1421,85 @@ export default function ViewSchedule() {
             setScheduleDescription('');
         }
     };
+
+    const handleDeleteSemester = async (semesterId) => {
+        try {
+            const response = await removeSemester(token, semesterId);
+            showToast(response.description, 'success');
+            const newSemesters = await fetchSemesters(token);
+            setSemesters(newSemesters);
+        } catch (err) {
+            showToast(`Lỗi: ${err.message}`, 'error');
+        }
+    };
+    const formatDate = (date) => {
+        if (!date) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
     const handleApplySchedule = async () => {
+        if (!applySemesterId) {
+            setApplyDateError('Vui lòng chọn học kỳ');
+            console.log('[handleApplySchedule] Error: No semester selected');
+            return;
+        }
         if (!applyScheduleId) {
             setApplyDateError('Vui lòng chọn mẫu thời khóa biểu');
+            console.log('[handleApplySchedule] Error: No schedule selected');
             return;
         }
         if (!applyBeginDate || !applyEndDate) {
             setApplyDateError('Vui lòng nhập đầy đủ ngày bắt đầu và ngày kết thúc');
+            console.log('[handleApplySchedule] Error: Missing begin or end date');
             return;
         }
-        if (new Date(applyBeginDate) > new Date(applyEndDate)) {
+        if (applyBeginDate > applyEndDate) {
             setApplyDateError('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc');
+            console.log('[handleApplySchedule] Error: Begin date after end date', {
+                applyBeginDate: formatDate(applyBeginDate),
+                applyEndDate: formatDate(applyEndDate),
+            });
+            return;
+        }
+        const usedDates = datesInUse.map(date => new Date(date.split('T')[0]));
+        if (
+            usedDates.some(date => date.toISOString().split('T')[0] === formatDate(applyBeginDate)) ||
+            usedDates.some(date => date.toISOString().split('T')[0] === formatDate(applyEndDate))
+        ) {
+            setApplyDateError('Ngày bắt đầu hoặc ngày kết thúc đã có lịch, vui lòng chọn ngày khác');
+            console.log('[handleApplySchedule] Error: Dates already in use', {
+                applyBeginDate: formatDate(applyBeginDate),
+                applyEndDate: formatDate(applyEndDate),
+                usedDates: usedDates.map(date => date.toISOString().split('T')[0]),
+            });
             return;
         }
         try {
             setIsLoading(true);
-            const response = await addSchedule(token, {
+            const payload = {
                 schedule_id: applyScheduleId,
-                begin_date: new Date(applyBeginDate).toISOString(),
-                end_date: new Date(applyEndDate).toISOString(),
+                begin_date: formatDate(applyBeginDate),
+                end_date: formatDate(applyEndDate),
                 force_assign: forceAssign,
-            });
+            };
+            console.log('[handleApplySchedule] Sending payload to addSchedule:', payload);
+            const response = await addSchedule(token, payload);
+            console.log('[handleApplySchedule] API response:', response);
             showToast(response.description, 'success');
             setIsApplyDialogOpen(false);
+            setApplySemesterId('');
             setApplyScheduleId('');
-            setApplyBeginDate('');
-            setApplyEndDate('');
+            setApplyBeginDate(null);
+            setApplyEndDate(null);
             setApplyDateError('');
-            setForceAssign(true);
+            setForceAssign(false);
+            setDatesInUse([]);
             await fetchTimetableData('Applied', selectedCurrent);
         } catch (err) {
             setApplyDateError(err.message);
+            console.error('[handleApplySchedule] Error:', err.message);
             showToast(`Lỗi: ${err.message}`, 'error');
         } finally {
             setIsLoading(false);
@@ -1147,20 +1545,29 @@ export default function ViewSchedule() {
 
     return (
         <Container>
-            <Heading>Quản lý thời khóa biểu</Heading>
-            {error && <ErrorMessage>{error}</ErrorMessage>}
-            {isLoading && <LoadingMessage>Đang tải...</LoadingMessage>}
-            {viewMode === 'Base' ? (
+            <Heading>
+                <FaCalendarAlt /> Quản lý thời khóa biểu
+            </Heading>
+            {error && <ErrorMessage><FaTimes /> {error}</ErrorMessage>}
+            {isLoading && <LoadingMessage><FaSpinner className="animate-spin" /> Đang tải...</LoadingMessage>}
+            <FormGroup>
+                <Button onClick={() => handleViewMode('Base')}>
+                    <FaCalendarAlt /> Mẫu thời khóa biểu
+                </Button>
+                <Button onClick={() => handleViewMode('Applied')}>
+                    <FaCalendarAlt /> Thời khóa biểu đang áp dụng
+                </Button>
+                <Button onClick={() => handleViewMode('Personal')}>
+                    <FaCalendarAlt /> Thời khóa biểu của tôi
+                </Button>
+                <Button onClick={() => handleViewMode('Semesters')}>
+                    <FaCalendarAlt /> Học kỳ
+                </Button>
+            </FormGroup>
+            {viewMode === 'Base' && (
                 <>
                     <FormGroup>
-                        <Button onClick={() => handleViewMode('Applied')}>
-                            Thời khóa biểu đang áp dụng
-                        </Button>
-                        <Button onClick={() => handleViewMode('Personal')}>
-                            Thời khóa biểu của tôi
-                        </Button>
                         <div>
-                            <Label>Bộ lọc</Label>
                             <Select value={baseType} onChange={(e) => handleBaseTypeChange(e.target.value)}>
                                 <option value="All">Tất cả</option>
                                 <option value="Class">Lớp</option>
@@ -1169,7 +1576,6 @@ export default function ViewSchedule() {
                         </div>
                         {baseType !== 'All' && (
                             <div>
-                                <Label>{baseType === 'Class' ? 'Chọn Lớp' : 'Chọn Giáo Viên'}</Label>
                                 <Select
                                     value={baseCode}
                                     onChange={async (e) => {
@@ -1231,49 +1637,50 @@ export default function ViewSchedule() {
                         )}
                     </Grid>
                 </>
-            ) : (
+            )}
+            {viewMode === 'Semesters' && (
+                <SemesterList
+                    semesters={semesters}
+                    onDelete={handleDeleteSemester}
+                    setSemesters={setSemesters}
+                    token={token}
+                    showToast={showToast}
+                />
+            )}
+            {(viewMode === 'Applied' || viewMode === 'Personal') && (
                 <>
                     <FormGroup>
-                        <Button onClick={() => handleViewMode('Base')}>
-                            Quay lại
-                        </Button>
-                        <Button onClick={() => setIsApplyDialogOpen(true)} disabled={isLoading}> {/* NEW: Nút mở dialog áp dụng */}
-                            Thêm thời khóa biểu
-                        </Button>
-                        <Button onClick={() => setIsRemoveDialogOpen(true)} disabled={isLoading}> {/* NEW: Nút mở dialog xóa */}
-                            Xóa thời khóa biểu
-                        </Button>
                         <NavButton
                             onClick={handlePrevPeriod}
                             disabled={isLoading}
                         >
-                            {'<'}
+                            <FaArrowLeft />
                         </NavButton>
                         <div>
-                            <Label>Khoảng thời gian</Label>
                             <PeriodText>{scheduleDescription}</PeriodText>
                         </div>
                         <NavButton
                             onClick={handleNextPeriod}
                             disabled={isLoading}
                         >
-                            {'>'}
+                            <FaArrowRight />
                         </NavButton>
-                        <div>
-                            <Label>Chế độ xem</Label>
-                            <Select
-                                value={selectedOption}
-                                onChange={(e) => handleOptionChange(e.target.value)}
-                                disabled={isLoading}
-                            >
-                                <option value="Daily">Ngày</option>
-                                <option value="Weekly">Tuần</option>
-                            </Select>
-                        </div>
+                        {viewMode === 'Applied' && (
+                            <>
+                                <ButtonAdd onClick={() => {
+                                    console.log('[ApplyDialog] Opening dialog. Semesters:', semesters, 'Templates:', templates);
+                                    setIsApplyDialogOpen(true);
+                                }} disabled={isLoading}>
+                                    <FaPlus /> Thêm thời khóa biểu
+                                </ButtonAdd>
+                                <ButtonDelete onClick={() => setIsRemoveDialogOpen(true)} disabled={isLoading}>
+                                    <FaTrash /> Xóa thời khóa biểu
+                                </ButtonDelete>
+                            </>
+                        )}
                         {viewMode === 'Applied' && (
                             <>
                                 <div>
-                                    <Label>Bộ lọc</Label>
                                     <Select value={appliedType} onChange={(e) => handleAppliedTypeChange(e.target.value)}>
                                         <option value="All">Tất Cả</option>
                                         <option value="Class">Lớp</option>
@@ -1282,7 +1689,6 @@ export default function ViewSchedule() {
                                 </div>
                                 {appliedType !== 'All' && (
                                     <div>
-                                        <Label>{appliedType === 'Class' ? 'Chọn Lớp' : 'Chọn Giáo Viên'}</Label>
                                         <Select
                                             value={appliedCode}
                                             onChange={(e) => handleAppliedCodeChange(e.target.value)}
@@ -1317,53 +1723,116 @@ export default function ViewSchedule() {
                         <>
                             <DialogOverlay onClick={() => {
                                 setIsApplyDialogOpen(false);
+                                setApplySemesterId('');
                                 setApplyScheduleId('');
-                                setApplyBeginDate('');
-                                setApplyEndDate('');
+                                setApplyBeginDate(null);
+                                setApplyEndDate(null);
                                 setApplyDateError('');
-                                setForceAssign(true);
+                                setForceAssign(false);
+                                setDatesInUse([]);
                             }} />
                             <Dialog>
-                                <SubHeading>Thêm thời khóa biểu</SubHeading>
-                                <FormGroup>
+                                <SubHeading>
+                                    <FaPlus /> Thêm thời khóa biểu
+                                </SubHeading>
+                                <FormGroup1>
+                                    <Label>Học kỳ</Label>
+                                    <Select
+                                        value={applySemesterId}
+                                        onChange={(e) => {
+                                            const newSemesterId = e.target.value;
+                                            setApplySemesterId(newSemesterId);
+                                            setApplyScheduleId('');
+                                            setApplyDateError('');
+                                            setDatesInUse([]);
+                                            console.log('[ApplyDialog] Selected semesterId:', newSemesterId, 'Type:', typeof newSemesterId, 'Semesters:', semesters, 'Templates:', templates);
+                                            if (newSemesterId) {
+                                                getDatesInUse(token, newSemesterId)
+                                                    .then(response => {
+                                                        console.log('[ApplyDialog] Dates in use:', response.data_set);
+                                                        setDatesInUse(response.data_set || []);
+                                                    })
+                                                    .catch(err => {
+                                                        showToast(`Lỗi khi lấy ngày đã sử dụng: ${err.message}`, 'error');
+                                                    });
+                                            }
+                                        }}
+                                    >
+                                        <option value="">-- Chọn học kỳ --</option>
+                                        {semesters.map((semester) => (
+                                            <option key={semester.id} value={semester.id}>
+                                                {semester.semester_name} ({new Date(semester.start_date).toLocaleDateString('vi-VN')} - {new Date(semester.end_date).toLocaleDateString('vi-VN')})
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </FormGroup1>
+                                <FormGroup1>
                                     <Label>Mẫu thời khóa biểu</Label>
                                     <Select
                                         value={applyScheduleId}
                                         onChange={(e) => {
+                                            console.log('[ApplyDialog] Selected scheduleId:', e.target.value);
                                             setApplyScheduleId(e.target.value);
                                             setApplyDateError('');
                                         }}
+                                        disabled={!applySemesterId}
                                     >
-                                        <option value="">Chọn mẫu</option>
-                                        {templates.map((template) => (
-                                            <option key={template.id} value={template.id}>
-                                                {template.schedule_name}
-                                            </option>
-                                        ))}
+                                        <option value="">-- Chọn mẫu --</option>
+                                        {(() => {
+                                            const filteredTemplates = templates.filter(template => {
+                                                const match = Number(template.semester_id) === Number(applySemesterId);
+                                                console.log(`[ApplyDialog] Template ${template.id} semester_id: ${template.semester_id} (type: ${typeof template.semester_id}), applySemesterId: ${applySemesterId} (type: ${typeof applySemesterId}), match: ${match}`);
+                                                return match;
+                                            });
+                                            console.log('[ApplyDialog] Filtered templates:', filteredTemplates);
+                                            return filteredTemplates.length > 0 ? (
+                                                filteredTemplates.map((template) => (
+                                                    <option key={template.id} value={template.id}>
+                                                        {template.schedule_name}
+                                                    </option>
+                                                ))
+                                            ) : (
+                                                <option value="" disabled>Không có mẫu nào cho học kỳ này</option>
+                                            );
+                                        })()}
                                     </Select>
-                                </FormGroup>
-                                <FormGroup>
+                                </FormGroup1>
+                                <FormGroup1>
                                     <Label>Ngày bắt đầu</Label>
-                                    <Input
-                                        type="date"
-                                        value={applyBeginDate}
-                                        onChange={(e) => {
-                                            setApplyBeginDate(e.target.value);
+                                    <DatePicker
+                                        selected={applyBeginDate}
+                                        onChange={(date) => {
+                                            setApplyBeginDate(date);
                                             setApplyDateError('');
                                         }}
+                                        minDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.start_date) : null}
+                                        maxDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.end_date) : null}
+                                        excludeDates={datesInUse.map(date => new Date(date))}
+                                        disabled={!applySemesterId}
+                                        dateFormat="dd/MM/yyyy"
+                                        placeholderText="Chọn ngày bắt đầu"
+                                        customInput={<Input />}
+                                        className={!applySemesterId ? 'disabled-date' : ''}
                                     />
-                                </FormGroup>
-                                <FormGroup>
+                                </FormGroup1>
+                                <FormGroup1>
                                     <Label>Ngày kết thúc</Label>
-                                    <Input
-                                        type="date"
-                                        value={applyEndDate}
-                                        onChange={(e) => {
-                                            setApplyEndDate(e.target.value);
+                                    <DatePicker
+                                        selected={applyEndDate}
+                                        onChange={(date) => {
+                                            setApplyEndDate(date);
                                             setApplyDateError('');
                                         }}
+                                        minDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.start_date) : null}
+                                        maxDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.end_date) : null}
+                                        excludeDates={datesInUse.map(date => new Date(date))}
+                                        disabled={!applySemesterId}
+                                        dateFormat="dd/MM/yyyy"
+                                        placeholderText="Chọn ngày kết thúc"
+                                        customInput={<Input />}
+                                        className={!applySemesterId ? 'disabled-date' : ''}
                                     />
-                                </FormGroup>
+                                </FormGroup1>
                                 <FormGroup>
                                     <CheckboxLabel>
                                         <Checkbox
@@ -1371,23 +1840,25 @@ export default function ViewSchedule() {
                                             checked={forceAssign}
                                             onChange={(e) => setForceAssign(e.target.checked)}
                                         />
-                                        Buộc gán (cập nhật giáo viên bộ môn mới nếu là mẫu mới)
+                                        Ép gán thời khóa biểu
                                     </CheckboxLabel>
                                 </FormGroup>
                                 {applyDateError && <DialogError>{applyDateError}</DialogError>}
                                 <DialogButtonGroup>
                                     <CancelButton onClick={() => {
                                         setIsApplyDialogOpen(false);
+                                        setApplySemesterId('');
                                         setApplyScheduleId('');
-                                        setApplyBeginDate('');
-                                        setApplyEndDate('');
+                                        setApplyBeginDate(null);
+                                        setApplyEndDate(null);
                                         setApplyDateError('');
-                                        setForceAssign(true);
+                                        setForceAssign(false);
+                                        setDatesInUse([]);
                                     }}>
-                                        Hủy
+                                        <FaTimes /> Hủy
                                     </CancelButton>
                                     <Button onClick={handleApplySchedule} disabled={isLoading}>
-                                        Áp dụng
+                                        <FaCheck /> Áp dụng
                                     </Button>
                                 </DialogButtonGroup>
                             </Dialog>
@@ -1402,8 +1873,10 @@ export default function ViewSchedule() {
                                 setRemoveDateError('');
                             }} />
                             <Dialog>
-                                <SubHeading>Xóa thời khóa biểu đang áp dụng</SubHeading>
-                                <FormGroup>
+                                <SubHeading>
+                                    <FaTrash /> Xóa thời khóa biểu đang áp dụng
+                                </SubHeading>
+                                <FormGroup1>
                                     <Label>Ngày bắt đầu</Label>
                                     <Input
                                         type="date"
@@ -1413,8 +1886,8 @@ export default function ViewSchedule() {
                                             setRemoveDateError('');
                                         }}
                                     />
-                                </FormGroup>
-                                <FormGroup>
+                                </FormGroup1>
+                                <FormGroup1>
                                     <Label>Ngày kết thúc</Label>
                                     <Input
                                         type="date"
@@ -1424,7 +1897,7 @@ export default function ViewSchedule() {
                                             setRemoveDateError('');
                                         }}
                                     />
-                                </FormGroup>
+                                </FormGroup1>
                                 {removeDateError && <DialogError>{removeDateError}</DialogError>}
                                 <DialogButtonGroup>
                                     <CancelButton onClick={() => {
@@ -1433,10 +1906,10 @@ export default function ViewSchedule() {
                                         setRemoveEndDate('');
                                         setRemoveDateError('');
                                     }}>
-                                        Hủy
+                                        <FaTimes /> Hủy
                                     </CancelButton>
                                     <Button onClick={handleRemoveTimeTable} disabled={isLoading}>
-                                        Xóa
+                                        <FaTrash /> Xóa
                                     </Button>
                                 </DialogButtonGroup>
                             </Dialog>
