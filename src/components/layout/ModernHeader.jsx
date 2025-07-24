@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import styled from 'styled-components';
-
+import { FaPlus, FaTrash, FaCalendarAlt, FaTimes, FaCheck } from 'react-icons/fa';
 // Page mappings based on abilities (excluding items in avatar dropdown)
 const PAGE_MAPPINGS = {
   'Cấu hình hệ thống': '/admin/setting',
@@ -18,7 +18,8 @@ const PAGE_MAPPINGS = {
   'Quản lí môn học': '/subject',
   'Quản lí phòng học': '/room',
   'Quản lí tiết học': '/timeslot',
-  'Thời khóa biểu': '/staff/schedule'
+  'Thời khóa biểu': '/staff/schedule',
+  'Quản lí học kỳ': '/staff/semesters'
 };
 
 const Container = styled.div`
@@ -332,7 +333,8 @@ function ModernHeader() {
       'Quản lí môn học': '📚',
       'Quản lí phòng học': '🏠',
       'Quản lí tiết học': '⏰',
-      'Thời khóa biểu': '📅'
+      'Thời khóa biểu': '📅',
+      'Quản lí học kỳ': <FaCalendarAlt />,
     };
     return iconMap[ability] || '📄';
   };
