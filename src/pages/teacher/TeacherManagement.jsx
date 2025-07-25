@@ -1463,14 +1463,6 @@ function TeacherManagement() {
       };
 
       const handleSaveScheduleLocal = () => {
-        const hasAnySlots = Object.keys(scheduleData)
-          .filter(key => !key.includes('_slot') && !key.includes('_day'))
-          .some(day => scheduleData[day] && scheduleData[day].length > 0);
-
-        if (!hasAnySlots) {
-          toast.warning('Vui lòng chọn ít nhất một tiết học trước khi lưu');
-          return;
-        }
 
         handleSaveSchedule(scheduleData);
       };

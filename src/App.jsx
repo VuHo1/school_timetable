@@ -24,6 +24,7 @@ import Notification from './pages/admin/Notification';
 import SystemError from './pages/admin/SystemError';
 import UserRole from './pages/admin/UserRole'
 import { useMemo } from 'react';
+import Semesters from './pages/staff/Semesters';
 
 function AppRoutes() {
   const { role, abilities, loading } = useAuth();
@@ -65,6 +66,11 @@ function AppRoutes() {
           <Route path="/staff/schedule" element={
             <ProtectedRoute requiredAbility="Thời khóa biểu">
               <ViewSchedule />
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/semesters" element={
+            <ProtectedRoute requiredAbility="Quản lí học kỳ">
+              <Semesters />
             </ProtectedRoute>
           } />
           <Route path="/staff/class" element={

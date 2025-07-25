@@ -39,6 +39,7 @@ const PAGE_MAPPINGS = {
   'Quản lí phòng học': '/room',
   'Quản lí tiết học': '/timeslot',
   'Thời khóa biểu': '/staff/schedule',
+   'Quản lí học kỳ': '/staff/semesters',
   'Thông báo': '/notification',
   'Ủy quyền chức năng': '/permission',
   'Quản lí vai trò': '/role',
