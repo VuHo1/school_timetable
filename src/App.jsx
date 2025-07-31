@@ -20,11 +20,13 @@ import TeacherManagement from './pages/teacher/TeacherManagement';
 import SubjectManagement from './pages/subject/SubjectManagement';
 import RoomManagement from './pages/room/RoomManagement';
 import TimeslotManagement from './pages/timeslot/TimeslotManagement';
+import AddClassSubject from './pages/staff/AddClassSubject';
 import Notification from './pages/admin/Notification';
 import SystemError from './pages/admin/SystemError';
 import UserRole from './pages/admin/UserRole'
 import { useMemo } from 'react';
 import Semesters from './pages/staff/Semesters';
+import ClassScheduleConfig from './pages/staff/ClassScheduleConfig';
 
 function AppRoutes() {
   const { role, abilities, loading } = useAuth();
@@ -91,6 +93,16 @@ function AppRoutes() {
           <Route path="/staff/class/:classCode" element={
             <ProtectedRoute requiredAbility="Quản lí lớp học">
               <ClassDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/class/add-subject/:classCode" element={
+            <ProtectedRoute requiredAbility="Quản lí lớp học">
+              <AddClassSubject />
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/class/schedule-config/:classCode" element={
+            <ProtectedRoute requiredAbility="Quản lí lớp học">
+              <ClassScheduleConfig />
             </ProtectedRoute>
           } />
 
