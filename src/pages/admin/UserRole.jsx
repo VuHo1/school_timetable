@@ -438,7 +438,7 @@ export default function UserRole() {
       }
     };
     fetchData();
-  }, [user, toast]);
+  }, [user]);
 
   useEffect(() => {
     const startIndex = (currentPage - 1) * limit;

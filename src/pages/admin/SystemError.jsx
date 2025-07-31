@@ -218,7 +218,7 @@ export default function SystemError() {
       }
       setLoading(true);
       try {
-        const data = await fetchSystemLogs(user.token, { limit: 1000 });
+        const data = await fetchSystemLogs(user.token);
         setAllLogs(data.data_set || []);
       } catch (error) {
         console.error('Error fetching system logs:', error);
@@ -228,7 +228,7 @@ export default function SystemError() {
       }
     };
     fetchLogs();
-  }, [user, toast]);
+  }, [user]);
 
   useEffect(() => {
     const startIndex = (currentPage - 1) * limit;

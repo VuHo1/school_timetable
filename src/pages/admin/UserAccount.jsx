@@ -613,7 +613,7 @@ export default function UserAccount() {
       try {
         console.log('Fetching user list and roles with token:', user.token);
         const [userData, rolesData] = await Promise.all([
-          fetchUserList(user.token, { limit: 1000 }),
+          fetchUserList(user.token),
           fetchRoles(user.token),
         ]);
         console.log('Fetched user data:', userData);

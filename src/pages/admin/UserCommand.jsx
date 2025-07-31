@@ -468,7 +468,7 @@ const UserCommand = () => {
             setLoading(true);
             try {
                 const [commandData, appData] = await Promise.all([
-                    fetchUserCommands(user.token, { limit: 1000 }),
+                    fetchUserCommands(user.token),
                     fetchApplications(user.token),
                 ]);
                 setAllCommands(commandData);
@@ -481,8 +481,7 @@ const UserCommand = () => {
             }
         };
         fetchData();
-    }, [user, toast]); // Added toast to dependencies
-
+    }, [user]);
     const applyFilters = () => {
         let filteredCommands = [...allCommands];
 
@@ -551,7 +550,7 @@ const UserCommand = () => {
             await createUserCommand(user.token, newCommand);
             toast.showToast('Tạo chức năng thành công!', 'success');
             setIsCreateModalOpen(false);
-            const updatedData = await fetchUserCommands(user.token, { limit: 1000 });
+            const updatedData = await fetchUserCommands(user.token);
             setAllCommands(updatedData);
             setNewCommand({ command_id: '', command_name: '', application: '' });
             setCurrentPage(1); // Reset to page 1 after creating
@@ -570,7 +569,7 @@ const UserCommand = () => {
             await updateUserCommand(user.token, updateCommand);
             toast.showToast('Cập nhật chức năng thành công!', 'success');
             setIsUpdateModalOpen(false);
-            const updatedData = await fetchUserCommands(user.token, { limit: 1000 });
+            const updatedData = await fetchUserCommands(user.token);
             setAllCommands(updatedData);
             setCurrentPage(1); // Reset to page 1 after updating
         } catch (error) {
@@ -587,7 +586,7 @@ const UserCommand = () => {
         try {
             await deleteUserCommand(user.token, commandId);
             toast.showToast('Thành công thay đổi trạng thái hoạt động!', 'success');
-            const updatedData = await fetchUserCommands(user.token, { limit: 1000 });
+            const updatedData = await fetchUserCommands(user.token);
             setAllCommands(updatedData);
             setCurrentPage(1); // Reset to page 1 after deleting
         } catch (error) {
