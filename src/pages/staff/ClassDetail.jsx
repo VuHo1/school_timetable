@@ -505,11 +505,10 @@ const CopyButton = styled.button`
 `;
 
 const SaveButton = styled.button`
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   padding: 12px 20px;
-  margin-right: 5px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -533,6 +532,7 @@ const CancelEditButton = styled.button`
   color: white;
   border: none;
   padding: 12px 20px;
+  margin-right: 5px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -546,7 +546,7 @@ const CancelEditButton = styled.button`
 `;
 
 const DeleteButton = styled.button`
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: #e74c3c;
   color: white;
   border: none;
   padding: 8px 12px;
@@ -564,7 +564,7 @@ const DeleteButton = styled.button`
 `;
 
 const AddButton = styled.button`
-  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   padding: 8px 12px;
@@ -1274,12 +1274,12 @@ function ClassDetail() {
               </CopyButton>
             ) : (
               <>
-                <SaveButton onClick={handleSaveSchedule} disabled={saving}>
-                  {saving ? 'Đang lưu...' : 'Lưu'}
-                </SaveButton>
                 <CancelEditButton onClick={handleCancelEdit} disabled={saving}>
                   Hủy
                 </CancelEditButton>
+                <SaveButton onClick={handleSaveSchedule} disabled={saving}>
+                  {saving ? 'Đang lưu...' : 'Lưu'}
+                </SaveButton>
               </>
             )}
           </div>
@@ -1313,12 +1313,12 @@ function ClassDetail() {
               </CopyButton>
             ) : (
               <>
-                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
-                  {saving ? 'Đang lưu...' : 'Lưu'}
-                </SaveButton>
                 <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>
                   Hủy
                 </CancelEditButton>
+                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
+                  {saving ? 'Đang lưu...' : 'Lưu'}
+                </SaveButton>
               </>
             )}
           </div>
@@ -1430,12 +1430,12 @@ function ClassDetail() {
                       <CopyButton
                         onClick={() => openSlotModal(index)}
                         style={{
-                          fontSize: '11px',
-                          padding: '4px 8px',
+                          fontSize: '14px',
+                          padding: '4px 10px',
                           background: '#6c757d'
                         }}
                       >
-                        {subject.fixed_slot?.length || 0} - {subject.avoid_slot?.length || 0}
+                        {subject.fixed_slot?.length || 0} - {subject.avoid_slot?.length || 0} tiết
                       </CopyButton>
                     </TableCell2>
                     <TableCell2>
@@ -1499,8 +1499,8 @@ function ClassDetail() {
                 ))}
             </CheckboxGrid>
             <BothButton>
-              <SaveButton onClick={handleCopySchedule}>Lưu</SaveButton>
               <CancelEditButton onClick={() => setShowScheduleModal(false)}>Hủy</CancelEditButton>
+              <SaveButton onClick={handleCopySchedule}>Lưu</SaveButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -1528,8 +1528,8 @@ function ClassDetail() {
                 ))}
             </CheckboxGrid>
             <BothButton>
-              <SaveButton onClick={handleCopySubjects}>Lưu</SaveButton>
               <CancelEditButton onClick={() => setShowSubjectsModal(false)}>Hủy</CancelEditButton>
+              <SaveButton onClick={handleCopySubjects}>Lưu</SaveButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -1564,13 +1564,13 @@ function ClassDetail() {
               )}
             </FormGroup>
             <BothButton>
+              <CancelEditButton onClick={() => setShowTeacherModal(false)}>Hủy</CancelEditButton>
               <SaveButton
                 onClick={handleUpdateTeacher}
                 disabled={saving || !selectedTeacher || selectedTeacher === classDetail.teacher_user_name}
               >
                 {saving ? 'Đang cập nhật...' : 'Lưu'}
               </SaveButton>
-              <CancelEditButton onClick={() => setShowTeacherModal(false)}>Hủy</CancelEditButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -1605,13 +1605,13 @@ function ClassDetail() {
               )}
             </FormGroup>
             <BothButton>
+              <CancelEditButton onClick={() => setShowRoomModal(false)}>Hủy</CancelEditButton>
               <SaveButton
                 onClick={handleUpdateRoom}
                 disabled={saving || !selectedRoom || selectedRoom === classDetail.room_code}
               >
                 {saving ? 'Đang cập nhật...' : 'Lưu'}
               </SaveButton>
-              <CancelEditButton onClick={() => setShowRoomModal(false)}>Hủy</CancelEditButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -1702,12 +1702,12 @@ function ClassDetail() {
 
             {isEditingSubjects && (
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
-                <SaveButton onClick={handleSlotModalSave}>
-                  Lưu
-                </SaveButton>
                 <CancelEditButton onClick={() => setShowSlotModal(false)}>
                   Hủy
                 </CancelEditButton>
+                <SaveButton onClick={handleSlotModalSave}>
+                  Lưu
+                </SaveButton>
               </div>
             )}
 

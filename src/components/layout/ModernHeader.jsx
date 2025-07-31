@@ -284,7 +284,7 @@ function ModernHeader() {
 
     // Filter out abilities that are available in avatar dropdown
     const filteredAbilities = abilitiesToProcess.filter(ability =>
-      ability !== 'Cá nhân' && ability !== 'Thông báo'
+      ability !== 'Cá nhân' && ability !== 'Thông báo' && ability !== 'Quản lí học kỳ' && ability !== 'Điểm danh'
     );
 
     setCurrentAbilities(filteredAbilities);
@@ -334,7 +334,7 @@ function ModernHeader() {
       'Quản lí phòng học': '🏠',
       'Quản lí tiết học': '⏰',
       'Thời khóa biểu': '📅',
-      'Quản lí học kỳ': <FaCalendarAlt />,
+      'Quản lí học kỳ': '📆',
     };
     return iconMap[ability] || '📄';
   };

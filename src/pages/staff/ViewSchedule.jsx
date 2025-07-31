@@ -258,14 +258,12 @@ const Button = styled.button`
 `;
 
 const ButtonAdd = styled(Button)`
-  background: #10b981;
-  &:hover {
-    background: #059669;
-  }
+  background: #3b82f6;
+  color: white;
 `;
 
 const ButtonDelete = styled(Button)`
-  background: #ef4444;
+  background: #e74c3c;
   &:hover {
     background: #dc2626;
   }
@@ -331,8 +329,8 @@ const DialogButtonGroup = styled.div`
 `;
 
 const CancelButton = styled(Button)`
-  background: #e5e7eb;
-  color: #1f2937;
+  background: #e74c3c;
+  color: white;
   &:hover {
     background: #d1d5db;
   }
@@ -406,13 +404,8 @@ const TemplateItem = styled.li.withConfig({
   border-radius: 8px;
   margin-bottom: 12px;
   cursor: pointer;
-  background: ${props => props.isSelected ? '#d1fae5' : props.isOnUse ? '#ecfdf5' : 'white'};
-  transition: background 0.2s ease, transform 0.1s ease;
+  background: ${props => props.isSelected ? '#d1fae5' : 'white'};
 
-  &:hover {
-    background: ${props => props.isSelected ? '#d1fae5' : '#eff6ff'};
-    transform: translateY(-2px);
-  }
 `;
 
 const TimetableWrapper = styled.div`
@@ -488,7 +481,7 @@ const SlotModal = ({ entries, onClose, viewMode }) => (
         <ModalOverlay onClick={onClose} />
         <Modal>
             <SubHeading>
-                <FaCalendarAlt /> Thông tin chi tiết
+                Thông tin chi tiết
             </SubHeading>
             <ModalContent>
                 {entries.map((entry) => (
@@ -519,7 +512,7 @@ const SlotModal = ({ entries, onClose, viewMode }) => (
             </ModalContent>
             <DialogButtonGroup>
                 <CloseButton onClick={onClose}>
-                    <FaTimes /> Đóng
+                    Đóng
                 </CloseButton>
             </DialogButtonGroup>
         </Modal>
@@ -582,11 +575,8 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast }) =
     return (
         <div>
             <ButtonAdd onClick={() => setIsAddSemesterDialogOpen(true)} disabled={isGenerating}>
-                <FaPlus /> Tạo học kỳ mới
+                <FaPlus /> Thêm mới
             </ButtonAdd>
-            <SubHeading>
-                <FaCalendarAlt /> Danh sách học kỳ
-            </SubHeading>
             <Table>
                 <thead>
                     <tr>
@@ -667,11 +657,11 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast }) =
                                 }}
                                 disabled={isGenerating}
                             >
-                                <FaTimes /> Hủy
+                                Hủy
                             </CancelButton>
-                            <Button onClick={handleAddSemester} disabled={isGenerating}>
-                                <FaCheck /> Tạo
-                            </Button>
+                            <ButtonAdd onClick={handleAddSemester} disabled={isGenerating}>
+                                Tạo
+                            </ButtonAdd>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -789,13 +779,10 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
 
     return (
         <TemplateListWrapper>
-            <SubHeading>
-                <FaCalendarAlt /> Mẫu thời khóa biểu
-            </SubHeading>
-            {error && <ErrorMessage><FaTimes /> {error}</ErrorMessage>}
-            <Button onClick={() => setIsDialogOpen(true)} disabled={isGenerating}>
-                <FaPlus /> Tạo mẫu thời khóa biểu mới
-            </Button>
+            {error && <ErrorMessage> {error}</ErrorMessage>}
+            <ButtonAdd onClick={() => setIsDialogOpen(true)} disabled={isGenerating}>
+                <FaPlus /> Thêm mới
+            </ButtonAdd>
             {isDialogOpen && (
                 <>
                     <DialogOverlay onClick={() => {
@@ -871,11 +858,11 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                 }}
                                 disabled={isGenerating}
                             >
-                                <FaTimes /> Hủy
+                                Hủy
                             </CancelButton>
-                            <Button onClick={handleGenerate} disabled={isGenerating}>
-                                <FaCheck /> Tạo
-                            </Button>
+                            <ButtonAdd onClick={handleGenerate} disabled={isGenerating}>
+                                Tạo
+                            </ButtonAdd>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -885,7 +872,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                     <DialogOverlay onClick={() => setIsEditDialogOpen(false)} />
                     <Dialog>
                         <SubHeading>
-                            <FaEdit /> Đổi tên thời khóa biểu mẫu
+                            Đổi tên thời khóa biểu mẫu
                         </SubHeading>
                         <Input
                             type="text"
@@ -895,11 +882,11 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                         />
                         <DialogButtonGroup>
                             <CancelButton onClick={() => setIsEditDialogOpen(false)}>
-                                <FaTimes /> Hủy
+                                Hủy
                             </CancelButton>
-                            <Button onClick={handleUpdate}>
-                                <FaCheck /> Cập nhật
-                            </Button>
+                            <ButtonAdd onClick={handleUpdate}>
+                                Lưu
+                            </ButtonAdd>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -914,7 +901,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                             <span>
-                                {template.schedule_name} {template.is_on_use && '(Đang áp dụng)'}
+                                {template.schedule_name} {template.is_on_use && '(⭐ Đang áp dụng)'}
                             </span>
                             <DropdownButton
                                 onClick={(e) => {
@@ -932,7 +919,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                             handleEdit(template.id, template.schedule_name);
                                         }}
                                     >
-                                        <FaEdit /> Đổi tên
+                                        Đổi tên
                                     </DropdownItem>
                                     <DropdownItem
                                         danger
@@ -941,7 +928,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                             handleDelete(template.id);
                                         }}
                                     >
-                                        <FaTrash /> Xóa
+                                        Xóa
                                     </DropdownItem>
                                 </DropdownMenu>
                             )}
@@ -1018,12 +1005,9 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
 
     return (
         <TimetableWrapper>
-            <SubHeading>
-                Thời khóa biểu {viewMode === 'Applied' ? `đang áp dụng` : viewMode === 'Personal' ? `của tôi` : 'mẫu'}
-            </SubHeading>
             {data.length === 0 && (
                 <InfoMessage>
-                    Không có lịch học : {scheduleDescription}.
+                    Không có lịch: {scheduleDescription}.
                 </InfoMessage>
             )}
             {data.length > 0 && timeSlots.length > 0 && dateColumns.length > 0 && (
@@ -1546,22 +1530,22 @@ export default function ViewSchedule() {
     return (
         <Container>
             <Heading>
-                <FaCalendarAlt /> Quản lý thời khóa biểu
+                📅 Quản lý thời khóa biểu
             </Heading>
-            {error && <ErrorMessage><FaTimes /> {error}</ErrorMessage>}
+            {error && <ErrorMessage> {error}</ErrorMessage>}
             {isLoading && <LoadingMessage><FaSpinner className="animate-spin" /> Đang tải...</LoadingMessage>}
             <FormGroup>
                 <Button onClick={() => handleViewMode('Base')}>
-                    <FaCalendarAlt /> Mẫu thời khóa biểu
+                    Mẫu thời khóa biểu
                 </Button>
                 <Button onClick={() => handleViewMode('Applied')}>
-                    <FaCalendarAlt /> Thời khóa biểu đang áp dụng
+                    Thời khóa biểu đang áp dụng
                 </Button>
                 <Button onClick={() => handleViewMode('Personal')}>
-                    <FaCalendarAlt /> Thời khóa biểu của tôi
+                    Thời khóa biểu của tôi
                 </Button>
                 <Button onClick={() => handleViewMode('Semesters')}>
-                    <FaCalendarAlt /> Học kỳ
+                    Quản lý học kỳ
                 </Button>
             </FormGroup>
             {viewMode === 'Base' && (
@@ -1671,10 +1655,10 @@ export default function ViewSchedule() {
                                     console.log('[ApplyDialog] Opening dialog. Semesters:', semesters, 'Templates:', templates);
                                     setIsApplyDialogOpen(true);
                                 }} disabled={isLoading}>
-                                    <FaPlus /> Thêm thời khóa biểu
+                                    <FaPlus /> Thêm mới
                                 </ButtonAdd>
                                 <ButtonDelete onClick={() => setIsRemoveDialogOpen(true)} disabled={isLoading}>
-                                    <FaTrash /> Xóa thời khóa biểu
+                                    <FaTrash /> Xóa
                                 </ButtonDelete>
                             </>
                         )}
@@ -1855,11 +1839,11 @@ export default function ViewSchedule() {
                                         setForceAssign(false);
                                         setDatesInUse([]);
                                     }}>
-                                        <FaTimes /> Hủy
+                                        Hủy
                                     </CancelButton>
-                                    <Button onClick={handleApplySchedule} disabled={isLoading}>
-                                        <FaCheck /> Áp dụng
-                                    </Button>
+                                    <ButtonAdd onClick={handleApplySchedule} disabled={isLoading}>
+                                        Lưu
+                                    </ButtonAdd>
                                 </DialogButtonGroup>
                             </Dialog>
                         </>
@@ -1874,7 +1858,7 @@ export default function ViewSchedule() {
                             }} />
                             <Dialog>
                                 <SubHeading>
-                                    <FaTrash /> Xóa thời khóa biểu đang áp dụng
+                                    <FaTrash /> Xóa thời khóa biểu
                                 </SubHeading>
                                 <FormGroup1>
                                     <Label>Ngày bắt đầu</Label>
@@ -1906,11 +1890,11 @@ export default function ViewSchedule() {
                                         setRemoveEndDate('');
                                         setRemoveDateError('');
                                     }}>
-                                        <FaTimes /> Hủy
+                                        Hủy
                                     </CancelButton>
-                                    <Button onClick={handleRemoveTimeTable} disabled={isLoading}>
-                                        <FaTrash /> Xóa
-                                    </Button>
+                                    <ButtonAdd onClick={handleRemoveTimeTable} disabled={isLoading}>
+                                        Lưu
+                                    </ButtonAdd>
                                 </DialogButtonGroup>
                             </Dialog>
                         </>
