@@ -181,20 +181,31 @@ function ClassScheduleConfig() {
         setSaving(true);
         try {
             const token = localStorage.getItem('authToken');
-            const payload = { class_code: classCode };
-            for (const day of Object.keys(dayMap)) {
-                payload[day] = (scheduleConfig[day] || []).join('|');
+            if (!token) {
+                showToast('Thiếu token, vui lòng đăng nhập lại.', 'error');
+                return;
             }
 
+            const payload = { class_code: classCode };
+            for (const day of Object.keys(dayMap)) {
+                payload[day] = (scheduleConfig[day] || []).filter(Boolean).join('|');
+
+            }
+
+            console.log('📦 [SENDING PAYLOAD]', payload);
+
             const res = await addClassScheduleConfig(token, payload);
+
             showToast(res.description || 'Lưu thành công', 'success');
             navigate(`/staff/class/${classCode}`);
         } catch (err) {
+            console.error('❌ [SAVE ERROR]', err);
             showToast(err.message || 'Lỗi khi lưu', 'error');
         } finally {
             setSaving(false);
         }
     };
+
 
     return (
         <Wrapper>
