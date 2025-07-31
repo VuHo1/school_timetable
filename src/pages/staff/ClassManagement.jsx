@@ -583,9 +583,9 @@ function ClassManagement() {
                       Loại phòng
                       <SortIcon>{getSortIcon('room_type_name')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell style={{ width: '30%' }} onClick={() => handleSort('teacher_full_name')}>
+                    <TableHeaderCell style={{ width: '30%' }} onClick={() => handleSort('teacher_user_name')}>
                       GVCN
-                      <SortIcon>{getSortIcon('teacher_full_name')}</SortIcon>
+                      <SortIcon>{getSortIcon('teacher_user_name')}</SortIcon>
                     </TableHeaderCell>
                     <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
                     <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
@@ -622,24 +622,6 @@ function ClassManagement() {
                             setOpenActionMenu(null);
                           }}>
                             <ActionMenuText>Xem chi tiết</ActionMenuText>
-                          </ActionMenuItem>
-                          {/* <ActionMenuItem onClick={() => {
-                            handleUpdateClass(cls.class_code);
-                            setOpenActionMenu(null);
-                          }}>
-                            <ActionMenuText>Cập nhật</ActionMenuText>
-                          </ActionMenuItem> */}
-                          <ActionMenuItem onClick={() => {
-                            handleAddSubject(cls.class_code);
-                            setOpenActionMenu(null);
-                          }}>
-                            <ActionMenuText>Thêm môn học</ActionMenuText>
-                          </ActionMenuItem>
-                          <ActionMenuItem onClick={() => {
-                            handleConfigureSchedule(cls.class_code);
-                            setOpenActionMenu(null);
-                          }}>
-                            <ActionMenuText>Cấu hình lịch học</ActionMenuText>
                           </ActionMenuItem>
                           <ActionMenuItem
                             onClick={() => {

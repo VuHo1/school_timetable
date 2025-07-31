@@ -697,7 +697,18 @@ export const fetchSubjectsByGrade = async (token, gradeLevel) => {
     const data = await response.json();
     return data.data_set || data.data || [];
 };
-
+export const fetchSubjectsConfigByClass = async (token, subjectCode, classCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/subject/${subjectCode}?classCode=${classCode}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch subjects by class');
+    const data = await response.json();
+    return data.data || data;
+};
 export const createSubject = async (token, subjectData) => {
     const response = await fetch(`${API_BASE_URL}/api/subject/add`, {
         method: 'POST',

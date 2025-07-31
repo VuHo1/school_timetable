@@ -1590,7 +1590,7 @@ function TeacherManagement() {
                                 isEditing={true}
                                 onClick={() => handleSlotToggle(day, slot.time_slot_code)}
                               >
-                                {isSelected ? 'Trống' : 'Nghỉ'}
+                                {isSelected ? 'Trống' : 'Tránh'}
                               </ScheduleCell>
                             );
                           })}
@@ -1702,7 +1702,7 @@ function TeacherManagement() {
                                     isSelected={hasSlot}
                                     isEditing={false}
                                   >
-                                    {hasSlot ? 'Trống' : 'Nghỉ'}
+                                    {hasSlot ? 'Trống' : 'Tránh'}
                                   </ScheduleCell>
                                 );
                               })}
