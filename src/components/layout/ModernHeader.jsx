@@ -284,7 +284,7 @@ function ModernHeader() {
 
     // Filter out abilities that are available in avatar dropdown
     const filteredAbilities = abilitiesToProcess.filter(ability =>
-      ability !== 'Cá nhân' && ability !== 'Thông báo' && ability !== 'Quản lí học kỳ' && ability !== 'Điểm danh'
+      ability !== 'Cá nhân' && ability !== 'Thông báo' && ability !== 'Quản lí học kỳ' && ability !== 'Điểm danh' && ability !== 'Danh mục dùng chung'
     );
 
     setCurrentAbilities(filteredAbilities);

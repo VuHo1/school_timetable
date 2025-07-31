@@ -170,9 +170,9 @@ const InfoMessage = styled.p`
 const Grid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 10px;
   @media (min-width: 768px) {
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: 1fr 3fr;
   }
 `;
 
@@ -182,12 +182,14 @@ const TemplateListWrapper = styled.div`
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
+  max-width: 100%;
 `;
 
 const SubHeading = styled.h2`
   font-size: 20px;
   font-weight: 600;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  margin-top: 0px;
   color: #1f2937;
   display: flex;
   align-items: center;
@@ -364,11 +366,9 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  margin-bottom: 20px;
 `;
 
 const ModalEntry = styled.div`
-  padding: 12px;
   border-bottom: 1px solid #e5e7eb;
   &:last-child {
     border-bottom: none;
@@ -409,13 +409,21 @@ const TemplateItem = styled.li.withConfig({
 `;
 
 const TimetableWrapper = styled.div`
-  background: white;
+  background: #ffffff;
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e0e0e0;
   overflow-x: auto;
+  max-width: 100%;
+  transition: all 0.3s ease;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    border-radius: 12px;
+  }
 `;
+
 
 const Table = styled.table`
   width: 100%;
@@ -426,8 +434,8 @@ const Table = styled.table`
 const Th = styled.th`
   border: 1px solid #e5e7eb;
   padding: 12px;
-  background: linear-gradient(to bottom, #f3f4f6, #e5e7eb);
-  color: #1f2937;
+  background: #f8f9fa;
+  color: #2c3e50;
   text-align: left;
   font-weight: 600;
 `;
@@ -439,10 +447,10 @@ const Td = styled.td`
 `;
 
 const Entry = styled.div`
-  margin-bottom: 10px;
+  margin-bottom: 5px;
   border-bottom: 1px solid #e5e7eb;
-  padding: 8px;
-  border-radius: 6px;
+  padding:5px;
+  border-radius: 5px;
   transition: background 0.2s ease;
 
   &:last-child {
@@ -460,6 +468,47 @@ const Entry = styled.div`
   }
 `;
 
+const StatusBadge = styled.span`
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  background-color: ${(props) => {
+        switch (props.status) {
+            case 'Chưa diễn ra': return '#E5E7EB';
+            case 'Sắp diễn ra': return '#DBEAFE';
+            case 'Đang học': return '#D1FAE5';
+            case 'Vắng mặt': return '#FEE2E2';
+            case 'Hoàn thành': return '#DBEAFE';
+            case 'Trễ': return '#FEF3C7';
+            case 'Đã xin nghỉ': return '#EDE9FE';
+            case 'Đã bị huỷ': return '#E5E7EB';
+            case 'Ngày lễ': return '#FEE2E2';
+            case 'Nghỉ lễ': return '#D1FAE5';
+            case 'Ngày thường': return '#D1FAE5';
+            default: return '#F3F4F6';
+        }
+    }};
+  color: ${(props) => {
+        switch (props.status) {
+            case 'Chưa diễn ra': return '#6B7280';
+            case 'Sắp diễn ra': return '#3B82F6';
+            case 'Đang học': return '#10B981';
+            case 'Vắng mặt': return '#EF4444';
+            case 'Hoàn thành': return '#2563EB';
+            case 'Trễ': return '#D97706';
+            case 'Đã xin nghỉ': return '#7C3AED';
+            case 'Đã bị huỷ': return '#374151';
+            case 'Ngày lễ': return '#EF4444';
+            case 'Nghỉ lễ': return '#10B981';
+            case 'Ngày thường': return '#10B981';
+            default: return '#4B5563';
+        }
+    }};
+`;
+
+
+
 const LoadingMessage = styled.p`
   font-size: 14px;
   color: #4b5563;
@@ -476,6 +525,17 @@ const PeriodText = styled.p`
   font-weight: 500;
 `;
 
+const formatTime = (timeStr) => {
+    if (!timeStr) return '';
+
+    if (/^\d{2}:\d{2}:\d{2}$/.test(timeStr)) {
+        const [h, m] = timeStr.split(':');
+        return `${h}:${m}`;
+    }
+
+    return timeStr; // fallback
+};
+
 const SlotModal = ({ entries, onClose, viewMode }) => (
     <>
         <ModalOverlay onClick={onClose} />
@@ -489,32 +549,31 @@ const SlotModal = ({ entries, onClose, viewMode }) => (
                         <p><b>Lớp:</b> {entry.class_code}</p>
                         <p><b>Mã môn:</b> {entry.subject_code}</p>
                         <p><b>Môn:</b> {entry.subject_name}</p>
-                        <p><b>Giáo viên:</b> {entry.teacher_user_name}</p>
+                        <p><b>Giáo viên:</b> {entry.teacher_name} ({entry.teacher_user_name})</p>
                         <p><b>Phòng:</b> {entry.room_code}</p>
                         <p><b>Tiết:</b> {entry.time_slot_id}</p>
                         {viewMode !== 'Base' && (
                             <>
-                                <p><b>Từ:</b> {entry.start_time} <b>đến</b> {entry.end_time}</p>
-                                <p><b>Phản hồi:</b>
+                                <p><b>Từ:</b> {formatTime(entry.start_time)} <b>đến</b> {formatTime(entry.end_time)}</p>
+                                <p><b>Đánh giá:</b>
                                     {' '}
                                     {entry.feedback && entry.feedback.trim() !== ''
                                         ? entry.feedback
-                                        : 'Chưa có phản hồi'}
+                                        : 'N/A'}
                                 </p>
-                                <p><b>Trạng thái:</b> {entry.status}</p>
-                                <p style={{ color: entry.is_holiday ? 'red' : 'green' }}>
-                                    <b>{entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}</b>
-                                </p>
+                                <p><b>Trạng thái:</b>
+                                    <StatusBadge status={entry.status}>
+                                        {entry.status || 'N/A'}
+                                    </StatusBadge></p>
+                                <p><b>Thời lượng giảng dạy:</b> {entry.duration} phút</p>
+                                <p><StatusBadge status={entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}>
+                                    {entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}
+                                </StatusBadge></p>
                             </>
                         )}
                     </ModalEntry>
                 ))}
             </ModalContent>
-            <DialogButtonGroup>
-                <CloseButton onClick={onClose}>
-                    Đóng
-                </CloseButton>
-            </DialogButtonGroup>
         </Modal>
     </>
 );
@@ -900,9 +959,9 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                         onClick={() => onSelect(template.id)}
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                            <span>
-                                {template.schedule_name} {template.is_on_use && '(⭐ Đang áp dụng)'}
-                            </span>
+                            {template.schedule_name}
+                            <br></br>
+                            {template.is_on_use && '⭐ Đang áp dụng'}
                             <DropdownButton
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -1014,9 +1073,9 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                 <Table>
                     <thead>
                         <tr>
-                            <Th>Tiết học</Th>
+                            <Th style={{ width: '9%' }}></Th>
                             {dateColumns.map((col) => (
-                                <Th key={col.date || col.id}>{col.label}</Th>
+                                <Th style={{ width: '13%' }} key={col.date || col.id}>{col.label}</Th>
                             ))}
                         </tr>
                     </thead>
@@ -1041,8 +1100,7 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                                                     onClick={() => setModalEntries([entry])}
                                                     style={{ cursor: 'pointer' }}
                                                 >
-                                                    <p>Lớp: {entry.class_code}</p>
-                                                    <p>GV: {entry.teacher_user_name}</p>
+                                                    <p>{entry.class_code}-{entry.subject_code} ({entry.teacher_user_name})</p>
                                                 </Entry>
                                             ))}
                                             {entries.length > maxDisplay && (
