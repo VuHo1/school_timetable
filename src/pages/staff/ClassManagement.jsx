@@ -26,7 +26,7 @@ const Title = styled.h1`
 `;
 
 const CreateButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #10B981;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -262,7 +262,7 @@ const ModalFooter = styled.div`
 `;
 
 const ConfirmButton = styled.button`
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -279,7 +279,7 @@ const ConfirmButton = styled.button`
 `;
 
 const CancelModalButton = styled.button`
-  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  background: #e74c3c;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -515,7 +515,7 @@ function ClassManagement() {
         <Title>📚 Quản lý lớp học</Title>
         {hasAbility('Quản lí lớp học') && (
           <CreateButton onClick={handleCreateClass}>
-            + Tạo lớp mới
+            + Tạo lớp học
           </CreateButton>
         )}
       </Header>
@@ -583,9 +583,9 @@ function ClassManagement() {
                       Loại phòng
                       <SortIcon>{getSortIcon('room_type_name')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell style={{ width: '30%' }} onClick={() => handleSort('teacher_full_name')}>
+                    <TableHeaderCell style={{ width: '30%' }} onClick={() => handleSort('teacher_user_name')}>
                       GVCN
-                      <SortIcon>{getSortIcon('teacher_full_name')}</SortIcon>
+                      <SortIcon>{getSortIcon('teacher_user_name')}</SortIcon>
                     </TableHeaderCell>
                     <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
                     <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
@@ -622,24 +622,6 @@ function ClassManagement() {
                             setOpenActionMenu(null);
                           }}>
                             <ActionMenuText>Xem chi tiết</ActionMenuText>
-                          </ActionMenuItem>
-                          {/* <ActionMenuItem onClick={() => {
-                            handleUpdateClass(cls.class_code);
-                            setOpenActionMenu(null);
-                          }}>
-                            <ActionMenuText>Cập nhật</ActionMenuText>
-                          </ActionMenuItem> */}
-                          <ActionMenuItem onClick={() => {
-                            handleAddSubject(cls.class_code);
-                            setOpenActionMenu(null);
-                          }}>
-                            <ActionMenuText>Thêm môn học</ActionMenuText>
-                          </ActionMenuItem>
-                          <ActionMenuItem onClick={() => {
-                            handleConfigureSchedule(cls.class_code);
-                            setOpenActionMenu(null);
-                          }}>
-                            <ActionMenuText>Cấu hình lịch học</ActionMenuText>
                           </ActionMenuItem>
                           <ActionMenuItem
                             onClick={() => {

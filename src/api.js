@@ -456,7 +456,8 @@ export const activateUser = async (token, username) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to activate user');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const blockUser = async (token, username) => {
@@ -471,7 +472,8 @@ export const blockUser = async (token, username) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to block user');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const deleteUser = async (token, username) => {
@@ -486,7 +488,8 @@ export const deleteUser = async (token, username) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to delete user');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 export const fetchRoles = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/user-role`, {
@@ -635,7 +638,8 @@ export const assignUserRole = async (token, roleId, username) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to assign user role');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 // Subject Management APIs
@@ -697,7 +701,18 @@ export const fetchSubjectsByGrade = async (token, gradeLevel) => {
     const data = await response.json();
     return data.data_set || data.data || [];
 };
-
+export const fetchSubjectsConfigByClass = async (token, subjectCode, classCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/subject/${subjectCode}?classCode=${classCode}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch subjects by class');
+    const data = await response.json();
+    return data.data || data;
+};
 export const createSubject = async (token, subjectData) => {
     const response = await fetch(`${API_BASE_URL}/api/subject/add`, {
         method: 'POST',

@@ -24,7 +24,7 @@ const Title = styled.h1`
 `;
 
 const AddButton = styled.button`
-  background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+  background: #10B981;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -458,7 +458,7 @@ function RoomManagement() {
       <Header>
         <Title>🏠 Quản lí phòng học</Title>
         <AddButton onClick={() => toast.success('Chức năng thêm phòng học đang phát triển')}>
-          + Thêm phòng học
+          + Tạo phòng học
         </AddButton>
       </Header>
 

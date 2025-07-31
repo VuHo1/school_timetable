@@ -438,7 +438,7 @@ export default function UserRole() {
       }
     };
     fetchData();
-  }, [user, toast]);
+  }, [user]);
 
   useEffect(() => {
     const startIndex = (currentPage - 1) * limit;
@@ -569,10 +569,10 @@ export default function UserRole() {
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell style={{ width: '15%' }}>ID</TableHeaderCell>
-                  <TableHeaderCell style={{ width: '25%' }}>Tên Vai Trò</TableHeaderCell>
-                  <TableHeaderCell style={{ width: '15%' }}>Là Giáo Viên</TableHeaderCell>
-                  <TableHeaderCell style={{ width: '15%' }}>Trạng Thái</TableHeaderCell>
-                  <TableHeaderCell style={{ width: '20%' }}>Ngày Tạo</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '25%' }}>Tên vai trò</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '15%' }}>Giáo viên?</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '15%' }}>Trạng thái</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '20%' }}>Ngày tạo</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
                 </TableRow>
               </TableHeader>
@@ -652,7 +652,7 @@ export default function UserRole() {
         <Modal>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Chi Tiết Vai Trò</ModalTitle>
+              <ModalTitle>Chi tiết vai trò</ModalTitle>
 
             </ModalHeader>
             <DetailSection>
@@ -661,23 +661,23 @@ export default function UserRole() {
                 <DetailValue>{selectedRole.id}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Tên Vai Trò:</DetailLabel>
+                <DetailLabel>Tên vai trò:</DetailLabel>
                 <DetailValue>{selectedRole.role_name}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Giáo Viên:</DetailLabel>
+                <DetailLabel>Giáo viên:</DetailLabel>
                 <DetailValue>{selectedRole.is_teacher ? 'Có' : 'Không'}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Trạng Thái:</DetailLabel>
+                <DetailLabel>Trạng thái:</DetailLabel>
                 <StatusBadge status={selectedRole.status}>{selectedRole.status}</StatusBadge>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Ngày Tạo:</DetailLabel>
+                <DetailLabel>Ngày tạo:</DetailLabel>
                 <DetailValue>{formatDateTime(selectedRole.created_date)}</DetailValue>
               </DetailItem>
               <DetailItem>
-                <DetailLabel>Ngày Cập Nhật:</DetailLabel>
+                <DetailLabel>Ngày cập nhật:</DetailLabel>
                 <DetailValue>{formatDateTime(selectedRole.updated_date)}</DetailValue>
               </DetailItem>
             </DetailSection>
@@ -698,12 +698,12 @@ export default function UserRole() {
         <Modal>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Tạo Vai Trò Mới</ModalTitle>
+              <ModalTitle>Tạo vai trò mới</ModalTitle>
 
             </ModalHeader>
             <form onSubmit={handleCreateRole}>
               <FormGroup>
-                <Label>Tên Vai Trò:</Label>
+                <Label>Tên vai trò:</Label>
                 <Input
                   type="text"
                   value={newRole.role_name}
@@ -720,7 +720,7 @@ export default function UserRole() {
                 />
               </FormGroup>
               <FormGroup>
-                <Label>Trạng Thái:</Label>
+                <Label>Trạng thái:</Label>
                 <Select
                   value={newRole.status}
                   onChange={(e) => setNewRole({ ...newRole, status: e.target.value })}
@@ -759,7 +759,7 @@ export default function UserRole() {
         <Modal>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Chỉnh Sửa Vai Trò</ModalTitle>
+              <ModalTitle>Chỉnh sửa vai trò</ModalTitle>
 
             </ModalHeader>
             <form onSubmit={handleUpdateRole}>
@@ -768,7 +768,7 @@ export default function UserRole() {
                 <Input type="text" value={editRole.id} disabled />
               </FormGroup>
               <FormGroup>
-                <Label>Tên Vai Trò:</Label>
+                <Label>Tên vai trò:</Label>
                 <Input
                   type="text"
                   value={editRole.role_name}

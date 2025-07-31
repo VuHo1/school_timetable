@@ -124,20 +124,19 @@ const TableHeaderCell = styled.th`
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'warning' ? '#f39c12' : '#3498db'};
+  background: ${(props) => props.variant === 'primary' ? '#3b82f6' : '#e74c3c'};
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  margin-right: 5px;
   transition: all 0.3s ease;
-  
   &:hover {
-    opacity: 0.8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   }
-  
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -1271,7 +1270,7 @@ function TeacherManagement() {
             variant="primary"
             disabled={modalLoading}
           >
-            {modalLoading ? 'Đang tạo...' : 'Tạo giáo viên'}
+            {modalLoading ? 'Đang tạo...' : 'Lưu thông tin'}
           </ActionButton>
         </ModalActions>
       </form>
@@ -1362,7 +1361,7 @@ function TeacherManagement() {
               📚 Môn học đang dạy ({teacherSubjects.length} môn)
             </h4>
             <ActionButton
-              variant="primary"
+              variant={editingSubjects ? '' : 'primary'}
               onClick={() => setEditingSubjects(!editingSubjects)}
             >
               {editingSubjects ? 'Hủy' : 'Chỉnh sửa'}
@@ -1390,7 +1389,7 @@ function TeacherManagement() {
               </div>
               <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
                 <ActionButton variant="primary" onClick={handleSaveSubjectsLocal}>
-                  Xác nhận
+                  Lưu thông tin
                 </ActionButton>
               </div>
             </div>
@@ -1474,7 +1473,7 @@ function TeacherManagement() {
               📅 Cấu hình lịch làm việc
             </h4>
             <ActionButton
-              variant="primary"
+              variant={editingSchedule ? '' : 'primary'}
               onClick={() => setEditingSchedule(!editingSchedule)}
             >
               {editingSchedule ? 'Hủy' : 'Chỉnh sửa'}
@@ -1590,7 +1589,7 @@ function TeacherManagement() {
                                 isEditing={true}
                                 onClick={() => handleSlotToggle(day, slot.time_slot_code)}
                               >
-                                {isSelected ? 'Trống' : 'Nghỉ'}
+                                {isSelected ? 'Trống' : 'Tránh'}
                               </ScheduleCell>
                             );
                           })}
@@ -1653,7 +1652,7 @@ function TeacherManagement() {
                   onClick={handleSaveScheduleLocal}
                   disabled={modalLoading}
                 >
-                  {modalLoading ? 'Đang lưu...' : 'Xác nhận'}
+                  {modalLoading ? 'Đang lưu...' : 'Lưu thông tin'}
                 </ActionButton>
               </div>
             </div>
@@ -1702,7 +1701,7 @@ function TeacherManagement() {
                                     isSelected={hasSlot}
                                     isEditing={false}
                                   >
-                                    {hasSlot ? 'Trống' : 'Nghỉ'}
+                                    {hasSlot ? 'Trống' : 'Tránh'}
                                   </ScheduleCell>
                                 );
                               })}

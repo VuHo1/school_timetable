@@ -35,7 +35,7 @@ const Title = styled.h1`
 `;
 
 const AddButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #10B981;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -155,20 +155,19 @@ const FilterItem = styled.div`
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'primary' ? '#3498db' : '#666'};
+  background: ${(props) => props.variant === 'primary' ? '#3b82f6' : '#e74c3c'};
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  margin-right: 5px;
   transition: all 0.3s ease;
-  
   &:hover {
-    opacity: 0.8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   }
-  
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -380,13 +379,13 @@ const ModalTitle = styled.h3`
 `;
 
 const CloseButton = styled.button`
-   padding: 6px 12px;
-  background-color: #dc3545;
+   padding: 8px 16px;
+  background-color: #e74c3c;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   margin-top: 8px;
   margin-left: 620px;
   &:hover {
@@ -613,7 +612,7 @@ export default function UserAccount() {
       try {
         console.log('Fetching user list and roles with token:', user.token);
         const [userData, rolesData] = await Promise.all([
-          fetchUserList(user.token, { limit: 1000 }),
+          fetchUserList(user.token),
           fetchRoles(user.token),
         ]);
         console.log('Fetched user data:', userData);
@@ -757,13 +756,15 @@ export default function UserAccount() {
     if (!user?.token) return;
     setLoading(true);
     try {
-      await activateUser(user.token, username);
-      toast.showToast('Kích hoạt tài khoản thành công!', 'success');
-      const updatedData = await fetchUserList(user.token);
-      if (Array.isArray(updatedData)) {
-        setAllUsers(updatedData);
-      } else {
-        setAllUsers(updatedData.data_set || []);
+      var resultdata = await activateUser(user.token, username);
+      toast.showToast(resultdata.description, resultdata.success ? 'success' : 'error');
+      if (resultdata.success) {
+        const updatedData = await fetchUserList(user.token);
+        if (Array.isArray(updatedData)) {
+          setAllUsers(updatedData);
+        } else {
+          setAllUsers(updatedData.data_set || []);
+        }
       }
     } catch (error) {
       console.error('Error activating user:', error);
@@ -777,13 +778,15 @@ export default function UserAccount() {
     if (!user?.token) return;
     setLoading(true);
     try {
-      await blockUser(user.token, username);
-      toast.showToast('Chặn tài khoản thành công!', 'success');
-      const updatedData = await fetchUserList(user.token);
-      if (Array.isArray(updatedData)) {
-        setAllUsers(updatedData);
-      } else {
-        setAllUsers(updatedData.data_set || []);
+      var resultdata = await blockUser(user.token, username);
+      toast.showToast(resultdata.description, resultdata.success ? 'success' : 'error');
+      if (resultdata.success) {
+        const updatedData = await fetchUserList(user.token);
+        if (Array.isArray(updatedData)) {
+          setAllUsers(updatedData);
+        } else {
+          setAllUsers(updatedData.data_set || []);
+        }
       }
     } catch (error) {
       console.error('Error blocking user:', error);
@@ -797,13 +800,15 @@ export default function UserAccount() {
     if (!user?.token) return;
     setLoading(true);
     try {
-      await deleteUser(user.token, username);
-      toast.showToast('Xóa tài khoản thành công!', 'success');
-      const updatedData = await fetchUserList(user.token);
-      if (Array.isArray(updatedData)) {
-        setAllUsers(updatedData);
-      } else {
-        setAllUsers(updatedData.data_set || []);
+      var resultdata = await deleteUser(user.token, username);
+      toast.showToast(resultdata.description, resultdata.success ? 'success' : 'error');
+      if (resultdata.success) {
+        const updatedData = await fetchUserList(user.token);
+        if (Array.isArray(updatedData)) {
+          setAllUsers(updatedData);
+        } else {
+          setAllUsers(updatedData.data_set || []);
+        }
       }
     } catch (error) {
       console.error('Error deleting user:', error);
@@ -816,17 +821,23 @@ export default function UserAccount() {
     if (!user?.token || !selectedRoleId || !selectedUsername) return;
     setLoading(true);
     try {
-      await assignUserRole(user.token, parseInt(selectedRoleId), selectedUsername);
-      toast.showToast('Gán vai trò thành công!', 'success');
-      setIsAssignRoleModalOpen(false);
-      window.location.reload();
-      const updatedData = await fetchUserList(user.token);
-      setAllUsers(updatedData.data_set || []);
-      setSelectedRoleId('');
-      setSelectedUsername('');
+      var resultdata = await assignUserRole(user.token, parseInt(selectedRoleId), selectedUsername);
+
+      if (!resultdata.success) {
+        toast.showToast(resultdata.description, 'error');
+      } else {
+        toast.showToast('Đổi vai trò thành công!', 'success');
+        setIsAssignRoleModalOpen(false);
+        window.location.reload();
+        const updatedData = await fetchUserList(user.token);
+        setAllUsers(updatedData.data_set || []);
+        setSelectedRoleId('');
+        setSelectedUsername('');
+      }
+
     } catch (error) {
       console.error('Error assigning role:', error);
-      toast.showToast(error.message || 'Gán vai trò thất bại.', 'error');
+      toast.showToast(error.message || 'Đổi vai trò thất bại.', 'error');
     } finally {
       setLoading(false);
     }
@@ -1006,6 +1017,7 @@ export default function UserAccount() {
                         </ActionMenuItem>
                         <ActionMenuItem
                           onClick={() => {
+                            if (user.status === 'Đang hoạt động') return;
                             handleActivateUser(user.user_name);
                             setOpenActionMenu(null);
                           }}
@@ -1024,6 +1036,7 @@ export default function UserAccount() {
                         </ActionMenuItem>
                         <ActionMenuItem
                           onClick={() => {
+                            if (user.status === 'Tạm khóa') return;
                             handleBlockUser(user.user_name);
                             setOpenActionMenu(null);
                           }}
@@ -1043,10 +1056,11 @@ export default function UserAccount() {
                         <ActionMenuItem
                           onClick={() => handleOpenAssignRoleModal(user)} // New action menu item
                         >
-                          <ActionMenuText>Gán vai trò</ActionMenuText>
+                          <ActionMenuText>Đổi vai trò</ActionMenuText>
                         </ActionMenuItem>
                         <ActionMenuItem
                           onClick={() => {
+                            if (user.status === 'Ngưng hoạt động') return;
                             handleDeleteUser(user.user_name);
                             setOpenActionMenu(null);
                           }}
@@ -1217,7 +1231,7 @@ export default function UserAccount() {
         <Modal>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Gán vai trò cho tài khoản</ModalTitle>
+              <ModalTitle>Đổi vai trò cho tài khoản</ModalTitle>
 
             </ModalHeader>
             <form onSubmit={(e) => { e.preventDefault(); handleAssignRole(); }}>
@@ -1253,7 +1267,7 @@ export default function UserAccount() {
                   variant="primary"
                   disabled={loading || !selectedRoleId}
                 >
-                  {loading ? 'Đang gán...' : 'Gán vai trò'}
+                  {loading ? 'Đang Đổi...' : 'Đổi vai trò'}
                 </ActionButton>
               </ModalActions>
             </form>

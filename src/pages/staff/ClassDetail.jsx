@@ -13,7 +13,11 @@ import {
   fetchAvailableRooms,
   fetchAllTeachers,
   updateClassTeacher,
-  updateClassRoom
+  updateClassRoom,
+  addClassScheduleConfig,
+  fetchSubjectsByGrade,
+  fetchSubjectsConfigByClass,
+  addClassSubject
 } from '../../api';
 import { toast } from 'react-hot-toast';
 import styled from 'styled-components';
@@ -77,17 +81,44 @@ const ModalContent = styled.div`
   background: white;
   border-radius: 12px;
   padding: 24px;
-  width: 70%;
-  max-height: 80vh;
+  min-width: 20%;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 `;
 
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
 const ModalTitle = styled.h2`
   color: #2c3e50;
-  margin: 0 0 24px;
+  margin: 0;
+  margin-bottom: 10px;
   font-size: 24px;
   font-weight: 600;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  
+  &:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+  }
 `;
 
 const ModalButton = styled.button`
@@ -121,7 +152,10 @@ const CheckboxGrid = styled.div`
   gap: 16px;
   margin-bottom: 20px;
   max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 8px; /* thêm padding để tránh che mất scrollbar */
 `;
+
 
 const CheckboxContainer = styled.div`
   display: flex;
@@ -223,42 +257,28 @@ const UpdateIcon = styled.button`
 `;
 
 const StatusBadge = styled.span`
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  display: inline-block;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border: 2px solid;
-  
-  background: ${props => {
-    switch (props.status?.toLowerCase()) {
-      case 'đang hoạt động':
-      case 'active':
-        return 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)';
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  background: ${(props) => {
+    switch (props.status) {
+      case 'Đang hoạt động':
+        return '#d4edda'; // xanh nhạt
+      case 'Tạm khóa':
+        return '#fff3cd'; // vàng nhạt
       default:
-        return 'linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%)';
+        return '#f8d7da'; // đỏ nhạt
     }
   }};
-  
-  color: ${props => {
-    switch (props.status?.toLowerCase()) {
-      case 'đang hoạt động':
-      case 'active':
-        return '#155724';
+  color: ${(props) => {
+    switch (props.status) {
+      case 'Đang hoạt động':
+        return '#155724'; // xanh đậm
+      case 'Tạm khóa':
+        return '#856404'; // vàng đậm
       default:
-        return '#721c24';
-    }
-  }};
-  
-  border-color: ${props => {
-    switch (props.status?.toLowerCase()) {
-      case 'đang hoạt động':
-      case 'active':
-        return '#28a745';
-      default:
-        return '#dc3545';
+        return '#721c24'; // đỏ đậm
     }
   }};
 `;
@@ -466,6 +486,7 @@ const CopyButton = styled.button`
   color: white;
   border: none;
   padding: 12px 20px;
+  margin-right: 5px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
@@ -481,6 +502,141 @@ const CopyButton = styled.button`
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
   }
 
+`;
+
+const UpdateButton = styled.button`
+  background: #6B7280;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  margin-right: 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  }
+
+`;
+
+const SaveButton = styled.button`
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const CancelEditButton = styled.button`
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  margin-right: 5px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+  }
+`;
+
+const DeleteButton = styled.button`
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(231, 76, 60, 0.4);
+  }
+`;
+
+const AddButton = styled.button`
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+  opacity: ${props => props.disabled ? 0.5 : 1};
+  
+  &:hover {
+    transform: ${props => props.disabled ? 'none' : 'translateY(-1px)'};
+    box-shadow: ${props => props.disabled ? '0 2px 4px rgba(39, 174, 96, 0.3)' : '0 3px 8px rgba(39, 174, 96, 0.4)'};
+  }
+`;
+
+const EditableTableCell = styled.td.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isSelected' && prop !== 'isEditing' && prop !== 'slotType',
+})`
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+  color: #2c3e50;
+  text-align: center;
+  font-weight: 500;
+  cursor: ${props => props.isEditing ? 'pointer' : 'default'};
+  background: ${props => {
+    if (props.slotType === 'fixed') {
+      return '#d3d3d3'; // Light gray for fixed slots
+    }
+    if (props.slotType === 'avoid') {
+      return '#ffc7ce'; // Light red for avoid slots
+    }
+    return '#c6efce'; // Light green for available slots
+  }};
+  color: ${props => {
+    if (props.slotType === 'fixed') {
+      return '#000'; // Black text for fixed slots
+    }
+    if (props.slotType === 'avoid') {
+      return '#9c0006'; // Dark red text for avoid slots
+    }
+    return '#006100'; // Dark green text for available slots
+  }};
+  
+  &:hover {
+    opacity: ${props => props.isEditing ? '0.8' : '1'};
+  }
 `;
 
 function ClassDetail() {
@@ -507,16 +663,31 @@ function ClassDetail() {
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [selectedRoom, setSelectedRoom] = useState('');
   const [saving, setSaving] = useState(false);
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
+  const [editedScheduleConfig, setEditedScheduleConfig] = useState(null);
+  const [isEditingSubjects, setIsEditingSubjects] = useState(false);
+  const [editedSubjects, setEditedSubjects] = useState([]);
+  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [showSlotModal, setShowSlotModal] = useState(false);
+  const [selectedSubjectIndex, setSelectedSubjectIndex] = useState(null);
+  const [slotModalData, setSlotModalData] = useState({ fixed_slot: [], avoid_slot: [] });
+  const [slotSelectionMode, setSlotSelectionMode] = useState('fixed'); // 'fixed' or 'avoid'
+  const [originalSubjects, setOriginalSubjects] = useState([]); // Track subjects that existed before edit mode
+  const [showAddNewRow, setShowAddNewRow] = useState(false); // Track when to show the add new row
 
   useEffect(() => {
     loadClassData();
-    fetchClassesData();
   }, [classCode]);
 
   const fetchClassesData = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const data = await fetchClasses(token);
+
+      const data = await fetchClasses(token, {
+        filter: {
+          status: 'Đang hoạt động'
+        }
+      });
       setClasses(data.data_set || []);
     } catch (err) {
       toast.error('Không thể tải danh sách lớp: ' + err.message);
@@ -537,11 +708,27 @@ function ClassDetail() {
         fetchTimeSlots(token)
       ]);
       setClassDetail(detailResult);
-      setClassSubjects(subjectsResult || []);
+      // Add IDs to existing subjects if they don't have one
+      const subjectsWithIds = (subjectsResult || []).map(subject => ({
+        ...subject,
+        id: subject.id || `existing_${subject.subject_code}_${Date.now()}`
+      }));
+      setClassSubjects(subjectsWithIds);
       setScheduleConfig(scheduleResult);
       setTimeSlots(timeSlotResult || []);
       setSelectedTeacher(detailResult.teacher_user_name || '');
       setSelectedRoom(detailResult.room_code || '');
+      // Initialize editedScheduleConfig with proper structure even if scheduleResult is null
+      const initialConfig = scheduleResult || {
+        monday: [],
+        tuesday: [],
+        wednesday: [],
+        thursday: [],
+        friday: [],
+        saturday: [],
+        sunday: []
+      };
+      setEditedScheduleConfig(initialConfig);
     } catch (err) {
       setError('Không thể tải thông tin lớp học: ' + err.message);
       toast.error('Không thể tải thông tin lớp học: ' + err.message);
@@ -702,6 +889,323 @@ function ClassDetail() {
     loadRooms();
   };
 
+  const handleEditSchedule = () => {
+    setIsEditingSchedule(true);
+    // Initialize with empty structure if scheduleConfig is null
+    const initialConfig = scheduleConfig || {
+      monday: [],
+      tuesday: [],
+      wednesday: [],
+      thursday: [],
+      friday: [],
+      saturday: [],
+      sunday: []
+    };
+    setEditedScheduleConfig(initialConfig);
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!editedScheduleConfig) return;
+    setSaving(true);
+    setError('');
+    setSuccess('');
+    try {
+      const token = localStorage.getItem('authToken');
+
+      // Prepare payload similar to ClassScheduleConfig.jsx
+      const payload = { class_code: classCode };
+      const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+      for (const day of dayKeys) {
+        const daySlots = editedScheduleConfig[day] || [];
+        payload[day] = daySlots.filter(Boolean).join('|');
+      }
+
+      console.log('📦 [SENDING SCHEDULE PAYLOAD]', payload);
+      const response = await addClassScheduleConfig(token, payload);
+
+      toast.success(response.description || 'Lưu cấu hình lịch thành công!');
+      setIsEditingSchedule(false);
+      setEditedScheduleConfig(null);
+      loadClassData(); // Reload data to get updated config
+    } catch (err) {
+      console.error('❌ [SAVE SCHEDULE ERROR]', err);
+      setError('Lỗi khi lưu cấu hình lịch: ' + err.message);
+      toast.error('Lỗi khi lưu cấu hình lịch: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingSchedule(false);
+    setEditedScheduleConfig(null);
+  };
+
+  const handleToggleSlot = (dayKey, slotId) => {
+    if (!isEditingSchedule || !editedScheduleConfig) return;
+
+    setEditedScheduleConfig(prev => {
+      const newConfig = { ...prev };
+      const daySlots = newConfig[dayKey] || [];
+      const slotStr = String(slotId);
+
+      if (daySlots.includes(slotStr)) {
+        // Remove slot from unavailable list (make it available)
+        newConfig[dayKey] = daySlots.filter(s => s !== slotStr);
+      } else {
+        // Add slot to unavailable list (make it unavailable)
+        newConfig[dayKey] = [...daySlots, slotStr].sort((a, b) => parseInt(a) - parseInt(b));
+      }
+
+      return newConfig;
+    });
+  };
+
+  // Subject editing functions
+  const handleEditSubjects = async () => {
+    setIsEditingSubjects(true);
+    setEditedSubjects([...classSubjects]);
+    setOriginalSubjects([...classSubjects]); // Track original subjects
+    setShowAddNewRow(false); // Reset add new row state
+    loadAvailableSubjects();
+
+    // Load available teacher data for existing subjects
+    try {
+      const token = localStorage.getItem('authToken');
+      const updatedSubjects = await Promise.all(
+        classSubjects.map(async (subject) => {
+          if (subject.subject_code) {
+            try {
+              const subjectData = await fetchSubjectsConfigByClass(token, subject.subject_code, classCode);
+              return {
+                ...subject,
+                available_teacher: subjectData.available_teacher || []
+              };
+            } catch (error) {
+              console.error(`Error loading subject config for ${subject.subject_code}:`, error);
+              return subject;
+            }
+          }
+          return subject;
+        })
+      );
+      setEditedSubjects(updatedSubjects);
+    } catch (error) {
+      console.error('Error loading subject configs for edit mode:', error);
+    }
+  };
+
+  const loadAvailableSubjects = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const gradeLevel = classCode.slice(0, 2);
+      const subjects = await fetchSubjectsByGrade(token, gradeLevel);
+      setAvailableSubjects(subjects);
+    } catch (error) {
+      console.error('Error loading available subjects:', error);
+      toast.error('Không thể tải danh sách môn học');
+    }
+  };
+
+  const handleSubjectChange = async (index, subjectCode) => {
+    if (!subjectCode) return;
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const subjectData = await fetchSubjectsConfigByClass(token, subjectCode, classCode);
+
+      setEditedSubjects(prev => {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          subject_code: subjectCode,
+          subject_name: subjectData.subject_name || '',
+          weekly_slot: subjectData.weekly_slot || 1,
+          continuous_slot: subjectData.continuous_slot || 1,
+          fixed_slot: subjectData.fixed_slot || [],
+          avoid_slot: subjectData.avoid_slot || [],
+          available_teacher: subjectData.available_teacher || [],
+          isTemporaryNew: false, // Mark as no longer temporary once a subject is selected
+        };
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error loading subject config:', error);
+      toast.error('Không thể tải thông tin môn học');
+    }
+  };
+
+  const handleChange = (index, field, value) => {
+    setEditedSubjects(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleSaveSubjects = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('authToken');
+
+      // Transform editedSubjects to match the API structure
+      const subjects = editedSubjects.map(subject => ({
+        subject_code: subject.subject_code,
+        teacher_user_name: subject.teacher_user_name,
+        weekly_slot: subject.weekly_slot || 0,
+        continuous_slot: subject.continuous_slot || 0,
+        fixed_slot: subject.fixed_slot || [],
+        avoid_slot: subject.avoid_slot || []
+      }));
+
+      // Call the addClassSubject API
+      const requestData = {
+        class_code: classCode,
+        force_assign: true,
+        subjects: subjects
+      };
+
+      await addClassSubject(token, requestData);
+
+      // Update local state after successful API call
+      setClassSubjects(editedSubjects);
+      setIsEditingSubjects(false);
+      setOriginalSubjects([]); // Reset original subjects tracking
+      setShowAddNewRow(false); // Reset add new row state
+      toast.success('Cập nhật môn học thành công!');
+
+      // Reload class data to ensure consistency
+      await loadClassData();
+    } catch (error) {
+      console.error('Error saving subjects:', error);
+      toast.error('Lỗi khi lưu môn học: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEditSubjects = () => {
+    setIsEditingSubjects(false);
+    setEditedSubjects([]);
+    setOriginalSubjects([]); // Reset original subjects tracking
+    setShowAddNewRow(false); // Reset add new row state
+  };
+
+  const openSlotModal = (index) => {
+    setSelectedSubjectIndex(index);
+    const subject = isEditingSubjects ? editedSubjects[index] : classSubjects[index];
+    setSlotModalData({
+      fixed_slot: subject.fixed_slot || [],
+      avoid_slot: subject.avoid_slot || []
+    });
+    setShowSlotModal(true);
+  };
+
+  const handleSlotModalSave = () => {
+    if (selectedSubjectIndex !== null) {
+      setEditedSubjects(prev => {
+        const updated = [...prev];
+        updated[selectedSubjectIndex] = {
+          ...updated[selectedSubjectIndex],
+          fixed_slot: slotModalData.fixed_slot,
+          avoid_slot: slotModalData.avoid_slot
+        };
+        return updated;
+      });
+    }
+    setShowSlotModal(false);
+    setSelectedSubjectIndex(null);
+  };
+
+  const handleDeleteSubject = (subjectId) => {
+    if (isEditingSubjects) {
+      setEditedSubjects(prev => prev.filter(subject => subject.id !== subjectId));
+    } else {
+      setClassSubjects(prev => prev.filter(subject => subject.id !== subjectId));
+    }
+    toast.success('Đã xóa môn học khỏi danh sách');
+  };
+
+  const handleAddNewSubject = () => {
+    setShowAddNewRow(true); // Show the add new row when button is clicked
+    const newSubject = {
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Temporary unique ID
+      subject_code: '',
+      subject_name: '',
+      teacher_user_name: '',
+      weekly_slot: 1,
+      continuous_slot: 1,
+      fixed_slot: [],
+      avoid_slot: [],
+      available_teacher: [],
+      isTemporaryNew: true // Flag to identify newly added subjects
+    };
+
+    if (isEditingSubjects) {
+      setEditedSubjects(prev => [...prev, newSubject]);
+    } else {
+      setClassSubjects(prev => [...prev, newSubject]);
+    }
+  };
+
+
+
+  // Helper function to check if a subject is an original subject (existed before edit mode)
+  const isOriginalSubject = (subjectCode) => {
+    return originalSubjects.some(subject => subject.subject_code === subjectCode);
+  };
+
+  // Helper function to check if there's an empty new row that needs to be filled
+  const hasEmptyNewRow = () => {
+    const currentSubjects = isEditingSubjects ? editedSubjects : classSubjects;
+    return currentSubjects.some(subject => subject.isTemporaryNew && !subject.subject_code);
+  };
+
+  const handleSlotToggle = (dayKey, slotId) => {
+    const dayMap = {
+      'monday': 'Monday',
+      'tuesday': 'Tuesday',
+      'wednesday': 'Wednesday',
+      'thursday': 'Thursday',
+      'friday': 'Friday',
+      'saturday': 'Saturday',
+      'sunday': 'Sunday'
+    };
+
+    const dayOfWeek = dayMap[dayKey];
+
+    setSlotModalData(prev => {
+      const newData = { ...prev };
+
+      // Check if slot exists in either fixed or avoid
+      const existsInFixed = newData.fixed_slot.some(s => s.time_slot_id === slotId && s.day_of_week === dayOfWeek);
+      const existsInAvoid = newData.avoid_slot.some(s => s.time_slot_id === slotId && s.day_of_week === dayOfWeek);
+
+      if (slotSelectionMode === 'fixed') {
+        if (existsInFixed) {
+          // Remove from fixed
+          newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+        } else {
+          // Add to fixed and remove from avoid if exists
+          newData.fixed_slot = [...newData.fixed_slot, { time_slot_id: slotId, day_of_week: dayOfWeek }];
+          newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+        }
+      } else {
+        if (existsInAvoid) {
+          // Remove from avoid
+          newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+        } else {
+          // Add to avoid and remove from fixed if exists
+          newData.avoid_slot = [...newData.avoid_slot, { time_slot_id: slotId, day_of_week: dayOfWeek }];
+          newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+        }
+      }
+
+      return newData;
+    });
+  };
+
   if (loading) {
     return (
       <Container>
@@ -782,17 +1286,38 @@ function ClassDetail() {
 
       <SubjectsSection>
         <SectionTitle>
-          Cấu hình thời khóa biểu
-          <CopyButton onClick={() => setShowScheduleModal(true)}>
-            Áp dụng cấu hình tương tự
-          </CopyButton>
+          <span>Cấu hình thời khóa biểu</span>
+          <div style={{ display: 'flex', gap: '5px', marginLeft: 'auto' }}>
+            <CopyButton onClick={() => setShowScheduleModal(true)}>
+              Đồng bộ với lớp khác
+            </CopyButton>
+            {!isEditingSchedule ? (
+              <UpdateButton onClick={handleEditSchedule}>
+                Chỉnh sửa
+              </UpdateButton>
+            ) : (
+              <>
+                <CancelEditButton onClick={handleCancelEdit} disabled={saving}>
+                  Hủy
+                </CancelEditButton>
+                <SaveButton onClick={handleSaveSchedule} disabled={saving}>
+                  {saving ? 'Đang lưu...' : 'Lưu'}
+                </SaveButton>
+              </>
+            )}
+          </div>
         </SectionTitle>
         {loadingSchedule ? (
           <Loading>Đang tải lịch...</Loading>
         ) : errorSchedule ? (
           <ErrorMessage>{errorSchedule}</ErrorMessage>
         ) : timeSlots.length > 0 ? (
-          <ScheduleTable config={scheduleConfig} timeSlots={timeSlots} />
+          <ScheduleConfigTable
+            config={isEditingSchedule ? editedScheduleConfig : scheduleConfig}
+            timeSlots={timeSlots}
+            isEditing={isEditingSchedule}
+            onToggleSlot={handleToggleSlot}
+          />
         ) : (
           <NoSubjects>Không có dữ liệu.</NoSubjects>
         )}
@@ -800,36 +1325,172 @@ function ClassDetail() {
 
       <SubjectsSection>
         <SectionTitle>
-          Danh sách môn học ({classSubjects.length} môn)
-          <CopyButton onClick={() => setShowSubjectsModal(true)}>
-            Áp dụng các môn học tương tự
-          </CopyButton>
+          <span>Danh sách môn học ({classSubjects.length} môn)</span>
+          <div style={{ display: 'flex', gap: '5px', marginLeft: 'auto' }}>
+            <CopyButton onClick={() => setShowSubjectsModal(true)}>
+              Đồng bộ với lớp khác
+            </CopyButton>
+            {!isEditingSubjects ? (
+              <UpdateButton onClick={handleEditSubjects}>
+                Chỉnh sửa
+              </UpdateButton>
+            ) : (
+              <>
+                <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>
+                  Hủy
+                </CancelEditButton>
+                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
+                  {saving ? 'Đang lưu...' : 'Lưu'}
+                </SaveButton>
+              </>
+            )}
+          </div>
         </SectionTitle>
-        {classSubjects.length > 0 ? (
+        {(isEditingSubjects ? editedSubjects : classSubjects).length > 0 ? (
           <TableContainer>
             <Table>
               <thead>
                 <tr>
                   <TableHeader2 style={{ width: '15%' }}>Mã môn</TableHeader2>
-                  <TableHeader2 style={{ width: '30%' }}>Tên môn</TableHeader2>
-                  <TableHeader2 style={{ width: '25%' }}>Giáo viên</TableHeader2>
-                  <TableHeader2 style={{ width: '15%' }}>Tiết/tuần</TableHeader2>
-                  <TableHeader2 style={{ width: '15%' }}>Tiết liên tiếp tối đa</TableHeader2>
+                  <TableHeader2 style={{ width: '25%' }}>Tên môn</TableHeader2>
+                  <TableHeader2 style={{ width: '20%' }}>Giáo viên</TableHeader2>
+                  <TableHeader2 style={{ width: '10%' }}>Tiết/tuần</TableHeader2>
+                  <TableHeader2 style={{ width: '10%' }}>Tiết liên tiếp tối đa</TableHeader2>
+                  <TableHeader2 style={{ width: '10%' }}>Cố định/Tránh</TableHeader2>
+                  <TableHeader2 style={{ width: '10%' }}>Hành động</TableHeader2>
                 </tr>
               </thead>
               <tbody>
-                {classSubjects.map((subject, index) => (
-                  <TableRow key={subject.subject_code || index}>
-                    <TableCell2>{subject.subject_code || 'N/A'}</TableCell2>
+                {(isEditingSubjects ? editedSubjects : classSubjects).map((subject, index) => (
+                  <TableRow key={subject.id || subject.subject_code || index}>
+                    <TableCell2>
+                      {isEditingSubjects && subject.isTemporaryNew ? (
+                        <Select
+                          value={subject.subject_code || ''}
+                          onChange={(e) => handleSubjectChange(index, e.target.value)}
+                          style={{ width: '100%', padding: '4px 8px', fontSize: '12px' }}
+                        >
+                          <option value="">Chọn môn học</option>
+                          {availableSubjects.map((subj) => (
+                            <option key={subj.subject_code} value={subj.subject_code}>
+                              {subj.subject_code}
+                            </option>
+                          ))}
+                        </Select>
+                      ) : (
+                        subject.subject_code || 'N/A'
+                      )}
+                    </TableCell2>
                     <TableCell2>{subject.subject_name || 'N/A'}</TableCell2>
                     <TableCell2>
-                      {subject.teacher_user_name || 'Chưa phân công'}
+                      {isEditingSubjects ? (
+                        <Select
+                          value={subject.teacher_user_name || ''}
+                          onChange={(e) => handleChange(index, 'teacher_user_name', e.target.value)}
+                          onFocus={async () => {
+                            // For original subjects, ensure we have the latest teacher data
+                            if (isOriginalSubject(subject.subject_code) && subject.subject_code) {
+                              try {
+                                const token = localStorage.getItem('authToken');
+                                const subjectData = await fetchSubjectsConfigByClass(token, subject.subject_code, classCode);
+                                setEditedSubjects(prev => {
+                                  const updated = [...prev];
+                                  updated[index] = {
+                                    ...updated[index],
+                                    available_teacher: subjectData.available_teacher || [],
+                                  };
+                                  return updated;
+                                });
+                              } catch (error) {
+                                console.error('Error loading subject config for teacher dropdown:', error);
+                              }
+                            }
+                          }}
+                          style={{ width: '100%', padding: '4px 8px', fontSize: '12px' }}
+                        >
+                          <option value="">Chọn giáo viên</option>
+                          {subject.available_teacher?.map((teacher) => (
+                            <option key={teacher.user_name} value={teacher.user_name}>
+                              {teacher.full_name} ({teacher.user_name})
+                              {teacher.is_home_room_teacher ? ' ⭐ Chủ nhiệm lớp' : ''}
+                            </option>
+                          )) || []}
+                        </Select>
+                      ) : (
+                        <span>
+                          {subject.teacher_user_name || 'Chưa phân công'}
+                          {subject.available_teacher?.find(t => t.user_name === subject.teacher_user_name)?.is_home_room_teacher && ' ⭐'}
+                        </span>
+                      )}
                     </TableCell2>
-                    <TableCell2>{subject.weekly_slot || 0}</TableCell2>
-                    <TableCell2>{subject.continuous_slot || 0}</TableCell2>
+                    <TableCell2>
+                      {isEditingSubjects ? (
+                        <input
+                          type="number"
+                          min="1"
+                          value={subject.weekly_slot || 1}
+                          onChange={(e) => handleChange(index, 'weekly_slot', parseInt(e.target.value) || 1)}
+                          style={{ width: '100%', padding: '4px 8px', fontSize: '12px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        />
+                      ) : (
+                        subject.weekly_slot || 0
+                      )}
+                    </TableCell2>
+                    <TableCell2>
+                      {isEditingSubjects ? (
+                        <input
+                          type="number"
+                          min="1"
+                          value={subject.continuous_slot || 1}
+                          onChange={(e) => handleChange(index, 'continuous_slot', parseInt(e.target.value) || 1)}
+                          style={{ width: '100%', padding: '4px 8px', fontSize: '12px', border: '1px solid #ddd', borderRadius: '4px' }}
+                        />
+                      ) : (
+                        subject.continuous_slot || 0
+                      )}
+                    </TableCell2>
+                    <TableCell2>
+                      <CopyButton
+                        onClick={() => openSlotModal(index)}
+                        style={{
+                          fontSize: '14px',
+                          padding: '4px 10px',
+                          background: '#6c757d'
+                        }}
+                      >
+                        {subject.fixed_slot?.length || 0} - {subject.avoid_slot?.length || 0} tiết
+                      </CopyButton>
+                    </TableCell2>
+                    <TableCell2>
+                      {isEditingSubjects && (
+                        <DeleteButton onClick={() => handleDeleteSubject(subject.id || index)}>
+                          Xóa
+                        </DeleteButton>
+                      )}
+                    </TableCell2>
                   </TableRow>
                 ))}
               </tbody>
+              {isEditingSubjects && (
+                <tbody>
+                  <TableRow>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>
+                      <AddButton
+                        onClick={handleAddNewSubject}
+                        disabled={hasEmptyNewRow()}
+                      >
+                        + Thêm mới
+                      </AddButton>
+                    </TableCell2>
+                  </TableRow>
+                </tbody>
+              )}
             </Table>
           </TableContainer>
         ) : (
@@ -842,10 +1503,11 @@ function ClassDetail() {
       {showScheduleModal && (
         <Modal>
           <ModalContent>
-            <ModalTitle>Chọn các lớp muốn áp dụng cấu hình tương tự</ModalTitle>
+            <ModalTitle>Chọn các lớp muốn đồng bộ</ModalTitle>
             <CheckboxGrid>
               {classes
                 .filter(cls => cls.class_code !== classCode)
+                .sort((a, b) => a.class_code.localeCompare(b.class_code))
                 .map(cls => (
                   <CheckboxContainer key={cls.class_code}>
                     <CheckboxLabel>
@@ -860,8 +1522,8 @@ function ClassDetail() {
                 ))}
             </CheckboxGrid>
             <BothButton>
-              <ConfirmButton onClick={handleCopySchedule}>Áp dụng</ConfirmButton>
-              <CancelButton onClick={() => setShowScheduleModal(false)}>Hủy</CancelButton>
+              <CancelEditButton onClick={() => setShowScheduleModal(false)}>Hủy</CancelEditButton>
+              <SaveButton onClick={handleCopySchedule}>Lưu</SaveButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -870,10 +1532,11 @@ function ClassDetail() {
       {showSubjectsModal && (
         <Modal>
           <ModalContent>
-            <ModalTitle>Chọn các lớp muốn áp dụng môn học tương tự</ModalTitle>
+            <ModalTitle>Chọn các lớp muốn đồng bộ</ModalTitle>
             <CheckboxGrid>
               {classes
-                .filter(cls => cls.class_code !== classCode)
+                .filter(cls => cls.class_code !== classCode && cls.grade_level_id === classDetail?.grade_level_id)
+                .sort((a, b) => a.class_code.localeCompare(b.class_code))
                 .map(cls => (
                   <CheckboxContainer key={cls.class_code}>
                     <CheckboxLabel>
@@ -888,8 +1551,8 @@ function ClassDetail() {
                 ))}
             </CheckboxGrid>
             <BothButton>
-              <ConfirmButton onClick={handleCopySubjects}>Áp dụng</ConfirmButton>
-              <CancelButton onClick={() => setShowSubjectsModal(false)}>Hủy</CancelButton>
+              <CancelEditButton onClick={() => setShowSubjectsModal(false)}>Hủy</CancelEditButton>
+              <SaveButton onClick={handleCopySubjects}>Lưu</SaveButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -898,9 +1561,8 @@ function ClassDetail() {
       {showTeacherModal && (
         <Modal>
           <ModalContent>
-            <ModalTitle>Cập nhật giáo viên chủ nhiệm lớp {classDetail.class_code}</ModalTitle>
+            <ModalTitle>Chọn giáo viên chủ nhiệm:</ModalTitle>
             <FormGroup>
-              <Label>Chọn giáo viên chủ nhiệm:</Label>
               <Select
                 value={selectedTeacher}
                 onChange={(e) => setSelectedTeacher(e.target.value)}
@@ -925,13 +1587,13 @@ function ClassDetail() {
               )}
             </FormGroup>
             <BothButton>
-              <ConfirmButton
+              <CancelEditButton onClick={() => setShowTeacherModal(false)}>Hủy</CancelEditButton>
+              <SaveButton
                 onClick={handleUpdateTeacher}
                 disabled={saving || !selectedTeacher || selectedTeacher === classDetail.teacher_user_name}
               >
-                {saving ? 'Đang cập nhật...' : 'Cập nhật'}
-              </ConfirmButton>
-              <CancelButton onClick={() => setShowTeacherModal(false)}>Hủy</CancelButton>
+                {saving ? 'Đang cập nhật...' : 'Lưu'}
+              </SaveButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -940,9 +1602,8 @@ function ClassDetail() {
       {showRoomModal && (
         <Modal>
           <ModalContent>
-            <ModalTitle>Cập nhật phòng học lớp {classDetail.class_code}</ModalTitle>
+            <ModalTitle>Chọn phòng học:</ModalTitle>
             <FormGroup>
-              <Label>Chọn phòng học:</Label>
               <Select
                 value={selectedRoom}
                 onChange={(e) => setSelectedRoom(e.target.value)}
@@ -967,14 +1628,112 @@ function ClassDetail() {
               )}
             </FormGroup>
             <BothButton>
-              <ConfirmButton
+              <CancelEditButton onClick={() => setShowRoomModal(false)}>Hủy</CancelEditButton>
+              <SaveButton
                 onClick={handleUpdateRoom}
                 disabled={saving || !selectedRoom || selectedRoom === classDetail.room_code}
               >
-                {saving ? 'Đang cập nhật...' : 'Cập nhật'}
-              </ConfirmButton>
-              <CancelButton onClick={() => setShowRoomModal(false)}>Hủy</CancelButton>
+                {saving ? 'Đang cập nhật...' : 'Lưu'}
+              </SaveButton>
             </BothButton>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {/* Slot Configuration Modal */}
+      {showSlotModal && (
+        <Modal>
+          <ModalContent style={{ maxWidth: '1000px', width: '95%' }}>
+            <ModalHeader>
+              <ModalTitle>
+                Cấu hình tiết học - {selectedSubjectIndex !== null &&
+                  (isEditingSubjects ? editedSubjects[selectedSubjectIndex]?.subject_name :
+                    classSubjects[selectedSubjectIndex]?.subject_name)}
+              </ModalTitle>
+              <CloseButton onClick={() => setShowSlotModal(false)}>
+                ×
+              </CloseButton>
+            </ModalHeader>
+
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                <div
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    background: slotSelectionMode === 'fixed' ? '#000' : '#f1f5f9',
+                    color: slotSelectionMode === 'fixed' ? '#fff' : '#64748b',
+                    border: '1px solid #e2e8f0'
+                  }}
+                  onClick={() => setSlotSelectionMode('fixed')}
+                >
+                  Tiết cố định ({slotModalData.fixed_slot.length})
+                </div>
+                <div
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    background: slotSelectionMode === 'avoid' ? '#f59e0b' : '#f1f5f9',
+                    color: slotSelectionMode === 'avoid' ? '#fff' : '#64748b',
+                    border: '1px solid #e2e8f0'
+                  }}
+                  onClick={() => setSlotSelectionMode('avoid')}
+                >
+                  Tiết cần tránh ({slotModalData.avoid_slot.length})
+                </div>
+              </div>
+            </div>
+
+            <SubjectSlotTable
+              config={{
+                monday: [
+                  ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                  ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                ],
+                tuesday: [
+                  ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                  ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                ],
+                wednesday: [
+                  ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                  ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                ],
+                thursday: [
+                  ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                  ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                ],
+                friday: [
+                  ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                  ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                ],
+                saturday: [
+                  ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                  ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                ],
+                sunday: [
+                  ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                  ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                ]
+              }}
+              timeSlots={timeSlots}
+              isEditing={isEditingSubjects}
+              onToggleSlot={handleSlotToggle}
+              slotSelectionMode={slotSelectionMode}
+            />
+
+            {isEditingSubjects && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <CancelEditButton onClick={() => setShowSlotModal(false)}>
+                  Hủy
+                </CancelEditButton>
+                <SaveButton onClick={handleSlotModalSave}>
+                  Lưu
+                </SaveButton>
+              </div>
+            )}
+
           </ModalContent>
         </Modal>
       )}
@@ -982,7 +1741,7 @@ function ClassDetail() {
   );
 }
 
-function ScheduleTable({ config, timeSlots }) {
+function ScheduleConfigTable({ config, timeSlots, isEditing, onToggleSlot }) {
   const days = [
     'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'
   ];
@@ -993,6 +1752,12 @@ function ScheduleTable({ config, timeSlots }) {
   const safeConfig = config && Object.keys(config).length > 0
     ? config
     : dayKeys.reduce((acc, key) => { acc[key] = []; return acc; }, {});
+
+  const isSlotSelected = (dayKey, slotId) => {
+    const slotArr = Array.isArray(safeConfig[dayKey]) ? safeConfig[dayKey] : [];
+    return slotArr.includes(slotId.toString());
+  };
+
   return (
     <TableContainer>
       <Table>
@@ -1011,20 +1776,81 @@ function ScheduleTable({ config, timeSlots }) {
                 <b>Tiết {slot.id}</b>
               </TableCell>
               {dayKeys.map((dayKey, d) => {
-                const slotArr = Array.isArray(safeConfig[dayKey]) ? safeConfig[dayKey] : [];
-                const isAvailable = !slotArr.includes(String(slot.id));
+                const isSelected = isSlotSelected(dayKey, slot.id);
                 return (
-                  <TableCell
+                  <EditableTableCell
                     key={d}
-                    style={{
-                      background: isAvailable ? '#c6efce' : '#ffc7ce',
-                      color: isAvailable ? '#006100' : '#9c0006',
-                      textAlign: 'center',
-                      fontWeight: 500
-                    }}
+                    isSelected={isSelected}
+                    isEditing={isEditing}
+                    slotType={isSelected ? 'avoid' : null}
+                    onClick={() => isEditing && onToggleSlot(dayKey, slot.id)}
                   >
-                    {isAvailable ? 'Trống' : 'Nghỉ'}
-                  </TableCell>
+                    {isSelected ? 'Tránh' : 'Trống'}
+                  </EditableTableCell>
+                );
+              })}
+            </TableRow>
+          ))}
+        </tbody>
+      </Table>
+    </TableContainer>
+  );
+}
+
+function SubjectSlotTable({ config, timeSlots, isEditing, onToggleSlot, slotSelectionMode }) {
+  const days = [
+    'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'
+  ];
+  const dayKeys = [
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+  ];
+  const slots = timeSlots;
+  const safeConfig = config && Object.keys(config).length > 0
+    ? config
+    : dayKeys.reduce((acc, key) => { acc[key] = []; return acc; }, {});
+
+  const getSlotType = (dayKey, slotId) => {
+    const slotArr = Array.isArray(safeConfig[dayKey]) ? safeConfig[dayKey] : [];
+    const slot = slotArr.find(s => s.id === slotId);
+    return slot ? slot.type : null;
+  };
+
+  const getSlotText = (dayKey, slotId) => {
+    const slotType = getSlotType(dayKey, slotId);
+    if (slotType === 'fixed') return 'Cố định';
+    if (slotType === 'avoid') return 'Tránh';
+    return 'Trống';
+  };
+
+  return (
+    <TableContainer>
+      <Table>
+        <thead>
+          <tr>
+            <TableHeader>Tiết</TableHeader>
+            {days.map(day => (
+              <TableHeader key={day}>{day}</TableHeader>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {slots.map((slot, i) => (
+            <TableRow key={slot.id || i}>
+              <TableCell>
+                <b>Tiết {slot.id}</b>
+              </TableCell>
+              {dayKeys.map((dayKey, d) => {
+                const slotType = getSlotType(dayKey, slot.id);
+                return (
+                  <EditableTableCell
+                    key={d}
+                    isSelected={!!slotType}
+                    isEditing={isEditing}
+                    slotType={slotType}
+                    onClick={() => isEditing && onToggleSlot(dayKey, slot.id)}
+                  >
+                    {getSlotText(dayKey, slot.id)}
+                  </EditableTableCell>
                 );
               })}
             </TableRow>

@@ -442,7 +442,7 @@ export default function CodeList() {
       }
     };
     fetchData();
-  }, [user, toast]);
+  }, [user]);
 
   // Apply filters and pagination
   const applyFilters = () => {
