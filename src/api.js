@@ -1235,6 +1235,8 @@ export const addClassSubject = async (token, classSubjectData) => {
 };
 
 export const addClassScheduleConfig = async (token, scheduleConfigData) => {
+    console.log('🔁 [API CALL] addClassScheduleConfig - Payload:', scheduleConfigData);
+
     const response = await fetch(`${API_BASE_URL}/api/class/class-schedule-config/add`, {
         method: 'POST',
         headers: {
@@ -1244,13 +1246,27 @@ export const addClassScheduleConfig = async (token, scheduleConfigData) => {
         },
         body: JSON.stringify(scheduleConfigData),
     });
-    const data = await response.json();
-    if (!response.ok || data.success === false) {
-        throw new Error(data.description);
+
+    const text = await response.text();
+    console.log('📩 [API RESPONSE TEXT]', text);
+
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        console.error('❌ [API ERROR] Không parse được JSON:', e);
+        throw new Error(text);
     }
 
+    if (!response.ok || data.success === false) {
+        console.error('❌ [API ERROR] Gọi API thất bại:', data);
+        throw new Error(data.description || 'Lỗi không xác định');
+    }
+
+    console.log('✅ [API SUCCESS] addClassScheduleConfig:', data);
     return data;
 };
+
 export const addClassScheduleConfigSame = async (token, { class_code, target_class_code }) => {
     const response = await fetch(`${API_BASE_URL}/api/class/class-schedule-config/add-same`, {
         method: 'POST',
