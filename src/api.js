@@ -339,7 +339,7 @@ export const fetchAvailableRooms = async (token) => {
     });
     if (!response.ok) throw new Error('Failed to fetch available rooms');
     const data = await response.json();
-    return data.data_set || []; // Trả về mảng data_set
+    return data.data || [];
 };
 
 // Add APIs to fetch all teachers and rooms (not just available)
@@ -1214,4 +1214,79 @@ export const getDatesInUse = async (token, semesterId) => {
         console.error('[getDatesInUse] Exception:', err);
         throw new Error(err.message || 'Lỗi không xác định khi lấy ngày đã có lịch');
     }
+};
+export const addClassSubject = async (token, classSubjectData) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/class-subject/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(classSubjectData),
+    });
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+        throw new Error(data.description);
+    }
+
+    return data;
+};
+
+export const addClassScheduleConfig = async (token, scheduleConfigData) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/class-schedule-config/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(scheduleConfigData),
+    });
+    const data = await response.json();
+    if (!response.ok || data.success === false) {
+        throw new Error(data.description);
+    }
+
+    return data;
+};
+export const addClassScheduleConfigSame = async (token, { class_code, target_class_code }) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/class-schedule-config/add-same`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            class_code,
+            target_class_code
+        }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description || 'Failed to copy schedule configuration');
+    }
+    return data;
+};
+
+export const addClassSubjectSame = async (token, { class_code, target_class_code }) => {
+    const response = await fetch(`${API_BASE_URL}/api/class/class-subject/add-same`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            class_code,
+            target_class_code
+        }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description || 'Failed to copy subjects');
+    }
+    return data;
 };

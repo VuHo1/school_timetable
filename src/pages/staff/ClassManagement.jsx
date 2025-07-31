@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useAbilities } from '../../hooks/useAbilities';
-import { fetchClasses, toggleClassStatus } from '../../api';
+import { fetchClasses, toggleClassStatus, fetchClassScheduleConfig, addClassScheduleConfig } from '../../api';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -67,40 +67,6 @@ const SearchInput = styled.input`
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-`;
-
-const SearchButton = styled.button`
-  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
-  }
-`;
-
-const ClearButton = styled.button`
-  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
   }
 `;
 
@@ -232,7 +198,6 @@ const SortIcon = styled.span`
   transition: all 0.3s ease;
 `;
 
-// Modal styles
 const Modal = styled.div`
   position: fixed;
   top: 0;
@@ -421,12 +386,12 @@ function ClassManagement() {
     setError('');
     try {
       const token = localStorage.getItem('authToken');
-      const searchParams = ({
+      const searchParams = {
         page: currentPage,
         limit: 10,
         sort: sortOrder === 'desc' ? `-${sortBy}` : sortBy,
         ...params
-      });
+      };
       if (searchTerm && searchTerm.trim()) {
         searchParams.search = searchTerm.trim();
       }
@@ -492,6 +457,14 @@ function ClassManagement() {
     navigate(`/staff/class/update/${classCode}`);
   };
 
+  const handleAddSubject = (classCode) => {
+    navigate(`/staff/class/add-subject/${classCode}`);
+  };
+
+  const handleConfigureSchedule = (classCode) => {
+    navigate(`/staff/class/schedule-config/${classCode}`);
+  };
+
   const handleCreateClass = () => {
     navigate('/staff/class/create');
   };
@@ -519,8 +492,6 @@ function ClassManagement() {
     try {
       const token = localStorage.getItem('authToken');
       await toggleClassStatus(token, classCode, currentStatus);
-
-      // Reload data để cập nhật trạng thái mới
       await loadClasses();
     } catch (err) {
       setError('Không thể cập nhật trạng thái lớp: ' + err.message);
@@ -652,11 +623,23 @@ function ClassManagement() {
                           }}>
                             <ActionMenuText>Xem chi tiết</ActionMenuText>
                           </ActionMenuItem>
-                          <ActionMenuItem onClick={() => {
+                          {/* <ActionMenuItem onClick={() => {
                             handleUpdateClass(cls.class_code);
                             setOpenActionMenu(null);
                           }}>
                             <ActionMenuText>Cập nhật</ActionMenuText>
+                          </ActionMenuItem> */}
+                          <ActionMenuItem onClick={() => {
+                            handleAddSubject(cls.class_code);
+                            setOpenActionMenu(null);
+                          }}>
+                            <ActionMenuText>Thêm môn học</ActionMenuText>
+                          </ActionMenuItem>
+                          <ActionMenuItem onClick={() => {
+                            handleConfigureSchedule(cls.class_code);
+                            setOpenActionMenu(null);
+                          }}>
+                            <ActionMenuText>Cấu hình lịch học</ActionMenuText>
                           </ActionMenuItem>
                           <ActionMenuItem
                             onClick={() => {
@@ -714,7 +697,6 @@ function ClassManagement() {
         </>
       )}
 
-      {/* Confirmation Modal */}
       {showConfirmModal && (
         <Modal>
           <ModalContent>
@@ -746,4 +728,4 @@ function ClassManagement() {
   );
 }
 
-export default ClassManagement; 
+export default ClassManagement;
