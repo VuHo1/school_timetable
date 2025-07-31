@@ -107,7 +107,7 @@ const ButtonGroup = styled.div`
 `;
 
 const SubmitButton = styled.button`
-  background-color: #28a745;
+  background-color: #3b82f6;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -124,7 +124,7 @@ const SubmitButton = styled.button`
 `;
 
 const CancelButton = styled.button`
-  background-color: #6c757d;
+  background-color: #e74c3c;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -355,7 +355,7 @@ function CreateClass() {
               Hủy
             </CancelButton>
             <SubmitButton type="submit" disabled={loading || loadingGrades}>
-              {loading ? 'Đang tạo...' : 'Tạo lớp'}
+              {loading ? 'Đang tạo...' : 'Lưu thông tin'}
             </SubmitButton>
           </ButtonGroup>
         </Form>

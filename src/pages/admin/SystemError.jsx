@@ -63,7 +63,7 @@ const ActionButton = styled.button`
 `;
 
 const ViewButton = styled(ActionButton)`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -150,7 +150,7 @@ const DetailValue = styled.p`
 
 const CloseButton = styled.button`
   padding: 6px 12px;
-  background-color: #dc3545;
+  background-color: #e74c3c;
   color: white;
   border: none;
   border-radius: 4px;

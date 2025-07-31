@@ -26,7 +26,7 @@ const Title = styled.h1`
 `;
 
 const CreateButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #10B981;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -262,7 +262,7 @@ const ModalFooter = styled.div`
 `;
 
 const ConfirmButton = styled.button`
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  background: #3b82f6;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -279,7 +279,7 @@ const ConfirmButton = styled.button`
 `;
 
 const CancelModalButton = styled.button`
-  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  background: #e74c3c;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -515,7 +515,7 @@ function ClassManagement() {
         <Title>📚 Quản lý lớp học</Title>
         {hasAbility('Quản lí lớp học') && (
           <CreateButton onClick={handleCreateClass}>
-            + Tạo lớp mới
+            + Tạo lớp học
           </CreateButton>
         )}
       </Header>

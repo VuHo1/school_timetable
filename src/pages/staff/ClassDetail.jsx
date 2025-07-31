@@ -504,6 +504,29 @@ const CopyButton = styled.button`
 
 `;
 
+const UpdateButton = styled.button`
+  background: #6B7280;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  margin-right: 5px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+  }
+
+`;
+
 const SaveButton = styled.button`
   background: #3b82f6;
   color: white;
@@ -1269,9 +1292,9 @@ function ClassDetail() {
               Đồng bộ với lớp khác
             </CopyButton>
             {!isEditingSchedule ? (
-              <CopyButton onClick={handleEditSchedule}>
+              <UpdateButton onClick={handleEditSchedule}>
                 Chỉnh sửa
-              </CopyButton>
+              </UpdateButton>
             ) : (
               <>
                 <CancelEditButton onClick={handleCancelEdit} disabled={saving}>
@@ -1308,9 +1331,9 @@ function ClassDetail() {
               Đồng bộ với lớp khác
             </CopyButton>
             {!isEditingSubjects ? (
-              <CopyButton onClick={handleEditSubjects}>
+              <UpdateButton onClick={handleEditSubjects}>
                 Chỉnh sửa
-              </CopyButton>
+              </UpdateButton>
             ) : (
               <>
                 <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>

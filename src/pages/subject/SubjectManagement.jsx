@@ -34,7 +34,7 @@ const Title = styled.h1`
 `;
 
 const AddButton = styled.button`
-  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  background: #10B981;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -321,20 +321,19 @@ const ModalActions = styled.div`
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'primary' ? '#3498db' : '#666'};
+  background: ${(props) => props.variant === 'primary' ? '#3b82f6' : '#e74c3c'};
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  margin-right: 5px;
   transition: all 0.3s ease;
-  
   &:hover {
-    opacity: 0.8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   }
-  
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -772,11 +771,11 @@ function SubjectManagement() {
             Hủy
           </ActionButton>
           <ActionButton
-            variant="success"
+            variant="primary"
             onClick={isEdit ? handleUpdate : handleCreate}
             disabled={modalLoading}
           >
-            {modalLoading ? '⏳ Đang lưu...' : (isEdit ? 'Cập nhật' : 'Tạo môn học')}
+            {modalLoading ? '⏳ Đang lưu...' : (isEdit ? 'Xác nhận' : 'Lưu thông tin')}
           </ActionButton>
         </ModalActions>
       </ModalContent>
@@ -791,7 +790,7 @@ function SubjectManagement() {
           resetForm();
           setShowCreateModal(true);
         }}>
-          + Thêm môn học
+          + Tạo môn học
         </AddButton>
       </Header>
 
@@ -878,11 +877,11 @@ function SubjectManagement() {
                         ⋯
                       </ActionMenuButton>
                       <ActionDropdown isOpen={openActionMenu === subject.subject_code}>
-                        <ActionMenuItem onClick={() => {
+                        {/* <ActionMenuItem onClick={() => {
                           setOpenActionMenu(subject.subject_code);
                         }}>
                           <ActionMenuText>Xem chi tiết</ActionMenuText>
-                        </ActionMenuItem>
+                        </ActionMenuItem> */}
                         <ActionMenuItem
                           onClick={() => {
                             handleEdit(subject);

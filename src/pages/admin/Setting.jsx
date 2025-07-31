@@ -62,7 +62,7 @@ const TableCell = styled.td`
 `;
 
 const EditButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #6B7280;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -167,8 +167,7 @@ const ModalActions = styled.div`
 `;
 
 const ActionButton = styled.button`
-  background: ${(props) =>
-    props.variant === 'primary' ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#6c757d'};
+  background: ${(props) => props.variant === 'primary' ? '#3b82f6' : '#e74c3c'};
   color: white;
   border: none;
   padding: 8px 16px;
@@ -328,7 +327,7 @@ export default function Setting() {
                     <TableCell>{setting.value}</TableCell>
                     <TableCell>
                       <EditButton onClick={() => handleEditSetting(setting)} disabled={loading}>
-                        Sửa
+                        Chỉnh sửa
                       </EditButton>
                     </TableCell>
                   </TableRow>
@@ -403,7 +402,7 @@ export default function Setting() {
                   Hủy
                 </ActionButton>
                 <ActionButton type="submit" variant="primary" disabled={loading}>
-                  {loading ? 'Đang cập nhật...' : 'Cập nhật'}
+                  {loading ? 'Đang cập nhật...' : 'Xác nhận'}
                 </ActionButton>
               </ModalActions>
             </form>
