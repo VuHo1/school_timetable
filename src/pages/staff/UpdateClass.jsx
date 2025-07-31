@@ -16,6 +16,7 @@ const Container = styled.div`
   padding: 24px;
   background-color: #f8f9fa;
   min-height: 100vh;
+  width: 100%;
 `;
 
 const Header = styled.div`
@@ -65,8 +66,7 @@ const FormContainer = styled.div`
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-  max-width: 900px;
+  max-width: 90%;
   border: 1px solid #e9ecef;
 `;
 

@@ -1,9 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { fetchClassDetail, fetchClassSubjects, fetchClassScheduleConfig, fetchTimeSlots } from '../../api';
+import {
+  fetchClassDetail,
+  fetchClassSubjects,
+  fetchClassScheduleConfig,
+  fetchTimeSlots,
+  fetchClasses,
+  addClassScheduleConfigSame,
+  addClassSubjectSame,
+  fetchAvailableTeachers,
+  fetchAvailableRooms,
+  fetchAllTeachers,
+  updateClassTeacher,
+  updateClassRoom
+} from '../../api';
+import { toast } from 'react-hot-toast';
 import styled from 'styled-components';
 
+// Styled components remain the same as in your provided code
 const Container = styled.div`
   padding: 24px;
   background-color: #f8f9fa;
@@ -40,34 +55,86 @@ const BackButton = styled.button`
   }
   
   &::before {
+    content: "←";
     font-size: 16px;
   }
 `;
 
-const UpdateButton = styled.button`
-  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-  color: #212529;
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  width: 70%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+`;
+
+const ModalTitle = styled.h2`
+  color: #2c3e50;
+  margin: 0 0 24px;
+  font-size: 24px;
+  font-weight: 600;
+`;
+
+const ModalButton = styled.button`
+  padding: 10px 20px;
+ margin: 10px;
   border: none;
-  padding: 12px 20px;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+`;
+
+const BothButton = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const ConfirmButton = styled(ModalButton)`
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+  color: white;
+`;
+
+const CancelButton = styled(ModalButton)`
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+`;
+
+const CheckboxGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+  max-height: 50vh;
+`;
+
+const CheckboxContainer = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
+const CheckboxLabel = styled.label`
   display: flex;
   align-items: center;
   gap: 8px;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
-  }
-  
-  &::before {
-    content: "✏️";
-    font-size: 14px;
-  }
+  color: #2c3e50;
+  font-size: 14px;
+  cursor: pointer;
 `;
 
 const Title = styled.h1`
@@ -103,13 +170,8 @@ const SectionTitle = styled.h3`
   font-size: 20px;
   font-weight: 600;
   display: flex;
-  align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  
-  &::before {
-    content: "📋";
-    font-size: 18px;
-  }
 `;
 
 const InfoGrid = styled.div`
@@ -132,23 +194,32 @@ const InfoRow = styled.div`
   padding: 12px 16px;
   border-radius: 8px;
   transition: all 0.3s ease;
-
 `;
 
 const InfoLabel = styled.span`
   font-weight: 600;
   color: #495057;
   min-width: 120px;
-  
-  &::after {
-    margin-left: 4px;
-  }
 `;
 
 const InfoValue = styled.span`
   color: #2c3e50;
   font-weight: 500;
   flex: 1;
+`;
+
+const UpdateIcon = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #007bff;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: #0056b3;
+    transform: scale(1.2);
+  }
 `;
 
 const StatusBadge = styled.span`
@@ -233,9 +304,6 @@ const TableHeader = styled.th`
   }
 `;
 
-const TableRow = styled.tr`
-`;
-
 const TableHeader2 = styled.th`
   background: white;
   padding: 16px 12px;
@@ -253,13 +321,13 @@ const TableHeader2 = styled.th`
   }
 `;
 
+const TableRow = styled.tr``;
+
 const TableCell = styled.td`
   padding: 16px 12px;
   vertical-align: middle;
   text-align: center;
   border: 1px solid #ddd;
-  padding: 12px 8px;
-  text-align: center;
   font-size: 13px;
   white-space: nowrap;
 `;
@@ -334,39 +402,85 @@ const ErrorMessage = styled.div`
   }
 `;
 
-const Metadata = styled.div`
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 2px solid #e9ecef;
-  font-size: 14px;
-  color: #6c757d;
-  background: #f8f9fa;
-  padding: 20px;
+const SuccessMessage = styled.div`
+  background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+  color: #155724;
+  padding: 16px 20px;
   border-radius: 12px;
+  margin-bottom: 24px;
+  border: 2px solid #28a745;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 12px;
   
-  p {
-    margin: 8px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    
-    strong {
-      color: #495057;
-      font-weight: 600;
-    }
+  &::before {
+    content: "✅";
+    font-size: 20px;
+  }
+`;
+
+const Select = styled.select`
+  padding: 14px 16px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: white;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    transform: translateY(-1px);
   }
   
-  p:first-child::before {
-    content: "👤";
+  &:hover {
+    border-color: #007bff;
   }
   
-  p:nth-child(2)::before {
-    content: "📅";
+  &:disabled {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+    opacity: 0.7;
   }
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+`;
+
+const Label = styled.label`
+  font-weight: 600;
+  color: #495057;
+  font-size: 15px;
+  margin-bottom: 4px;
+`;
+
+const CopyButton = styled.button`
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
   
-  p:last-child::before {
-    content: "🔄";
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
   }
+
 `;
 
 function ClassDetail() {
@@ -381,10 +495,33 @@ function ClassDetail() {
   const [loadingSchedule, setLoadingSchedule] = useState(false);
   const [error, setError] = useState('');
   const [errorSchedule, setErrorSchedule] = useState('');
+  const [success, setSuccess] = useState('');
+  const [classes, setClasses] = useState([]);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showSubjectsModal, setShowSubjectsModal] = useState(false);
+  const [showTeacherModal, setShowTeacherModal] = useState(false);
+  const [showRoomModal, setShowRoomModal] = useState(false);
+  const [selectedClasses, setSelectedClasses] = useState([]);
+  const [availableTeachers, setAvailableTeachers] = useState([]);
+  const [availableRooms, setAvailableRooms] = useState([]);
+  const [selectedTeacher, setSelectedTeacher] = useState('');
+  const [selectedRoom, setSelectedRoom] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadClassData();
+    fetchClassesData();
   }, [classCode]);
+
+  const fetchClassesData = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const data = await fetchClasses(token);
+      setClasses(data.data_set || []);
+    } catch (err) {
+      toast.error('Không thể tải danh sách lớp: ' + err.message);
+    }
+  };
 
   const loadClassData = async () => {
     setLoading(true);
@@ -403,11 +540,143 @@ function ClassDetail() {
       setClassSubjects(subjectsResult || []);
       setScheduleConfig(scheduleResult);
       setTimeSlots(timeSlotResult || []);
+      setSelectedTeacher(detailResult.teacher_user_name || '');
+      setSelectedRoom(detailResult.room_code || '');
     } catch (err) {
       setError('Không thể tải thông tin lớp học: ' + err.message);
+      toast.error('Không thể tải thông tin lớp học: ' + err.message);
     } finally {
       setLoading(false);
       setLoadingSchedule(false);
+    }
+  };
+
+  const loadTeachers = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      let teachers = await fetchAvailableTeachers(token);
+      if (teachers.length === 0) {
+        console.log('No available teachers, loading all teachers...');
+        teachers = await fetchAllTeachers(token, { limit: 100 });
+      }
+      setAvailableTeachers(teachers);
+    } catch (err) {
+      setError('Không thể tải danh sách giáo viên: ' + err.message);
+      toast.error('Không thể tải danh sách giáo viên: ' + err.message);
+    }
+  };
+
+  const loadRooms = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const rooms = await fetchAvailableRooms(token);
+      console.log('Available rooms:', rooms);
+      setAvailableRooms(rooms);
+    } catch (err) {
+      setError('Không thể tải danh sách phòng học: ' + err.message);
+      toast.error('Không thể tải danh sách phòng học: ' + err.message);
+    }
+  };
+
+  const handleUpdateTeacher = async () => {
+    if (!selectedTeacher) {
+      setError('Vui lòng chọn giáo viên chủ nhiệm');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const result = await updateClassTeacher(token, classCode, selectedTeacher);
+
+      if (result.success) {
+        setSuccess('Cập nhật giáo viên chủ nhiệm thành công!');
+        const updatedClassData = await fetchClassDetail(token, classCode);
+        setClassDetail(updatedClassData);
+        setShowTeacherModal(false);
+        toast.success(result.description);
+      } else {
+        throw new Error(result.description || 'Cập nhật thất bại');
+      }
+    } catch (err) {
+      setError('Lỗi khi cập nhật giáo viên: ' + err.message);
+      toast.error('Lỗi khi cập nhật giáo viên: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateRoom = async () => {
+    if (!selectedRoom) {
+      setError('Vui lòng chọn phòng học');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const token = localStorage.getItem('authToken');
+      const result = await updateClassRoom(token, classCode, selectedRoom);
+
+      if (result.success) {
+        setSuccess('Cập nhật phòng học thành công!');
+        const updatedClassData = await fetchClassDetail(token, classCode);
+        setClassDetail(updatedClassData);
+        toast.success(result.description);
+        setShowRoomModal(false);
+      } else {
+        throw new Error(result.description || 'Cập nhật thất bại');
+      }
+    } catch (err) {
+      setError('Lỗi khi cập nhật phòng học: ' + err.message);
+      toast.error('Thất bại: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCopySchedule = async () => {
+    if (selectedClasses.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một lớp để áp dụng');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await addClassScheduleConfigSame(token, {
+        class_code: classCode,
+        target_class_code: selectedClasses
+      });
+      toast.success(response.description);
+      setShowScheduleModal(false);
+      setSelectedClasses([]);
+      loadClassData();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleCopySubjects = async () => {
+    if (selectedClasses.length === 0) {
+      toast.error('Vui lòng chọn ít nhất một lớp để áp dụng');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await addClassSubjectSame(token, {
+        class_code: classCode,
+        target_class_code: selectedClasses
+      });
+      toast.success(response.description);
+      setShowSubjectsModal(false);
+      setSelectedClasses([]);
+      loadClassData();
+    } catch (err) {
+      toast.error(err.message);
     }
   };
 
@@ -415,8 +684,22 @@ function ClassDetail() {
     navigate('/staff/class');
   };
 
-  const handleUpdate = () => {
-    navigate(`/staff/class/update/${classCode}`);
+  const toggleClassSelection = (classCode) => {
+    setSelectedClasses(prev =>
+      prev.includes(classCode)
+        ? prev.filter(code => code !== classCode)
+        : [...prev, classCode]
+    );
+  };
+
+  const openTeacherModal = () => {
+    setShowTeacherModal(true);
+    loadTeachers();
+  };
+
+  const openRoomModal = () => {
+    setShowRoomModal(true);
+    loadRooms();
   };
 
   if (loading) {
@@ -427,47 +710,31 @@ function ClassDetail() {
     );
   }
 
-  if (error) {
-    return (
-      <Container>
-        <ErrorMessage>{error}</ErrorMessage>
-        <BackButton onClick={handleBack}>
-          ← Quay lại
-        </BackButton>
-      </Container>
-    );
-  }
-
   if (!classDetail) {
     return (
       <Container>
+        <Header>
+          <BackButton onClick={handleBack}>
+            Quay lại
+          </BackButton>
+          <Title>Chi tiết lớp</Title>
+        </Header>
         <ErrorMessage>Không tìm thấy thông tin lớp học</ErrorMessage>
-        <BackButton onClick={handleBack}>
-          ← Quay lại
-        </BackButton>
       </Container>
     );
   }
-
-  // Log kiểm tra dữ liệu timeSlots
-  console.log('timeSlots:', timeSlots);
 
   return (
     <Container>
       <Header>
         <BackButton onClick={handleBack}>
-          ← Quay lại
+          Quay lại
         </BackButton>
         <Title>Chi tiết lớp {classDetail.class_code}</Title>
-        <UpdateButton onClick={handleUpdate}>
-          Cập nhật lớp học
-        </UpdateButton>
       </Header>
-
       <InfoSection>
         <SectionTitle>Thông tin cơ bản</SectionTitle>
         <InfoGrid>
-          {/* Cột trái */}
           <div>
             <InfoRow>
               <InfoLabel>Mã lớp:</InfoLabel>
@@ -479,18 +746,27 @@ function ClassDetail() {
             </InfoRow>
             <InfoRow>
               <InfoLabel>GVCN:</InfoLabel>
-              <InfoValue>{classDetail.teacher_full_name ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})` : 'Chưa có GV'}</InfoValue>
+              <InfoValue>
+                {classDetail.teacher_full_name ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})` : 'Chưa có GV'}
+                <UpdateIcon onClick={openTeacherModal} title="Cập nhật giáo viên">✏️</UpdateIcon>
+              </InfoValue>
             </InfoRow>
             <InfoRow>
               <InfoLabel>Trạng thái:</InfoLabel>
-              <InfoValue>{classDetail.status || 'N/A'}</InfoValue>
+              <InfoValue>
+                <StatusBadge status={classDetail.status}>
+                  {classDetail.status || 'N/A'}
+                </StatusBadge>
+              </InfoValue>
             </InfoRow>
           </div>
-          {/* Cột phải */}
           <div>
             <InfoRow>
               <InfoLabel>Mã phòng học:</InfoLabel>
-              <InfoValue>{classDetail.room_code || 'Chưa xếp phòng'}</InfoValue>
+              <InfoValue>
+                {classDetail.room_code || 'Chưa xếp phòng'}
+                <UpdateIcon onClick={openRoomModal} title="Cập nhật phòng học">✏️</UpdateIcon>
+              </InfoValue>
             </InfoRow>
             <InfoRow>
               <InfoLabel>Tên phòng:</InfoLabel>
@@ -504,23 +780,31 @@ function ClassDetail() {
         </InfoGrid>
       </InfoSection>
 
-      {/* Thời khóa biểu đặt trên */}
       <SubjectsSection>
-        <SectionTitle>Cấu hình thời khóa biểu</SectionTitle>
+        <SectionTitle>
+          Cấu hình thời khóa biểu
+          <CopyButton onClick={() => setShowScheduleModal(true)}>
+            Áp dụng cấu hình tương tự
+          </CopyButton>
+        </SectionTitle>
         {loadingSchedule ? (
-          <Loading>Đang tải thời khóa biểu...</Loading>
+          <Loading>Đang tải lịch...</Loading>
         ) : errorSchedule ? (
           <ErrorMessage>{errorSchedule}</ErrorMessage>
         ) : timeSlots.length > 0 ? (
           <ScheduleTable config={scheduleConfig} timeSlots={timeSlots} />
         ) : (
-          <NoSubjects>Không có dữ liệu thời khóa biểu.</NoSubjects>
+          <NoSubjects>Không có dữ liệu.</NoSubjects>
         )}
       </SubjectsSection>
 
-      {/* Danh sách môn học đặt dưới */}
       <SubjectsSection>
-        <SectionTitle>Danh sách môn học ({classSubjects.length} môn)</SectionTitle>
+        <SectionTitle>
+          Danh sách môn học ({classSubjects.length} môn)
+          <CopyButton onClick={() => setShowSubjectsModal(true)}>
+            Áp dụng các môn học tương tự
+          </CopyButton>
+        </SectionTitle>
         {classSubjects.length > 0 ? (
           <TableContainer>
             <Table>
@@ -530,7 +814,7 @@ function ClassDetail() {
                   <TableHeader2 style={{ width: '30%' }}>Tên môn</TableHeader2>
                   <TableHeader2 style={{ width: '25%' }}>Giáo viên</TableHeader2>
                   <TableHeader2 style={{ width: '15%' }}>Tiết/tuần</TableHeader2>
-                  <TableHeader2 style={{ width: '15%' }}>Tiết liên tiếp tối đa cho phép</TableHeader2>
+                  <TableHeader2 style={{ width: '15%' }}>Tiết liên tiếp tối đa</TableHeader2>
                 </tr>
               </thead>
               <tbody>
@@ -554,6 +838,146 @@ function ClassDetail() {
           </NoSubjects>
         )}
       </SubjectsSection>
+
+      {showScheduleModal && (
+        <Modal>
+          <ModalContent>
+            <ModalTitle>Chọn các lớp muốn áp dụng cấu hình tương tự</ModalTitle>
+            <CheckboxGrid>
+              {classes
+                .filter(cls => cls.class_code !== classCode)
+                .map(cls => (
+                  <CheckboxContainer key={cls.class_code}>
+                    <CheckboxLabel>
+                      <input
+                        type="checkbox"
+                        checked={selectedClasses.includes(cls.class_code)}
+                        onChange={() => toggleClassSelection(cls.class_code)}
+                      />
+                      {cls.class_code}
+                    </CheckboxLabel>
+                  </CheckboxContainer>
+                ))}
+            </CheckboxGrid>
+            <BothButton>
+              <ConfirmButton onClick={handleCopySchedule}>Áp dụng</ConfirmButton>
+              <CancelButton onClick={() => setShowScheduleModal(false)}>Hủy</CancelButton>
+            </BothButton>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {showSubjectsModal && (
+        <Modal>
+          <ModalContent>
+            <ModalTitle>Chọn các lớp muốn áp dụng môn học tương tự</ModalTitle>
+            <CheckboxGrid>
+              {classes
+                .filter(cls => cls.class_code !== classCode)
+                .map(cls => (
+                  <CheckboxContainer key={cls.class_code}>
+                    <CheckboxLabel>
+                      <input
+                        type="checkbox"
+                        checked={selectedClasses.includes(cls.class_code)}
+                        onChange={() => toggleClassSelection(cls.class_code)}
+                      />
+                      {cls.class_code}
+                    </CheckboxLabel>
+                  </CheckboxContainer>
+                ))}
+            </CheckboxGrid>
+            <BothButton>
+              <ConfirmButton onClick={handleCopySubjects}>Áp dụng</ConfirmButton>
+              <CancelButton onClick={() => setShowSubjectsModal(false)}>Hủy</CancelButton>
+            </BothButton>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {showTeacherModal && (
+        <Modal>
+          <ModalContent>
+            <ModalTitle>Cập nhật giáo viên chủ nhiệm lớp {classDetail.class_code}</ModalTitle>
+            <FormGroup>
+              <Label>Chọn giáo viên chủ nhiệm:</Label>
+              <Select
+                value={selectedTeacher}
+                onChange={(e) => setSelectedTeacher(e.target.value)}
+                disabled={saving}
+              >
+                <option value="">-- Chọn giáo viên --</option>
+                {availableTeachers.length > 0 ? (
+                  availableTeachers.map((teacher) => (
+                    <option key={teacher.user_name} value={teacher.user_name}>
+                      {teacher.full_name} ({teacher.user_name})
+                      {teacher.class_code && ` - Đang dạy: ${teacher.class_code}`}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Không có giáo viên nào</option>
+                )}
+              </Select>
+              {availableTeachers.length === 0 && (
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  Không có giáo viên available. Vui lòng liên hệ admin để thêm giáo viên.
+                </div>
+              )}
+            </FormGroup>
+            <BothButton>
+              <ConfirmButton
+                onClick={handleUpdateTeacher}
+                disabled={saving || !selectedTeacher || selectedTeacher === classDetail.teacher_user_name}
+              >
+                {saving ? 'Đang cập nhật...' : 'Cập nhật'}
+              </ConfirmButton>
+              <CancelButton onClick={() => setShowTeacherModal(false)}>Hủy</CancelButton>
+            </BothButton>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {showRoomModal && (
+        <Modal>
+          <ModalContent>
+            <ModalTitle>Cập nhật phòng học lớp {classDetail.class_code}</ModalTitle>
+            <FormGroup>
+              <Label>Chọn phòng học:</Label>
+              <Select
+                value={selectedRoom}
+                onChange={(e) => setSelectedRoom(e.target.value)}
+                disabled={saving}
+              >
+                <option value="">-- Chọn phòng học --</option>
+                {availableRooms.length > 0 ? (
+                  availableRooms.map((room) => (
+                    <option key={room.room_code} value={room.room_code}>
+                      {room.room_name} ({room.room_code})
+
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>Không có phòng học nào</option>
+                )}
+              </Select>
+              {availableRooms.length === 0 && (
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  Không có phòng học available. Vui lòng liên hệ admin để thêm phòng học.
+                </div>
+              )}
+            </FormGroup>
+            <BothButton>
+              <ConfirmButton
+                onClick={handleUpdateRoom}
+                disabled={saving || !selectedRoom || selectedRoom === classDetail.room_code}
+              >
+                {saving ? 'Đang cập nhật...' : 'Cập nhật'}
+              </ConfirmButton>
+              <CancelButton onClick={() => setShowRoomModal(false)}>Hủy</CancelButton>
+            </BothButton>
+          </ModalContent>
+        </Modal>
+      )}
     </Container>
   );
 }
@@ -565,9 +989,7 @@ function ScheduleTable({ config, timeSlots }) {
   const dayKeys = [
     'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
   ];
-  // Lấy tối đa 8 tiết
   const slots = timeSlots;
-  // Nếu không có config, tạo object với các ngày đều là mảng rỗng
   const safeConfig = config && Object.keys(config).length > 0
     ? config
     : dayKeys.reduce((acc, key) => { acc[key] = []; return acc; }, {});
@@ -590,7 +1012,6 @@ function ScheduleTable({ config, timeSlots }) {
               </TableCell>
               {dayKeys.map((dayKey, d) => {
                 const slotArr = Array.isArray(safeConfig[dayKey]) ? safeConfig[dayKey] : [];
-                // So sánh với String(slot.id)
                 const isAvailable = !slotArr.includes(String(slot.id));
                 return (
                   <TableCell
@@ -614,4 +1035,4 @@ function ScheduleTable({ config, timeSlots }) {
   );
 }
 
-export default ClassDetail; 
+export default ClassDetail;
