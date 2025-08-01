@@ -925,19 +925,25 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
         }
         setIsGenerating(true);
         try {
-            await generateSchedule(token, {
+            var resultData = await generateSchedule(token, {
                 schedule_name: scheduleName.trim(),
                 semester_id: semesterId,
                 option,
                 use_class_config: useClassConfig,
             });
-            showToast('Tạo mẫu mới thành công', 'success');
-            const newTemplates = await fetchBaseSchedules(token);
-            onGenerate(newTemplates);
-            setError(null);
-            setIsDialogOpen(false);
-            setScheduleName('');
-            setSemesterId('');
+            if (resultData.success) {
+                showToast(resultData.description, 'success');
+                const newTemplates = await fetchBaseSchedules(token);
+                onGenerate(newTemplates);
+                setError(null);
+                setIsDialogOpen(false);
+                setScheduleName('');
+                setSemesterId('');
+            }
+            else {
+                showToast(resultData.description, 'error');
+            }
+
         } catch (err) {
             showToast(`Lỗi: ${err.message}`, 'error');
         } finally {
@@ -1713,10 +1719,6 @@ export default function ViewSchedule() {
             setIsLoading(false);
         }
     };
-
-    if (loading) {
-        return <Container>Đang tải...</Container>;
-    }
 
     if (!token) {
         return <Container>Vui lòng đăng nhập để xem thời khóa biểu.</Container>;
