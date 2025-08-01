@@ -130,7 +130,7 @@ const AddSlotRow = styled.tr`
 `;
 
 const AddButton = styled.button`
-  background: #27ae60;
+  background: #10B981;
   color: white;
   border: none;
   padding: 8px 16px;
@@ -256,7 +256,10 @@ function TimeslotManagement() {
       start_time: newSlot.start_time,
       end_time: newSlot.end_time,
     };
-
+    if (!newTimeslot.start_time || !newTimeslot.end_time) {
+      toast.error('Vui lòng nhập đầy đủ thời gian bắt đầu và kết thúc');
+      return;
+    }
     try {
       await createTimeSlot(token, newTimeslot);
       toast.success('Thêm tiết học thành công');

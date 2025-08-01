@@ -260,6 +260,11 @@ const Button = styled.button`
 `;
 
 const ButtonAdd = styled(Button)`
+  background: #10B981;
+  color: white;
+`;
+
+const ButtonSave = styled(Button)`
   background: #3b82f6;
   color: white;
 `;
@@ -638,7 +643,7 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
                     }} />
                     <Dialog>
                         <SubHeading>
-                            <FaPlus /> Tạo học kỳ mới
+                            + Tạo học kỳ mới
                         </SubHeading>
                         <FormGroup1>
                             <Label>Tên học kỳ</Label>
@@ -683,7 +688,7 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
                                 Hủy
                             </CancelButton>
                             <ButtonAdd onClick={handleAddSemester} disabled={isGenerating}>
-                                Tạo
+                                Lưu thông tin
                             </ButtonAdd>
                         </DialogButtonGroup>
                     </Dialog>
@@ -835,7 +840,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                     }} />
                     <Dialog>
                         <SubHeading>
-                            <FaPlus /> Tạo mẫu thời khóa biểu mới
+                            + Tạo mẫu thời khóa biểu mới
                         </SubHeading>
                         <FormGroup1>
                             <Label>Tên thời khóa biểu (để trống để sinh ngẫu nhiên)</Label>
@@ -903,7 +908,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                 Hủy
                             </CancelButton>
                             <ButtonAdd onClick={handleGenerate} disabled={isGenerating}>
-                                Tạo
+                                Lưu thông tin
                             </ButtonAdd>
                         </DialogButtonGroup>
                     </Dialog>
@@ -926,9 +931,9 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                             <CancelButton onClick={() => setIsEditDialogOpen(false)}>
                                 Hủy
                             </CancelButton>
-                            <ButtonAdd onClick={handleUpdate}>
-                                Lưu
-                            </ButtonAdd>
+                            <ButtonSave onClick={handleUpdate}>
+                                Xác nhận
+                            </ButtonSave>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -1540,7 +1545,7 @@ export default function ViewSchedule() {
     return (
         <Container>
             <Heading>
-                📅 Quản lý thời khóa biểu
+                📅 Quản lí thời khóa biểu
             </Heading>
             {error && <ErrorMessage> {error}</ErrorMessage>}
             {isLoading && <LoadingMessage><FaSpinner className="animate-spin" /> Đang tải...</LoadingMessage>}
@@ -1562,7 +1567,7 @@ export default function ViewSchedule() {
                 <>
                     <FormGroup>
                         <ButtonAdd onClick={() => setIsDialogOpen(true)} disabled={isGeneratingTemplate}>
-                            <FaPlus /> Thêm mới
+                            + Thêm mới
                         </ButtonAdd>
                         <div>
                             <Select value={baseType} onChange={(e) => handleBaseTypeChange(e.target.value)}>
@@ -1641,7 +1646,7 @@ export default function ViewSchedule() {
                 <>
                     <FormGroup>
                         <ButtonAdd onClick={() => setIsAddSemesterDialogOpen(true)} disabled={isGeneratingSemester}>
-                            <FaPlus /> Thêm mới
+                            + Thêm mới
                         </ButtonAdd>
                     </FormGroup>
                     <SemesterList
@@ -1684,7 +1689,7 @@ export default function ViewSchedule() {
                                         console.log('[ApplyDialog] Opening dialog. Semesters:', semesters, 'Templates:', templates);
                                         setIsApplyDialogOpen(true);
                                     }} disabled={isLoading}>
-                                        <FaPlus /> Thêm mới
+                                        + Thêm mới
                                     </ButtonAdd>
                                     <ButtonDelete onClick={() => setIsRemoveDialogOpen(true)} disabled={isLoading}>
                                         <FaTrash /> Xóa
@@ -1746,7 +1751,7 @@ export default function ViewSchedule() {
                                 }} />
                                 <Dialog>
                                     <SubHeading>
-                                        <FaPlus /> Thêm thời khóa biểu
+                                        + Thêm thời khóa biểu
                                     </SubHeading>
                                     <FormGroup1>
                                         <Label>Học kỳ</Label>
