@@ -20,6 +20,8 @@ import {
     addSemester,
     removeSemester,
     getDatesInUse,
+    fetchScheduleConfig,
+    updateScheduleConfig,
 } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import DatePicker from 'react-datepicker';
@@ -273,6 +275,13 @@ const ButtonDelete = styled(Button)`
   background: #e74c3c;
   &:hover {
     background: #dc2626;
+  }
+`;
+
+const ButtonUpdate = styled(Button)`
+  background: #6B7280;
+  &:hover {
+    background: #6B7280;
   }
 `;
 
@@ -725,6 +734,162 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
     );
 };
 
+const Configuration = ({ token, showToast, configs, setConfigs, filteredConfigs }) => {
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editingConfig, setEditingConfig] = useState(null);
+    const [editValue, setEditValue] = useState('');
+    const [saving, setSaving] = useState(false);
+
+
+
+    const handleEdit = (config) => {
+        setEditingConfig(config);
+        setEditValue(config.value);
+        setIsEditDialogOpen(true);
+    };
+
+    const handleSave = async () => {
+        if (!editingConfig || !editValue.trim()) {
+            showToast('Vui lòng nhập giá trị hợp lệ', 'error');
+            return;
+        }
+
+        setSaving(true);
+        try {
+            var resultData = await updateScheduleConfig(token, {
+                name: editingConfig.name,
+                value: editValue.trim()
+            });
+            if (resultData.success) {
+                setConfigs(prevConfigs =>
+                    prevConfigs.map(config =>
+                        config.name === editingConfig.name
+                            ? { ...config, value: editValue.trim() }
+                            : config
+                    )
+                );
+
+                showToast(resultData.description, 'success');
+                setIsEditDialogOpen(false);
+                setEditingConfig(null);
+                setEditValue('');
+            }
+            else {
+                showToast(resultData.description, 'error');
+            }
+            // Update the local state
+
+        } catch (err) {
+            showToast(`Lỗi khi cập nhật cấu hình: ${err.message}`, 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleCancel = () => {
+        setIsEditDialogOpen(false);
+        setEditingConfig(null);
+        setEditValue('');
+    };
+
+    if (!configs || configs.length === 0) {
+        return <div>Đang tải...</div>;
+    }
+
+    return (
+        <div>
+
+            <Table>
+                <thead>
+                    <tr>
+                        <Th style={{ width: '60%' }}>Tên cấu hình</Th>
+                        <Th style={{ width: '30%' }}>Giá trị</Th>
+                        <Th style={{ width: '10%' }}>Hành động</Th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {filteredConfigs.map((config) => (
+                        <tr key={config.name}>
+                            <Td>{config.description}</Td>
+                            <Td>{config.value}</Td>
+                            <Td>
+                                <ButtonUpdate
+                                    onClick={() => handleEdit(config)}
+                                    disabled={config.is_restricted}
+                                    style={{
+                                        opacity: config.is_restricted ? 0.5 : 1,
+                                        cursor: config.is_restricted ? 'not-allowed' : 'pointer'
+                                    }}
+                                >
+                                    Chỉnh sửa
+                                </ButtonUpdate>
+                            </Td>
+                        </tr>
+                    ))}
+                </tbody>
+            </Table>
+
+            {/* Edit Dialog */}
+            {isEditDialogOpen && editingConfig && (
+                <DialogOverlay onClick={handleCancel}>
+                    <Dialog onClick={(e) => e.stopPropagation()}>
+                        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>
+                            Chỉnh sửa cấu hình
+                        </h3>
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                                Tên cấu hình:
+                            </label>
+                            <div style={{
+                                width: '95%',
+                                padding: '8px 12px',
+                                backgroundColor: '#f3f4f6',
+                                borderRadius: '4px',
+                                color: '#6b7280'
+                            }}>
+                                {editingConfig.description}
+                            </div>
+                        </div>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                                Giá trị:
+                            </label>
+                            <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                style={{
+                                    width: '95%',
+                                    padding: '8px 12px',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '4px',
+                                    fontSize: '14px'
+                                }}
+                                placeholder="Nhập giá trị mới"
+                            />
+                        </div>
+                        <DialogButtonGroup>
+                            <CancelButton onClick={handleCancel}>
+                                Hủy
+                            </CancelButton>
+                            <Button
+                                onClick={handleSave}
+                                disabled={saving}
+                                style={{
+                                    background: saving ? '#9ca3af' : '#3b82f6',
+                                    cursor: saving ? 'not-allowed' : 'pointer'
+                                }}
+                            >
+                                {saving ? 'Đang lưu...' : 'Xác nhận'}
+                            </Button>
+                        </DialogButtonGroup>
+                    </Dialog>
+                </DialogOverlay>
+            )}
+        </div>
+    );
+};
+
 const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selectedScheduleId, isDialogOpen, setIsDialogOpen, isGenerating, setIsGenerating }) => {
     const { showToast } = useToast();
     const [option, setOption] = useState('Default');
@@ -751,7 +916,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
         if (token) {
             fetchData();
         }
-    }, [token, showToast]);
+    }, [token]);
 
     const handleGenerate = async () => {
         if (!semesterId) {
@@ -1152,6 +1317,8 @@ export default function ViewSchedule() {
     const [isGeneratingSemester, setIsGeneratingSemester] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
+    const [selectedApplication, setSelectedApplication] = useState('Tất cả');
+    const [configs, setConfigs] = useState([]);
 
     const token = user?.token;
 
@@ -1165,6 +1332,9 @@ export default function ViewSchedule() {
                 if (viewMode === 'Semesters') {
                     const semestersData = await fetchSemesters(token);
                     setSemesters(semestersData);
+                } else if (viewMode === 'Config') {
+                    const configsData = await fetchScheduleConfig(token);
+                    setConfigs(configsData);
                 } else {
                     const templatesData = await fetchBaseSchedules(token);
                     setTemplates(templatesData);
@@ -1450,6 +1620,16 @@ export default function ViewSchedule() {
             showToast(`Lỗi: ${err.message}`, 'error');
         }
     };
+
+    // Configuration filter logic
+    const uniqueApplications = ['Tất cả', ...new Set(configs.map(config => config.application))];
+    const filteredConfigs = selectedApplication === 'Tất cả'
+        ? configs
+        : configs.filter(config => config.application === selectedApplication);
+
+    const handleApplicationChange = (value) => {
+        setSelectedApplication(value);
+    };
     const formatDate = (date) => {
         if (!date) return '';
         const year = date.getFullYear();
@@ -1560,7 +1740,10 @@ export default function ViewSchedule() {
                     Thời khóa biểu của tôi
                 </Button>
                 <Button onClick={() => handleViewMode('Semesters')}>
-                    Quản lý học kỳ
+                    Quản lí học kỳ
+                </Button>
+                <Button onClick={() => handleViewMode('Config')}>
+                    Cấu hình thời khóa biểu
                 </Button>
             </FormGroup>
             {viewMode === 'Base' && (
@@ -1661,9 +1844,32 @@ export default function ViewSchedule() {
                         setIsGenerating={setIsGeneratingSemester}
                     />
                 </>
-
-            )
-            }
+            )}
+            {viewMode === 'Config' && (
+                <>
+                    <FormGroup>
+                        <div>
+                            <Select
+                                value={selectedApplication}
+                                onChange={(e) => handleApplicationChange(e.target.value)}
+                            >
+                                {uniqueApplications.map((app) => (
+                                    <option key={app} value={app}>
+                                        {app}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+                    </FormGroup>
+                    <Configuration
+                        token={token}
+                        showToast={showToast}
+                        configs={configs}
+                        setConfigs={setConfigs}
+                        filteredConfigs={filteredConfigs}
+                    />
+                </>
+            )}
             {
                 (viewMode === 'Applied' || viewMode === 'Personal') && (
                     <>
