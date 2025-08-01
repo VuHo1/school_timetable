@@ -59,7 +59,7 @@ const Title = styled.h1`
 `;
 
 const CreateButton = styled.button`
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #10B981;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -222,7 +222,7 @@ const ModalTitle = styled.h3`
 
 const CloseButton = styled.button`
  padding: 6px 12px;
-  background-color: #dc3545;
+  background-color: #e74c3c;
   color: white;
   border: none;
   border-radius: 4px;
@@ -238,15 +238,21 @@ const CloseButton = styled.button`
 const DetailSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 8px;
 `;
 
 const DetailItem = styled.div`
   display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  margin-bottom: 15px;
+  .label {
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 150px;
+  }
+  .value {
+    color: #666;
+    flex: 1;
+  }
 `;
 
 const DetailLabel = styled.span`
@@ -316,16 +322,18 @@ const ModalActions = styled.div`
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${props => props.variant === 'primary' ? '#3498db' : '#666'};
+  background: ${(props) => props.variant === 'primary' ? '#3b82f6' : '#e74c3c'};
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   &:hover {
-    opacity: 0.8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   }
   &:disabled {
     opacity: 0.5;
@@ -467,7 +475,6 @@ export default function UserRole() {
       const updatedRoles = await fetchRoles(user.token);
       setAllRoles(updatedRoles);
     } catch (error) {
-      console.error('Error creating role:', error);
       toast.showToast(error.message, 'error');
     } finally {
       setLoading(false);
@@ -549,9 +556,9 @@ export default function UserRole() {
   return (
     <Container>
       <Header>
-        <Title>📋 Quản Lý Vai Trò</Title>
+        <Title>📋 Quản lí vai trò</Title>
         <CreateButton onClick={() => setIsCreateModalOpen(true)} disabled={loading}>
-          + Tạo Vai Trò
+          + Tạo vai trò
         </CreateButton>
       </Header>
 
@@ -708,15 +715,6 @@ export default function UserRole() {
                   type="text"
                   value={newRole.role_name}
                   onChange={(e) => setNewRole({ ...newRole, role_name: e.target.value })}
-                  required
-                />
-              </FormGroup>
-              <FormGroup>
-                <Label>Có phải giáo viên không:</Label>
-                <Checkbox
-                  type="checkbox"
-                  checked={newRole.is_teacher}
-                  onChange={(e) => setNewRole({ ...newRole, is_teacher: e.target.checked })}
                 />
               </FormGroup>
               <FormGroup>
@@ -724,7 +722,6 @@ export default function UserRole() {
                 <Select
                   value={newRole.status}
                   onChange={(e) => setNewRole({ ...newRole, status: e.target.value })}
-                  required
                 >
                   <option value="">Chọn trạng thái</option>
                   {statusCodes.map((status) => (
@@ -733,6 +730,14 @@ export default function UserRole() {
                     </option>
                   ))}
                 </Select>
+              </FormGroup>
+              <FormGroup>
+                <Label>Có phải giáo viên không:</Label>
+                <Checkbox
+                  type="checkbox"
+                  checked={newRole.is_teacher}
+                  onChange={(e) => setNewRole({ ...newRole, is_teacher: e.target.checked })}
+                />
               </FormGroup>
               <ModalActions>
                 <ActionButton
@@ -747,7 +752,7 @@ export default function UserRole() {
                   variant="primary"
                   disabled={loading}
                 >
-                  {loading ? 'Đang tạo...' : 'Tạo'}
+                  {loading ? 'Đang tạo...' : 'Lưu thông tin'}
                 </ActionButton>
               </ModalActions>
             </form>
@@ -764,7 +769,7 @@ export default function UserRole() {
             </ModalHeader>
             <form onSubmit={handleUpdateRole}>
               <FormGroup>
-                <Label>ID:</Label>
+                <Label>ID vai trò: </Label>
                 <Input type="text" value={editRole.id} disabled />
               </FormGroup>
               <FormGroup>
@@ -773,7 +778,6 @@ export default function UserRole() {
                   type="text"
                   value={editRole.role_name}
                   onChange={(e) => setEditRole({ ...editRole, role_name: e.target.value })}
-                  required
                 />
               </FormGroup>
               <ModalActions>
@@ -789,7 +793,7 @@ export default function UserRole() {
                   variant="primary"
                   disabled={loading}
                 >
-                  {loading ? 'Đang cập nhật...' : 'Cập nhật'}
+                  {loading ? 'Đang cập nhật...' : 'Xác nhận'}
                 </ActionButton>
               </ModalActions>
             </form>

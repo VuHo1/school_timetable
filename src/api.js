@@ -441,7 +441,8 @@ export const createUser = async (token, userData) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to create user');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const activateUser = async (token, username) => {

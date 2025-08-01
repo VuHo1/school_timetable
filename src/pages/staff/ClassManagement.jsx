@@ -512,7 +512,7 @@ function ClassManagement() {
   return (
     <Container>
       <Header>
-        <Title>📚 Quản lý lớp học</Title>
+        <Title>📚 Quản lí lớp học</Title>
         {hasAbility('Quản lí lớp học') && (
           <CreateButton onClick={handleCreateClass}>
             + Tạo lớp học

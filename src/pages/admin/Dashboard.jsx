@@ -355,7 +355,7 @@ function Dashboard() {
             🎯 Tính năng nổi bật
           </h3>
           <p style={{ margin: 0, opacity: 0.9 }}>
-            Quản lý thời khóa biểu, đồng bộ đa thiết bị,
+            Quản lí thời khóa biểu, đồng bộ đa thiết bị,
             và thông báo tự động cho mọi lịch trình quan trọng
           </p>
         </FeatureHighlight>

@@ -81,7 +81,7 @@ const ModalContent = styled.div`
   background: white;
   border-radius: 12px;
   padding: 24px;
-  min-width: 20%;
+  min-width: 30%;
   overflow-y: auto;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 `;
@@ -728,6 +728,7 @@ function ClassDetail() {
         saturday: [],
         sunday: []
       };
+      fetchClassesData();
       setEditedScheduleConfig(initialConfig);
     } catch (err) {
       setError('Không thể tải thông tin lớp học: ' + err.message);
@@ -1301,7 +1302,7 @@ function ClassDetail() {
                   Hủy
                 </CancelEditButton>
                 <SaveButton onClick={handleSaveSchedule} disabled={saving}>
-                  {saving ? 'Đang lưu...' : 'Lưu'}
+                  {saving ? 'Đang lưu...' : 'Xác nhận'}
                 </SaveButton>
               </>
             )}
@@ -1340,7 +1341,7 @@ function ClassDetail() {
                   Hủy
                 </CancelEditButton>
                 <SaveButton onClick={handleSaveSubjects} disabled={saving}>
-                  {saving ? 'Đang lưu...' : 'Lưu'}
+                  {saving ? 'Đang lưu...' : 'Xác nhận'}
                 </SaveButton>
               </>
             )}
@@ -1523,7 +1524,7 @@ function ClassDetail() {
             </CheckboxGrid>
             <BothButton>
               <CancelEditButton onClick={() => setShowScheduleModal(false)}>Hủy</CancelEditButton>
-              <SaveButton onClick={handleCopySchedule}>Lưu</SaveButton>
+              <SaveButton onClick={handleCopySchedule}>Xác nhận</SaveButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -1552,7 +1553,7 @@ function ClassDetail() {
             </CheckboxGrid>
             <BothButton>
               <CancelEditButton onClick={() => setShowSubjectsModal(false)}>Hủy</CancelEditButton>
-              <SaveButton onClick={handleCopySubjects}>Lưu</SaveButton>
+              <SaveButton onClick={handleCopySubjects}>Xác nhận</SaveButton>
             </BothButton>
           </ModalContent>
         </Modal>
@@ -1592,7 +1593,7 @@ function ClassDetail() {
                 onClick={handleUpdateTeacher}
                 disabled={saving || !selectedTeacher || selectedTeacher === classDetail.teacher_user_name}
               >
-                {saving ? 'Đang cập nhật...' : 'Lưu'}
+                {saving ? 'Đang cập nhật...' : 'Xác nhận'}
               </SaveButton>
             </BothButton>
           </ModalContent>
@@ -1633,7 +1634,7 @@ function ClassDetail() {
                 onClick={handleUpdateRoom}
                 disabled={saving || !selectedRoom || selectedRoom === classDetail.room_code}
               >
-                {saving ? 'Đang cập nhật...' : 'Lưu'}
+                {saving ? 'Đang cập nhật...' : 'Xác nhận'}
               </SaveButton>
             </BothButton>
           </ModalContent>
@@ -1729,7 +1730,7 @@ function ClassDetail() {
                   Hủy
                 </CancelEditButton>
                 <SaveButton onClick={handleSlotModalSave}>
-                  Lưu
+                  Xác nhận
                 </SaveButton>
               </div>
             )}

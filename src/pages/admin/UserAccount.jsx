@@ -712,38 +712,26 @@ export default function UserAccount() {
     if (!user?.token) return;
     setLoading(true);
     try {
-      const phoneRegex = /^0\d{9}$/;
-      const currentDate = new Date();
-      const inputDate = new Date(newUser.dob);
-      if (!phoneRegex.test(newUser.phone)) {
-        toast.showToast('Số điện thoại không hợp lệ', 'error');
-        return;
-      }
-      if (inputDate > currentDate) {
-        toast.showToast('Ngày sinh không được là ngày tương lai.', 'error');
-        return;
-      }
       const userData = {
         email: newUser.email,
         full_name: newUser.full_name,
         phone: newUser.phone,
         gender: newUser.gender,
-        dob: new Date(newUser.dob).toISOString(),
-        role_id: parseInt(newUser.role_id),
+        dob: newUser.role_id ? new Date(newUser.dob).toISOString() : new Date().toISOString(),
+        role_id: newUser.role_id ? parseInt(newUser.role_id) : 0,
       };
       const response = await createUser(user.token, userData);
-      if (!response.success) {
-        throw new Error(response.description || 'Tạo tài khoản thất bại.');
+      toast.showToast(response.description, response.success ? 'success' : 'error');
+      if (response.success) {
+        setIsCreateModalOpen(false);
+        const updatedData = await fetchUserList(user.token);
+        if (Array.isArray(updatedData)) {
+          setAllUsers(updatedData);
+        } else {
+          setAllUsers(updatedData.data_set || []);
+        }
+        setNewUser({ email: '', full_name: '', phone: '', gender: '', dob: '', role_id: '' });
       }
-      toast.showToast('Tạo tài khoản thành công!', 'success');
-      setIsCreateModalOpen(false);
-      const updatedData = await fetchUserList(user.token);
-      if (Array.isArray(updatedData)) {
-        setAllUsers(updatedData);
-      } else {
-        setAllUsers(updatedData.data_set || []);
-      }
-      setNewUser({ email: '', full_name: '', phone: '', gender: '', dob: '', role_id: '' });
     } catch (error) {
       console.error('Error creating user:', error);
       toast.showToast(error.message || 'Tạo tài khoản thất bại.', 'error');
@@ -836,7 +824,6 @@ export default function UserAccount() {
       }
 
     } catch (error) {
-      console.error('Error assigning role:', error);
       toast.showToast(error.message || 'Đổi vai trò thất bại.', 'error');
     } finally {
       setLoading(false);
@@ -891,7 +878,7 @@ export default function UserAccount() {
 
 
       <Header>
-        <Title>👨‍💼 Quản lý tài khoản</Title>
+        <Title>👨‍💼 Quản lí tài khoản</Title>
         <AddButton onClick={() => setIsCreateModalOpen(true)}>
           + Tạo tài khoản
         </AddButton>
@@ -1137,7 +1124,6 @@ export default function UserAccount() {
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                   placeholder="Nhập email"
-                  required
                 />
               </FormGroup>
               <FormGroup>
@@ -1147,7 +1133,6 @@ export default function UserAccount() {
                   value={newUser.full_name}
                   onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
                   placeholder="Nhập họ và tên"
-                  required
                 />
               </FormGroup>
               <FormGroup>
@@ -1157,7 +1142,6 @@ export default function UserAccount() {
                   value={newUser.phone}
                   onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
                   placeholder="Nhập số điện thoại"
-                  required
                 />
               </FormGroup>
               <FormGroup>
@@ -1173,7 +1157,6 @@ export default function UserAccount() {
                     }}
                     dateFormat="dd/MM/yyyy"
                     placeholderText="dd/MM/yyyy"
-                    required
                   />
                 </DatePickerWrapper>
               </FormGroup>
@@ -1182,7 +1165,6 @@ export default function UserAccount() {
                 <Select
                   value={newUser.gender}
                   onChange={(e) => setNewUser({ ...newUser, gender: e.target.value })}
-                  required
                 >
                   <option value="">Chọn giới tính</option>
                   <option value="0">Không xác định</option>
@@ -1196,7 +1178,6 @@ export default function UserAccount() {
                 <Select
                   value={newUser.role_id}
                   onChange={(e) => setNewUser({ ...newUser, role_id: e.target.value })}
-                  required
                 >
                   <option value="">Chọn vai trò</option>
                   {roles.map((role) => (

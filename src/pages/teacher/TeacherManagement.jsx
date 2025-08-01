@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
 import { fetchTimeSlots, fetchAllTeachers } from '../../api';
+import { Tooltip } from 'react-tooltip';
+
 
 // Get API base URL with fallback
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
@@ -124,7 +126,8 @@ const TableHeaderCell = styled.th`
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${(props) => props.variant === 'primary' ? '#3b82f6' : '#e74c3c'};
+  background: ${(props) => props.variant === 'primary' ? '#3b82f6'
+    : props.variant === 'update' ? '#6B7280' : '#e74c3c'};
   color: white;
   border: none;
   padding: 8px 16px;
@@ -338,7 +341,18 @@ const ScheduleTableElement = styled.table`
   border-collapse: collapse;
   background: white;
 `;
-
+const SectionTitle = styled.h3`
+  color: #2c3e50;
+  margin: 0 0 24px 0;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e9ecef;
+  text-align: left;
+  font-size: 20px;
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+`;
 const TimeSlotHeader = styled.th`
   background:white;
   border: 1px solid #ddd;
@@ -1078,10 +1092,15 @@ function TeacherManagement() {
       });
 
       if (response.ok) {
-        toast.success('Cập nhật môn học thành công!');
-        setEditingSubjects(false);
-        // Reload teacher subjects
-        fetchTeacherSubjects(selectedTeacher.user_name);
+        var resultData = await response.json();
+        if (resultData.success) {
+          toast.success('Cập nhật môn học thành công!');
+          setEditingSubjects(false);
+          fetchTeacherSubjects(selectedTeacher.user_name);
+        } else {
+          toast.error(resultData.description);
+        }
+
       } else {
         const errorData = await response.text();
         if (response.status === 401) {
@@ -1093,8 +1112,7 @@ function TeacherManagement() {
         }
       }
     } catch (error) {
-      console.error('Error saving subjects:', error);
-      toast.error('Có lỗi kết nối khi cập nhật môn học');
+      toast.error(error.message || 'Có lỗi kết nối khi cập nhật môn học');
     }
   };
 
@@ -1126,9 +1144,15 @@ function TeacherManagement() {
       });
 
       if (response.ok) {
-        toast.success('Cập nhật lịch làm việc thành công!');
-        setEditingSchedule(false);
-        await fetchTeacherScheduleConfig(selectedTeacher.user_name);
+        var resultData = await response.json();
+        if (resultData.success) {
+          toast.success('Cập nhật lịch làm việc thành công!');
+          setEditingSchedule(false);
+          await fetchTeacherScheduleConfig(selectedTeacher.user_name);
+        } else {
+          toast.error(resultData.description || 'Có lỗi khi cập nhật lịch làm việc');
+        }
+
       } else {
         const errorData = await response.text();
 
@@ -1141,7 +1165,7 @@ function TeacherManagement() {
         }
       }
     } catch (error) {
-      toast.error('Có lỗi kết nối khi cập nhật lịch làm việc');
+      toast.error(error.message || 'Có lỗi kết nối khi cập nhật lịch làm việc');
     } finally {
       setModalLoading(false);
     }
@@ -1270,7 +1294,7 @@ function TeacherManagement() {
             variant="primary"
             disabled={modalLoading}
           >
-            {modalLoading ? 'Đang tạo...' : 'Lưu thông tin'}
+            {modalLoading ? 'Đang tạo...' : 'Xác nhận'}
           </ActionButton>
         </ModalActions>
       </form>
@@ -1356,17 +1380,22 @@ function TeacherManagement() {
 
       return (
         <TabContent>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h4 style={{ color: '#2c3e50', margin: 0 }}>
-              📚 Môn học đang dạy ({teacherSubjects.length} môn)
-            </h4>
-            <ActionButton
-              variant={editingSubjects ? '' : 'primary'}
-              onClick={() => setEditingSubjects(!editingSubjects)}
-            >
-              {editingSubjects ? 'Hủy' : 'Chỉnh sửa'}
-            </ActionButton>
-          </div>
+          <SectionTitle>
+            <span>📚 Môn học đang dạy ({teacherSubjects.length} môn)</span>
+            <div style={{ display: 'flex', gap: '5px', marginLeft: 'auto' }}>
+              <ActionButton
+                variant={editingSubjects ? '' : 'update'}
+                onClick={() => setEditingSubjects(!editingSubjects)}
+              >
+                {editingSubjects ? 'Hủy' : 'Chỉnh sửa'}
+              </ActionButton>
+              {editingSubjects && (
+                <ActionButton variant="primary" onClick={handleSaveSubjectsLocal}>
+                  Xác nhận
+                </ActionButton>
+              )}
+            </div>
+          </SectionTitle>
 
           {editingSubjects ? (
             <div>
@@ -1387,11 +1416,7 @@ function TeacherManagement() {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                <ActionButton variant="primary" onClick={handleSaveSubjectsLocal}>
-                  Lưu thông tin
-                </ActionButton>
-              </div>
+
             </div>
           ) : (
             <div>
@@ -1468,20 +1493,26 @@ function TeacherManagement() {
 
       return (
         <TabContent>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h4 style={{ color: '#2c3e50', margin: 0 }}>
-              📅 Cấu hình lịch làm việc
-            </h4>
-            <ActionButton
-              variant={editingSchedule ? '' : 'primary'}
-              onClick={() => setEditingSchedule(!editingSchedule)}
-            >
-              {editingSchedule ? 'Hủy' : 'Chỉnh sửa'}
-            </ActionButton>
-          </div>
-
-
-
+          <SectionTitle>
+            <span>📅 Cấu hình lịch làm việc</span>
+            <div style={{ display: 'flex', gap: '5px', marginLeft: 'auto' }}>
+              <ActionButton
+                variant={editingSchedule ? '' : 'update'}
+                onClick={() => setEditingSchedule(!editingSchedule)}
+              >
+                {editingSchedule ? 'Hủy' : 'Chỉnh sửa'}
+              </ActionButton>
+              {editingSchedule && (
+                <ActionButton
+                  variant="primary"
+                  onClick={handleSaveScheduleLocal}
+                  disabled={modalLoading}
+                >
+                  {modalLoading ? 'Đang lưu...' : 'Xác nhận'}
+                </ActionButton>
+              )}
+            </div>
+          </SectionTitle>
           {editingSchedule ? (
             <div>
               <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
@@ -1511,28 +1542,6 @@ function TeacherManagement() {
                     >
                       Chọn tất cả T2-T6
                     </ActionButton>
-                    {/* <ActionButton
-                      variant="secondary"
-                      style={{ fontSize: '11px', padding: '4px 8px' }}
-                      onClick={() => {
-                        const morningSlots = timeSlots
-                          .filter(slot => parseInt(slot.time_slot_code) <= 4)
-                          .map(slot => String(slot.time_slot_code))
-                          .sort((a, b) => parseInt(a) - parseInt(b))
-                          .join('|');
-
-                        setScheduleData(prev => ({
-                          ...prev,
-                          monday: morningSlots,
-                          tuesday: morningSlots,
-                          wednesday: morningSlots,
-                          thursday: morningSlots,
-                          friday: morningSlots
-                        }));
-                      }}
-                    >
-                      Chỉ ca sáng
-                    </ActionButton> */}
                     <ActionButton
                       variant="secondary"
                       style={{ fontSize: '11px', padding: '4px 8px' }}
@@ -1611,7 +1620,17 @@ function TeacherManagement() {
 
 
                 <FormGroup>
-                  <Label>Tiết tối đa/tuần:</Label>
+                  <Label>
+                    Tiết tối đa/tuần:{' '}
+                    <span
+                      data-tooltip-id="tip-weekly-max-slot"
+                      data-tooltip-content="Nhập 0 là không giới hạn"
+                      style={{ cursor: 'pointer', color: '#007bff' }}
+                    >
+                      ❓
+                    </span>
+                    <Tooltip id="tip-weekly-max-slot" place="right" />
+                  </Label>
                   <Input
                     type="number"
                     min="0"
@@ -1622,7 +1641,17 @@ function TeacherManagement() {
 
 
                 <FormGroup>
-                  <Label>Tiết tối đa/ngày:</Label>
+                  <Label>
+                    Tiết tối đa/ngày:{' '}
+                    <span
+                      data-tooltip-id="tip-weekly-max-slot"
+                      data-tooltip-content="Nhập 0 là không giới hạn"
+                      style={{ cursor: 'pointer', color: '#007bff' }}
+                    >
+                      ❓
+                    </span>
+                    <Tooltip id="tip-weekly-max-slot" place="right" />
+                  </Label>
                   <Input
                     type="number"
                     min="0"
@@ -1633,7 +1662,17 @@ function TeacherManagement() {
 
 
                 <FormGroup>
-                  <Label>Ngày tối đa/tuần:</Label>
+                  <Label>
+                    Ngày tối đa/tuần:{' '}
+                    <span
+                      data-tooltip-id="tip-weekly-max-slot"
+                      data-tooltip-content="Nhập 0 là không giới hạn"
+                      style={{ cursor: 'pointer', color: '#007bff' }}
+                    >
+                      ❓
+                    </span>
+                    <Tooltip id="tip-weekly-max-slot" place="right" />
+                  </Label>
                   <Input
                     type="number"
                     min="0"
@@ -1642,18 +1681,6 @@ function TeacherManagement() {
                     onChange={(e) => handleNumberChange('weekly_maximum_day', e.target.value)}
                   />
                 </FormGroup>
-              </div>
-
-
-
-              <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                <ActionButton
-                  variant="primary"
-                  onClick={handleSaveScheduleLocal}
-                  disabled={modalLoading}
-                >
-                  {modalLoading ? 'Đang lưu...' : 'Lưu thông tin'}
-                </ActionButton>
               </div>
             </div>
           ) : (
@@ -1717,7 +1744,52 @@ function TeacherManagement() {
                       </tbody>
                     </ScheduleTableElement>
                   </ScheduleTableContainer>
+                  <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
 
+
+                    <FormGroup>
+                      <Label>Tiết tối đa/tuần:</Label>
+                      {scheduleData.weekly_maximum_slot === 0 ? (
+                        <Input value="Không giới hạn" disabled />
+                      ) : (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={scheduleData.weekly_maximum_slot}
+                          disabled
+                        />
+                      )}
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label>Tiết tối đa/ngày:</Label>
+                      {scheduleData.daily_maximum_slot === 0 ? (
+                        <Input value="Không giới hạn" disabled />
+                      ) : (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={scheduleData.daily_maximum_slot}
+                          disabled
+                        />
+                      )}
+                    </FormGroup>
+
+                    <FormGroup>
+                      <Label>Ngày tối đa/tuần:</Label>
+                      {scheduleData.weekly_maximum_day === 0 ? (
+                        <Input value="Không giới hạn" disabled />
+                      ) : (
+                        <Input
+                          type="number"
+                          min="0"
+                          value={scheduleData.weekly_maximum_day}
+                          disabled
+                        />
+                      )}
+                    </FormGroup>
+
+                  </div>
 
                 </div>
               ) : (
