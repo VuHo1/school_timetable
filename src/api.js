@@ -536,7 +536,8 @@ export const updateAppSetting = async (token, settingData) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to update app setting');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const fetchSystemLogs = async (token, params = {}) => {
@@ -1154,6 +1155,38 @@ export const fetchSemesters = async (token) => {
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to fetch semesters');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+export const updateScheduleConfig = async (token, settingData) => {
+    const response = await fetch(`${API_BASE_URL}/api/setting/schedule-config/update`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settingData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update app setting');
+    }
+    const data = await response.json();
+    return data;
+};
+export const fetchScheduleConfig = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/setting/schedule-config`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch schedule config');
     }
     const data = await response.json();
     return data.data_set || [];

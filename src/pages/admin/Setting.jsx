@@ -280,10 +280,16 @@ export default function Setting() {
         name: selectedSetting.name,
         value: editedValue,
       };
-      await updateAppSetting(user.token, settingData);
-      toast.showToast('Cập nhật cài đặt thành công!', 'success');
-      setSettings(settings.map(s => s.name === selectedSetting.name ? { ...s, value: editedValue } : s));
-      setIsEditModalOpen(false);
+      var resultData = await updateAppSetting(user.token, settingData);
+      if (resultData.success) {
+        toast.showToast(resultData.description, 'success');
+        setSettings(settings.map(s => s.name === selectedSetting.name ? { ...s, value: editedValue } : s));
+        setIsEditModalOpen(false);
+      } else {
+        toast.showToast(resultData.description, 'error');
+      }
+
+
     } catch (error) {
       console.error('Error updating setting:', error);
       toast.showToast(error.message || 'Cập nhật cài đặt thất bại.', 'error');
