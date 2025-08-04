@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
@@ -9,8 +10,6 @@ import {
   fetchGradeLevels,
   fetchSubjectCodeList
 } from '../../api';
-
-// Get API base URL with fallback
 
 // Styled Components
 const Container = styled.div`
@@ -125,7 +124,6 @@ const TableHeaderCell = styled.th`
   color: #2c3e50;
   font-size: 14px;
 `;
-
 
 const StatusBadge = styled.span.withConfig({
   shouldForwardProp: (prop) => prop !== 'status',
@@ -407,6 +405,22 @@ const ActionMenuText = styled.span`
   color: #2c3e50;
 `;
 
+const DetailItem = styled.div`
+  display: flex;
+  margin-bottom: 15px;
+  
+  .label {
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 150px;
+  }
+  
+  .value {
+    color: #666;
+    flex: 1;
+  }
+`;
+
 function SubjectManagement() {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -416,14 +430,12 @@ function SubjectManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [gradeFilter, setGradeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-
-  // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [openActionMenu, setOpenActionMenu] = useState(null);
   const actionMenuRef = useRef(null);
-  // Form data
   const [formData, setFormData] = useState({
     subject_code: '',
     grade_level: [],
@@ -434,39 +446,31 @@ function SubjectManagement() {
     fixed_slot: [],
     avoid_slot: []
   });
-
-  // Master data
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjectCodes, setSubjectCodes] = useState([]);
+
   // Fetch subjects from API
   const fetchSubjects = async () => {
     try {
       setLoading(true);
-
       const token = localStorage.getItem('authToken');
       const params = {
         page: currentPage,
         limit: 10,
         sort: 'subject_code'
       };
-
       if (searchTerm && searchTerm.trim()) {
         params.search = searchTerm.trim();
       }
-
       if (gradeFilter || statusFilter) {
         params.filter = {};
         if (gradeFilter) params.filter.grade_level_id = gradeFilter;
         if (statusFilter) params.filter.status = statusFilter;
       }
-
       const data = await apiFetchSubjects(token, params);
       const subjectList = data.data_set || data.data || [];
-
       setSubjects(subjectList);
       setTotalPages(data.pagination.last);
-
-
     } catch (error) {
       toast.error(error.message);
       setSubjects([]);
@@ -479,13 +483,10 @@ function SubjectManagement() {
   const fetchMasterData = async () => {
     try {
       const token = localStorage.getItem('authToken');
-
-      // Fetch grade levels
       const grades = await fetchGradeLevels(token);
       setGradeLevels(grades || []);
       const subjectCodeList = await fetchSubjectCodeList(token);
       setSubjectCodes(subjectCodeList || []);
-
     } catch (error) {
       toast.error(error.message);
     }
@@ -495,20 +496,16 @@ function SubjectManagement() {
   const handleCreate = async () => {
     try {
       setModalLoading(true);
-
       if (!formData.subject_code || formData.grade_level.length === 0) {
         toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
         return;
       }
-
       const token = localStorage.getItem('authToken');
       await createSubject(token, formData);
-
       toast.success('Tạo môn học thành công!');
       setShowCreateModal(false);
       resetForm();
       fetchSubjects();
-
     } catch (error) {
       console.error('Error creating subject:', error);
       toast.error('Có lỗi khi tạo môn học: ' + error.message);
@@ -521,7 +518,6 @@ function SubjectManagement() {
   const handleUpdate = async () => {
     try {
       setModalLoading(true);
-
       const token = localStorage.getItem('authToken');
       const updateData = {
         subject_code: selectedSubject.subject_code,
@@ -531,16 +527,13 @@ function SubjectManagement() {
         limit: formData.limit,
         fixed_slot: formData.fixed_slot,
         avoid_slot: formData.avoid_slot,
-        also_update_for_class_subject: 'A' // Update all related class subjects
+        also_update_for_class_subject: 'A'
       };
-
       await updateSubject(token, updateData);
-
       toast.success('Cập nhật môn học thành công!');
       setShowEditModal(false);
       resetForm();
       fetchSubjects();
-
     } catch (error) {
       console.error('Error updating subject:', error);
       toast.error('Có lỗi khi cập nhật môn học: ' + error.message);
@@ -554,17 +547,22 @@ function SubjectManagement() {
     if (!window.confirm('Bạn có chắc chắn muốn xóa môn học này?')) {
       return;
     }
-
     try {
       const token = localStorage.getItem('authToken');
       await deleteSubject(token, subjectCode);
-
       toast.success('Xóa môn học thành công');
       fetchSubjects();
     } catch (error) {
       console.error('Error deleting subject:', error);
       toast.error('Có lỗi khi xóa môn học: ' + error.message);
     }
+  };
+
+  // Handle view details
+  const handleViewDetails = (subject) => {
+    setSelectedSubject(subject);
+    setShowDetailModal(true);
+    setOpenActionMenu(null);
   };
 
   // Handle edit click
@@ -581,6 +579,7 @@ function SubjectManagement() {
       avoid_slot: subject.avoid_slot || []
     });
     setShowEditModal(true);
+    setOpenActionMenu(null);
   };
 
   // Reset form
@@ -660,6 +659,7 @@ function SubjectManagement() {
   const handleActionMenuToggle = (subject_code) => {
     setOpenActionMenu(openActionMenu === subject_code ? null : subject_code);
   };
+
   // Create/Edit Modal Component
   const SubjectModal = ({ isEdit = false }) => (
     <ModalOverlay onClick={(e) => e.target === e.currentTarget && (isEdit ? setShowEditModal(false) : setShowCreateModal(false))}>
@@ -670,7 +670,6 @@ function SubjectManagement() {
             ×
           </CloseButton>
         </ModalHeader>
-
         <ModalBody>
           <FormGrid>
             <FormGroup>
@@ -696,7 +695,6 @@ function SubjectManagement() {
                 </Select>
               )}
             </FormGroup>
-
             <FormGroup>
               <Label>Học online</Label>
               <CheckboxItem>
@@ -708,7 +706,6 @@ function SubjectManagement() {
                 Môn học online
               </CheckboxItem>
             </FormGroup>
-
             <FormGroup>
               <Label>Số tiết/tuần *</Label>
               <Input
@@ -720,7 +717,6 @@ function SubjectManagement() {
                 required
               />
             </FormGroup>
-
             <FormGroup>
               <Label>Số tiết liên tiếp tối đa *</Label>
               <Input
@@ -732,7 +728,6 @@ function SubjectManagement() {
                 required
               />
             </FormGroup>
-
             <FormGroup>
               <Label>Giới hạn cùng thời điểm</Label>
               <Input
@@ -744,7 +739,6 @@ function SubjectManagement() {
               />
             </FormGroup>
           </FormGrid>
-
           {!isEdit && (
             <FormGroup>
               <Label>Khối học *</Label>
@@ -763,7 +757,6 @@ function SubjectManagement() {
             </FormGroup>
           )}
         </ModalBody>
-
         <ModalActions>
           <ActionButton
             onClick={() => isEdit ? setShowEditModal(false) : setShowCreateModal(false)}
@@ -782,6 +775,57 @@ function SubjectManagement() {
     </ModalOverlay>
   );
 
+  // Detail Modal Component
+  const DetailModal = ({ subject }) => (
+    <ModalOverlay>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Chi tiết môn học</ModalTitle>
+          <CloseButton onClick={() => setShowDetailModal(false)}>×</CloseButton>
+        </ModalHeader>
+        <ModalBody>
+          <DetailItem>
+            <span className="label">Mã môn học:</span>
+            <span className="value">{subject.subject_code}</span>
+          </DetailItem>
+          <DetailItem>
+            <span className="label">Tên môn học:</span>
+            <span className="value">{subject.subject_name}</span>
+          </DetailItem>
+          <DetailItem>
+            <span className="label">Khối học:</span>
+            <span className="value">{subject.grade_level || 'N/A'}</span>
+          </DetailItem>
+          <DetailItem>
+            <span className="label">Số tiết/tuần:</span>
+            <span className="value">{subject.weekly_slot}</span>
+          </DetailItem>
+          <DetailItem>
+            <span className="label">Số tiết liên tiếp:</span>
+            <span className="value">{subject.continuous_slot}</span>
+          </DetailItem>
+          <DetailItem>
+            <span className="label">Phương thức :</span>
+            <span className="value">{subject.is_online_course ? 'Online' : 'Offline'}</span>
+          </DetailItem>
+          <DetailItem>
+            <span className="label">Giới hạn:</span>
+            <span className="value">{subject.limit || 'Không giới hạn'}</span>
+          </DetailItem>
+          <DetailItem>
+            <span className="label">Trạng thái:</span>
+            <span className="value">
+              <StatusBadge status={subject.status}>{subject.status}</StatusBadge>
+            </span>
+          </DetailItem>
+        </ModalBody>
+        <ModalActions>
+          <ActionButton onClick={() => setShowDetailModal(false)}>Đóng</ActionButton>
+        </ModalActions>
+      </ModalContent>
+    </ModalOverlay>
+  );
+
   return (
     <Container>
       <Header>
@@ -793,7 +837,6 @@ function SubjectManagement() {
           + Tạo môn học
         </AddButton>
       </Header>
-
       <FilterSection>
         <SearchInput
           type="text"
@@ -801,7 +844,6 @@ function SubjectManagement() {
           value={searchTerm}
           onChange={handleSearch}
         />
-
         <Select
           value={gradeFilter}
           onChange={(e) => handleFilterChange('grade', e.target.value)}
@@ -813,7 +855,6 @@ function SubjectManagement() {
             </option>
           ))}
         </Select>
-
         <Select
           value={statusFilter}
           onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -823,7 +864,6 @@ function SubjectManagement() {
           <option value="Dừng hoạt động">Dừng hoạt động</option>
         </Select>
       </FilterSection>
-
       <TableContainer>
         {loading ? (
           <LoadingSpinner>
@@ -877,23 +917,16 @@ function SubjectManagement() {
                         ⋯
                       </ActionMenuButton>
                       <ActionDropdown isOpen={openActionMenu === subject.subject_code}>
-                        {/* <ActionMenuItem onClick={() => {
-                          setOpenActionMenu(subject.subject_code);
-                        }}>
+                        <ActionMenuItem onClick={() => handleViewDetails(subject)}>
                           <ActionMenuText>Xem chi tiết</ActionMenuText>
-                        </ActionMenuItem> */}
-                        <ActionMenuItem
-                          onClick={() => {
-                            handleEdit(subject);
-                            setOpenActionMenu(subject.subject_code);
-                          }}
-                        >
+                        </ActionMenuItem>
+                        <ActionMenuItem onClick={() => handleEdit(subject)}>
                           <ActionMenuText>Cập nhật</ActionMenuText>
                         </ActionMenuItem>
                         <ActionMenuItem
                           onClick={() => {
                             handleDelete(subject.subject_code);
-                            setOpenActionMenu(subject.subject_code);
+                            setOpenActionMenu(null);
                           }}
                           style={{ color: '#e74c3c' }}
                         >
@@ -905,7 +938,6 @@ function SubjectManagement() {
                 ))}
               </tbody>
             </Table>
-
             {totalPages > 1 && (
               <Pagination>
                 <PaginationButton
@@ -914,7 +946,6 @@ function SubjectManagement() {
                 >
                   ← Trước
                 </PaginationButton>
-
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                   <PaginationButton
                     key={page}
@@ -924,7 +955,6 @@ function SubjectManagement() {
                     {page}
                   </PaginationButton>
                 ))}
-
                 <PaginationButton
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
@@ -936,12 +966,11 @@ function SubjectManagement() {
           </>
         )}
       </TableContainer>
-
-      {/* Modals */}
       {showCreateModal && <SubjectModal />}
       {showEditModal && <SubjectModal isEdit />}
-    </Container >
+      {showDetailModal && <DetailModal subject={selectedSubject} />}
+    </Container>
   );
 }
 
-export default SubjectManagement; 
+export default SubjectManagement;
