@@ -9,9 +9,8 @@ import {
   createRoom,
   updateRoom,
   deleteRoom,
-} from '../../api'; // Import API functions from api.js
+} from '../../api';
 
-// Existing styled components (unchanged)
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
