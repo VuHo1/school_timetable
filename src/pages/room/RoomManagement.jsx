@@ -545,18 +545,6 @@ function RoomManagement() {
       navigate('/login');
       return;
     }
-    if (!createForm.floor || createForm.floor < 1) {
-      toast.error('Tầng phải là số dương.');
-      return;
-    }
-    if (!createForm.quantity || createForm.quantity < 1) {
-      toast.error('Số lượng phải là số dương.');
-      return;
-    }
-    if (!createForm.room_type) {
-      toast.error('Loại phòng không được để trống.');
-      return;
-    }
     setIsSubmitting(true);
     try {
       const roomData = {
@@ -565,8 +553,8 @@ function RoomManagement() {
         quantity: parseInt(createForm.quantity),
         room_type: createForm.room_type,
       };
-      await createRoom(user.token, roomData);
-      toast.success('Tạo phòng học thành công!');
+      const response = await createRoom(user.token, roomData);
+      toast.success(response.description);
       setShowCreateModal(false);
       setCreateForm({ building_prefix: '', floor: 1, quantity: 1, room_type: '' });
       fetchRooms();
@@ -586,24 +574,19 @@ function RoomManagement() {
       navigate('/login');
       return;
     }
-    if (!updateForm.room_name) {
-      toast.error('Tên phòng không được để trống.');
-      return;
-    }
-    if (!updateForm.room_type) {
-      toast.error('Loại phòng không được để trống.');
-      return;
-    }
     setIsSubmitting(true);
     try {
-      await updateRoom(user.token, updateForm);
-      toast.success('Cập nhật phòng học thành công!');
-      setShowUpdateModal(false);
-      setSelectedRoom(null);
-      fetchRooms();
+      const response = await updateRoom(user.token, updateForm);
+      if (response.success) {
+        toast.success(response.description);
+        setShowUpdateModal(false);
+        setSelectedRoom(null);
+        fetchRooms();
+      } else {
+        toast.error(response.description);
+      }
     } catch (error) {
-      console.error('Update room error:', error);
-      toast.error(error.message || 'Không thể cập nhật phòng học.');
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -650,22 +633,11 @@ function RoomManagement() {
 
     setIsSubmitting(true);
     try {
-      await deleteRoom(user.token, roomCode);
-      toast.success('Thành công!');
+      const response = await deleteRoom(user.token, roomCode);
+      toast.success(response.description);
       fetchRooms();
     } catch (error) {
-      console.error('Delete room error:', error);
-      let errorMessage = 'Không thể xóa phòng học.';
-      if (error.message.includes('401')) {
-        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
-        await logout();
-        navigate('/login');
-      } else if (error.message.includes('403')) {
-        errorMessage = 'Bạn không có quyền xóa phòng học này.';
-      } else if (error.message.includes('404')) {
-        errorMessage = 'Phòng học không tồn tại.';
-      }
-      toast.error(errorMessage);
+      toast.error(response.description);
     } finally {
       setIsSubmitting(false);
     }
