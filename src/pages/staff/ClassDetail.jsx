@@ -781,7 +781,6 @@ function ClassDetail() {
       const result = await updateClassTeacher(token, classCode, selectedTeacher);
 
       if (result.success) {
-        setSuccess('Cập nhật giáo viên chủ nhiệm thành công!');
         const updatedClassData = await fetchClassDetail(token, classCode);
         setClassDetail(updatedClassData);
         setShowTeacherModal(false);
@@ -812,7 +811,6 @@ function ClassDetail() {
       const result = await updateClassRoom(token, classCode, selectedRoom);
 
       if (result.success) {
-        setSuccess('Cập nhật phòng học thành công!');
         const updatedClassData = await fetchClassDetail(token, classCode);
         setClassDetail(updatedClassData);
         toast.success(result.description);
@@ -839,10 +837,15 @@ function ClassDetail() {
         class_code: classCode,
         target_class_code: selectedClasses
       });
-      toast.success(response.description);
-      setShowScheduleModal(false);
-      setSelectedClasses([]);
-      loadClassData();
+      if (response.success) {
+        toast.success(response.description);
+        setShowScheduleModal(false);
+        setSelectedClasses([]);
+        loadClassData();
+      }
+      else {
+        toast.error(response.description);
+      }
     } catch (err) {
       toast.error(err.message);
     }
@@ -859,10 +862,15 @@ function ClassDetail() {
         class_code: classCode,
         target_class_code: selectedClasses
       });
-      toast.success(response.description);
-      setShowSubjectsModal(false);
-      setSelectedClasses([]);
-      loadClassData();
+      if (response.success) {
+        toast.success(response.description);
+        setShowSubjectsModal(false);
+        setSelectedClasses([]);
+        loadClassData();
+      }
+      else {
+        toast.error(response.description);
+      }
     } catch (err) {
       toast.error(err.message);
     }

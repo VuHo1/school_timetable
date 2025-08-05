@@ -1260,6 +1260,11 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                                                     style={{ cursor: 'pointer' }}
                                                 >
                                                     <p>{entry.class_code}-{entry.subject_code} ({entry.teacher_user_name})</p>
+                                                    {entry.status && (
+                                                        <p>
+                                                            <StatusBadge status={entry.status}>{entry.status}</StatusBadge>
+                                                        </p>
+                                                    )}
                                                 </Entry>
                                             ))}
                                             {entries.length > maxDisplay && (
@@ -1737,9 +1742,6 @@ export default function ViewSchedule() {
                 </Button>
                 <Button onClick={() => handleViewMode('Applied')}>
                     Thời khóa biểu đang áp dụng
-                </Button>
-                <Button onClick={() => handleViewMode('Personal')}>
-                    Thời khóa biểu của tôi
                 </Button>
                 <Button onClick={() => handleViewMode('Semesters')}>
                     Quản lí học kỳ

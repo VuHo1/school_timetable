@@ -467,13 +467,14 @@ export default function UserRole() {
       };
       const response = await createRole(user.token, roleData);
       if (!response.success) {
-        throw new Error(response.description || 'Tạo vai trò thất bại.');
+        toast.showToast(response.description, 'error');
+      } else {
+        toast.showToast(response.description, 'success');
+        setIsCreateModalOpen(false);
+        setNewRole({ role_name: '', is_teacher: false, status: '' });
+        const updatedRoles = await fetchRoles(user.token);
+        setAllRoles(updatedRoles);
       }
-      toast.showToast(response.description, 'success');
-      setIsCreateModalOpen(false);
-      setNewRole({ role_name: '', is_teacher: false, status: '' });
-      const updatedRoles = await fetchRoles(user.token);
-      setAllRoles(updatedRoles);
     } catch (error) {
       toast.showToast(error.message, 'error');
     } finally {
@@ -492,13 +493,14 @@ export default function UserRole() {
       };
       const response = await updateRole(user.token, roleData);
       if (!response.success) {
-        throw new Error(response.description || 'Cập nhật vai trò thất bại.');
+        toast.showToast(response.description, 'error');
+      } else {
+        toast.showToast(response.description, 'success');
+        setIsEditModalOpen(false);
+        setEditRole({ id: '', role_name: '' });
+        const updatedRoles = await fetchRoles(user.token);
+        setAllRoles(updatedRoles);
       }
-      toast.showToast(response.description, 'success');
-      setIsEditModalOpen(false);
-      setEditRole({ id: '', role_name: '' });
-      const updatedRoles = await fetchRoles(user.token);
-      setAllRoles(updatedRoles);
     } catch (error) {
       console.error('Error updating role:', error);
       toast.showToast(error.message, 'error');
@@ -513,12 +515,14 @@ export default function UserRole() {
     try {
       const response = await deleteRole(user.token, roleId);
       if (!response.success) {
-        throw new Error(response.description || 'Xóa vai trò thất bại.');
+        toast.showToast(response.description, 'error');
+      } else {
+
+        toast.showToast(response.description, 'success');
+        const updatedRoles = await fetchRoles(user.token);
+        setAllRoles(updatedRoles);
+        setCurrentPage(1);
       }
-      toast.showToast(response.description, 'success');
-      const updatedRoles = await fetchRoles(user.token);
-      setAllRoles(updatedRoles);
-      setCurrentPage(1);
     } catch (error) {
       console.error('Error deleting role:', error);
       toast.showToast(error.message, 'error');

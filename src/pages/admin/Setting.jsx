@@ -254,7 +254,11 @@ export default function Setting() {
       setLoading(true);
       try {
         const data = await fetchAppSetting(user.token);
-        setSettings(data);
+        if (data.success) {
+          setSettings(data.data || data.data_set || []);
+        } else {
+          toast.showToast(data.description || 'Không thể tải dữ liệu cài đặt.', 'error');
+        }
       } catch (error) {
         console.error('Error fetching settings:', error);
         toast.showToast('Không thể tải dữ liệu cài đặt. Chi tiết:', 'error');

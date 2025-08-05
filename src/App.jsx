@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ModernHeader from './components/layout/ModernHeader';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -10,6 +11,7 @@ import CodeList from './pages/admin/CodeList';
 import UserCommand from './pages/admin/UserCommand';
 import Setting from './pages/admin/Setting';
 import ViewSchedule from './pages/staff/ViewSchedule';
+import MySchedule from './pages/staff/MySchedule';
 import ClassManagement from './pages/staff/ClassManagement';
 import ClassDetail from './pages/staff/ClassDetail';
 import CreateClass from './pages/staff/CreateClass';
@@ -27,6 +29,7 @@ import UserRole from './pages/admin/UserRole'
 import { useMemo } from 'react';
 import Semesters from './pages/staff/Semesters';
 import ClassScheduleConfig from './pages/staff/ClassScheduleConfig';
+import { listenToForegroundMessage } from './firebase/init.jsx';
 
 function AppRoutes() {
   const { role, abilities, loading } = useAuth();
@@ -66,8 +69,13 @@ function AppRoutes() {
           <Route path="/admin/dashboard" element={<Dashboard />} />
           {/* Staff routes */}
           <Route path="/staff/schedule" element={
-            <ProtectedRoute requiredAbility="Thời khóa biểu">
+            <ProtectedRoute requiredAbility="Quản lí thời khóa biểu">
               <ViewSchedule />
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/my-schedule" element={
+            <ProtectedRoute requiredAbility="Thời khóa biểu">
+              <MySchedule />
             </ProtectedRoute>
           } />
           <Route path="/staff/semesters" element={
@@ -192,6 +200,9 @@ function AppRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+    listenToForegroundMessage();
+  }, []);
   return (
     <AuthProvider>
       <AppRoutes />

@@ -228,7 +228,7 @@ export const createTimeSlot = async (token, request) => {
     if (!response.ok || !data.success) {
         throw new Error(data.description);
     }
-    return true;
+    return data;
 };
 export const updateTimeSlot = async (token, request) => {
     const response = await fetch(`${API_BASE_URL}/api/time-slot/update`, {
@@ -244,7 +244,7 @@ export const updateTimeSlot = async (token, request) => {
     if (!response.ok || !data.success) {
         throw new Error(data.description);
     }
-    return true;
+    return data;
 };
 // Code list APIs
 export const fetchCodeList = async (token) => {
@@ -375,12 +375,24 @@ export const fetchAllTeachers = async (token, params = {}) => {
     return data;
 };
 
+// Fetch all rooms
 export const fetchAllRooms = async (token, params = {}) => {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page);
-    if (params.limit) queryParams.append('limit', params.limit || 100);
+    if (params.limit) queryParams.append('limit', params.limit || 10);
+    if (params.sort) queryParams.append('sort', params.sort);
+    if (params.search) queryParams.append('search', params.search);
+    if (params.filter) {
+        if (params.filter.room_type) {
+            queryParams.append('filter[room_type]', params.filter.room_type);
+        }
+        if (params.filter.room_status) {
+            queryParams.append('filter[room_status]', params.filter.room_status);
+        }
+    }
 
     const url = `${API_BASE_URL}/api/room?${queryParams.toString()}`;
+    console.log('Fetching rooms from:', url); // Debug log
     const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -388,9 +400,30 @@ export const fetchAllRooms = async (token, params = {}) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    if (!response.ok) throw new Error('Failed to fetch all rooms');
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+            errorData.description || `Failed to fetch rooms: ${response.status}`
+        );
+    }
     const data = await response.json();
-    return data.data_set || []; // Trả về mảng data_set
+    console.log('Raw API response:', data); // Debug log
+    const rooms = (
+        data.data_set ||
+        data.data ||
+        data.items ||
+        data.result ||
+        data.rooms ||
+        (Array.isArray(data) ? data : [])
+    );
+    if (!Array.isArray(rooms)) {
+        console.error('Expected rooms to be an array, got:', rooms);
+        return { rooms: [], pagination: { total: 0 } };
+    }
+    return {
+        rooms,
+        pagination: data.pagination || { total: rooms.length || 0 },
+    };
 };
 
 //Quản lý tài khoản
@@ -519,7 +552,7 @@ export const fetchAppSetting = async (token) => {
     });
     if (!response.ok) throw new Error('Failed to fetch app settings');
     const data = await response.json();
-    return data.data_set || [];
+    return data;
 };
 
 export const updateAppSetting = async (token, settingData) => {
@@ -872,7 +905,8 @@ export const createUserCommand = async (token, commandData) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to create user command');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const updateUserCommand = async (token, commandData) => {
@@ -889,7 +923,8 @@ export const updateUserCommand = async (token, commandData) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to update user command');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const deleteUserCommand = async (token, commandId) => {
@@ -904,7 +939,8 @@ export const deleteUserCommand = async (token, commandId) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to delete user command');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const fetchBaseSchedules = async (token) => {
@@ -1353,5 +1389,80 @@ export const addClassSubjectSame = async (token, { class_code, target_class_code
     if (!response.ok || !data.success) {
         throw new Error(data.description || 'Failed to copy subjects');
     }
+    return data;
+};
+
+// api.js
+
+// ... (existing imports and functions)
+
+// Fetch room types
+export const fetchRoomTypes = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/code-list/ROOMTYPE`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch room types');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+
+// Create a new room
+export const createRoom = async (token, roomData) => {
+    const response = await fetch(`${API_BASE_URL}/api/room/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(roomData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to create room');
+    }
+    const data = await response.json();
+    return data;
+};
+
+// Update a room
+export const updateRoom = async (token, roomData) => {
+    const response = await fetch(`${API_BASE_URL}/api/room/update`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(roomData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update room');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const deleteRoom = async (token, roomCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/room/remove/${roomCode}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to delete room');
+    }
+    const data = await response.json();
     return data;
 };

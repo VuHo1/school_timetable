@@ -1,8 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+import {
+  fetchRoomTypes,
+  fetchAllRooms,
+  createRoom,
+  updateRoom,
+  deleteRoom,
+} from '../../api';
 
-// Styled Components
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -120,20 +128,19 @@ const TableHeaderCell = styled.th`
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'primary' ? '#3498db' : '#666'};
+  background: ${(props) => props.variant === 'primary' ? '#3b82f6' : '#e74c3c'};
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  margin-right: 5px;
   transition: all 0.3s ease;
-  
   &:hover {
-    opacity: 0.8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
   }
-  
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -307,157 +314,401 @@ const PaginationButton = styled.button.withConfig({
   }
 `;
 
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: auto;
+  min-width: 30%;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+`;
+
+const ModalTitle = styled.h3`
+  color: #2c3e50;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+`;
+
+const FormGroup = styled.div`
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+`;
+
+const Label = styled.div`
+  font-weight: 500;
+  color: #2c3e50;
+  text-align: left;
+  margin-top: 10px;
+  padding-right: 10px;
+`;
+
+const Input = styled.input`
+  box-sizing: border-box;
+  width: 510px;
+  margin-left: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+`;
+
+const ModalSelect = styled.select`
+  box-sizing: border-box;
+  width: 510px;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+`;
+
+const DetailItem = styled.div`
+  display: flex;
+  margin-bottom: 20px;
+  justify-content: space-around;
+  .label {
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 150px;
+    text-align: left;
+  }
+  .value {
+    text-align: right;
+    color: #666;
+    flex: 1;
+  }
+`;
+
+// Hàm debounce thủ công
+const debounce = (func, wait) => {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
+
 function RoomManagement() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [sortField, setSortField] = useState('room_code');
+  const [sortOrder, setSortOrder] = useState('ASC');
   const [openActionMenu, setOpenActionMenu] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [roomTypes, setRoomTypes] = useState([]);
+  const [createForm, setCreateForm] = useState({
+    building_prefix: '',
+    floor: 1,
+    quantity: 1,
+    room_type: '',
+  });
+  const [updateForm, setUpdateForm] = useState({
+    room_code: '',
+    room_name: '',
+    room_type: '',
+  });
   const actionMenuRef = useRef(null);
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
-  // Room type mapping
-  const getRoomTypeName = (type) => {
-    const typeMap = {
-      'LR': 'Lớp học',
-      'LAB': 'Phòng thí nghiệm',
-      'GYM': 'Phòng thể dục',
-    };
-    return typeMap[type] || type;
-  };
 
-  // Fetch rooms from API
-  const fetchRooms = async () => {
+  // Room type mapping
+  const getRoomTypeName = useCallback((type) => {
+    const typeMap = roomTypes.reduce((map, type) => {
+      map[type.code_id] = type.caption;
+      return map;
+    }, {});
+    return typeMap[type] || type;
+  }, [roomTypes]);
+
+  // Fetch room types
+  const fetchRoomTypesList = useCallback(async () => {
+    if (!user?.token) {
+      toast.error('Vui lòng đăng nhập để tiếp tục.');
+      navigate('/login');
+      return;
+    }
+    try {
+      const roomTypesData = await fetchRoomTypes(user.token);
+      setRoomTypes(roomTypesData);
+    } catch (error) {
+      console.error('Error fetching room types:', error);
+      toast.error('Không thể tải danh sách loại phòng.');
+    }
+  }, [user, navigate]);
+
+  // Fetch rooms
+  const fetchRooms = useCallback(async () => {
+    if (!user?.token) {
+      toast.error('Vui lòng đăng nhập để tiếp tục.');
+      navigate('/login');
+      return;
+    }
     try {
       setLoading(true);
-
-      // Build query parameters according to API documentation
-      const params = new URLSearchParams({
+      const params = {
         page: currentPage,
         limit: 10,
-        sort: 'room_code'
-      });
-
-      // Add search parameter if provided
+        sort: `${sortField}:${sortOrder}`,
+      };
       if (searchTerm && searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
+        params.search = searchTerm.trim();
+      }
+      if (typeFilter || statusFilter) {
+        params.filter = {};
+        if (typeFilter) params.filter.room_type = typeFilter;
+        if (statusFilter) params.filter.room_status = statusFilter;
       }
 
-      // Add room type filter if provided
-      if (typeFilter) {
-        params.append('filter[room_type]', typeFilter);
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/room?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      // Set data based on actual API response structure
-      let roomList = [];
-      if (Array.isArray(data)) {
-        roomList = data;
-      } else if (data.data_set && Array.isArray(data.data_set)) {
-        roomList = data.data_set;
-      } else if (data.data && Array.isArray(data.data)) {
-        roomList = data.data;
-      } else {
-        roomList = [];
-      }
-
-      setRooms(roomList);
-      setTotalPages(Math.ceil((data.pagination?.total || roomList.length || 0) / 10));
-
-
+      const { rooms, pagination } = await fetchAllRooms(user.token, params);
+      setRooms(rooms);
+      setTotalPages(Math.ceil((pagination?.total || rooms.length || 0) / 10));
     } catch (error) {
       console.error('Error fetching rooms:', error);
-
-      // More detailed error messages
+      let errorMessage = 'Không thể tải danh sách phòng học.';
       if (error.message.includes('401')) {
-        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        await logout();
+        navigate('/login');
       } else if (error.message.includes('403')) {
-        toast.error('Bạn không có quyền truy cập chức năng này.');
+        errorMessage = 'Bạn không có quyền truy cập chức năng này.';
       } else if (error.message.includes('404')) {
-        toast.error('API endpoint không tồn tại.');
-      } else {
-        toast.error('Không thể tải danh sách phòng học. Vui lòng thử lại.');
+        errorMessage = 'API endpoint không tồn tại.';
+      } else if (error.message.includes('429')) {
+        errorMessage = 'Quá nhiều yêu cầu. Vui lòng thử lại sau.';
       }
-
+      toast.error(errorMessage);
       setRooms([]);
     } finally {
       setLoading(false);
     }
-  };
-  const handleActionMenuToggle = (roomId) => {
-    setOpenActionMenu(openActionMenu === roomId ? null : roomId);
-  };
-  // Handle room deletion
-  const handleDelete = async (roomCode) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa phòng học này?')) {
+  }, [user, navigate, logout, currentPage, searchTerm, typeFilter, statusFilter, sortField, sortOrder]);
+
+  // Create room
+  const handleCreateRoom = useCallback(async (e) => {
+    e.preventDefault();
+    if (!user?.token) {
+      toast.error('Vui lòng đăng nhập để tiếp tục.');
+      navigate('/login');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const roomData = {
+        building_prefix: createForm.building_prefix,
+        floor: parseInt(createForm.floor),
+        quantity: parseInt(createForm.quantity),
+        room_type: createForm.room_type,
+      };
+      const response = await createRoom(user.token, roomData);
+      if (response.success) {
+        toast.success(response.description);
+        setShowCreateModal(false);
+        setCreateForm({ building_prefix: '', floor: 1, quantity: 1, room_type: '' });
+        fetchRooms();
+      } else {
+        toast.error(response.description || 'Không thể tạo phòng học.');
+      }
+    } catch (error) {
+      console.error('Create room error:', error);
+      toast.error(error.message || 'Không thể tạo phòng học.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [user, navigate, createForm, fetchRooms]);
+
+  // Update room
+  const handleUpdateRoom = useCallback(async (e) => {
+    e.preventDefault();
+    if (!user?.token) {
+      toast.error('Vui lòng đăng nhập để tiếp tục.');
+      navigate('/login');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const response = await updateRoom(user.token, updateForm);
+      if (response.success) {
+        toast.success(response.description);
+        setShowUpdateModal(false);
+        setSelectedRoom(null);
+        fetchRooms();
+      } else {
+        toast.error(response.description);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [user, navigate, updateForm, fetchRooms]);
+
+  // Toggle room status
+  const handleToggleStatus = useCallback(async (room) => {
+    if (!user?.token) {
+      toast.error('Vui lòng đăng nhập để tiếp tục.');
+      navigate('/login');
+      return;
+    }
+    const newStatus = room.room_status === 'Đang hoạt động' ? 'Ngừng hoạt động' : 'Đang hoạt động';
+    if (!['Đang hoạt động', 'Ngừng hoạt động'].includes(newStatus)) {
+      toast.error('Trạng thái không hợp lệ.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const roomData = {
+        room_code: room.room_code,
+        room_name: room.room_name,
+        room_type: room.room_type,
+        room_status: newStatus,
+      };
+      await updateRoom(user.token, roomData);
+      toast.success('Cập nhật trạng thái phòng học thành công!');
+      fetchRooms();
+    } catch (error) {
+      console.error('Toggle status error:', error);
+      toast.error(error.message || 'Không thể cập nhật trạng thái.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [user, navigate, fetchRooms]);
+
+  // Delete room
+  const handleDelete = useCallback(async (roomCode) => {
+    if (!user?.token) {
+      toast.error('Vui lòng đăng nhập để tiếp tục.');
+      navigate('/login');
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/room/remove/${roomCode}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      toast.success('Xóa phòng học thành công');
-      fetchRooms(); // Refresh data
-    } catch (error) {
-      console.error('Error deleting room:', error);
-
-      if (error.message.includes('401')) {
-        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-      } else if (error.message.includes('403')) {
-        toast.error('Bạn không có quyền xóa phòng học này.');
-      } else if (error.message.includes('404')) {
-        toast.error('Phòng học không tồn tại.');
+      const response = await deleteRoom(user.token, roomCode);
+      if (response.success) {
+        toast.success(response.description);
+        fetchRooms();
       } else {
-        toast.error('Không thể xóa phòng học. Vui lòng thử lại.');
+        toast.error(response.description);
       }
+    } catch (error) {
+      toast.error(error.message || 'Không thể xóa phòng học.');
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }, [user, navigate, logout, fetchRooms]);
 
-  // Handle search
+  const handleViewDetails = useCallback((room) => {
+    setSelectedRoom(room);
+    setIsDetailModalOpen(true);
+  }, []);
+
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setSearchTerm(value);
+      setCurrentPage(1);
+    }, 300),
+    []
+  );
+
   const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
+    debouncedSearch(e.target.value);
   };
 
-  // Handle filter change
-  const handleTypeFilter = (value) => {
+  const handleTypeFilter = useCallback((value) => {
     setTypeFilter(value);
     setCurrentPage(1);
-  };
+  }, []);
 
-  // Fetch data when dependencies change
+  const handleStatusFilter = useCallback((value) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleActionMenuToggle = useCallback((roomId) => {
+    setOpenActionMenu(openActionMenu === roomId ? null : roomId);
+  }, [openActionMenu]);
+
+  // Handle click outside to close action menu
   useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
+        setOpenActionMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fetch data on mount and when dependencies change
+  useEffect(() => {
+    if (!user?.token) {
+      toast.error('Vui lòng đăng nhập để tiếp tục.');
+      navigate('/login');
+      return;
+    }
     fetchRooms();
-  }, [currentPage, searchTerm, typeFilter]);
+    fetchRoomTypesList();
+  }, [user, navigate, fetchRooms, fetchRoomTypesList, currentPage, searchTerm, typeFilter, statusFilter, sortField, sortOrder]);
 
   return (
     <Container>
       <Header>
         <Title>🏠 Quản lí phòng học</Title>
-        <AddButton onClick={() => toast.success('Chức năng thêm phòng học đang phát triển')}>
+        <AddButton onClick={() => setShowCreateModal(true)}>
           + Tạo phòng học
         </AddButton>
       </Header>
@@ -466,26 +717,32 @@ function RoomManagement() {
         <SearchInput
           type="text"
           placeholder="Tìm kiếm theo mã phòng, tên phòng, loại phòng..."
-          value={searchTerm}
           onChange={handleSearch}
         />
-
         <Select
           value={typeFilter}
           onChange={(e) => handleTypeFilter(e.target.value)}
         >
           <option value="">Tất cả loại phòng</option>
-          <option value="LR">Lớp học</option>
-          <option value="LAB">Phòng thí nghiệm</option>
-          <option value="GYM">Phòng thể dục</option>
+          {roomTypes.map((type) => (
+            <option key={type.code_id} value={type.caption}>
+              {type.caption}
+            </option>
+          ))}
+        </Select>
+        <Select
+          value={statusFilter}
+          onChange={(e) => handleStatusFilter(e.target.value)}
+        >
+          <option value="">Tất cả trạng thái</option>
+          <option value="Đang hoạt động">Đang hoạt động</option>
+          <option value="Ngưng hoạt động">Ngừng hoạt động</option>
         </Select>
       </FilterSection>
 
       <TableContainer>
         {loading ? (
-          <LoadingSpinner>
-            🔄 Đang tải dữ liệu...
-          </LoadingSpinner>
+          <LoadingSpinner>🔄 Đang tải dữ liệu...</LoadingSpinner>
         ) : rooms.length === 0 ? (
           <EmptyState>
             <div className="icon">🏠</div>
@@ -499,7 +756,7 @@ function RoomManagement() {
                   <TableHeaderCell style={{ width: '10%' }}>Mã phòng</TableHeaderCell>
                   <TableHeaderCell style={{ width: '30%' }}>Tên phòng</TableHeaderCell>
                   <TableHeaderCell style={{ width: '30%' }}>Loại phòng</TableHeaderCell>
-                  <TableHeaderCell style={{ width: '10%' }}>Lớp được phân</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Lớp đang học</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
                 </TableRow>
@@ -509,8 +766,16 @@ function RoomManagement() {
                   <TableRow key={room.room_code}>
                     <TableCell>{room.room_code}</TableCell>
                     <TableCell>{room.room_name}</TableCell>
-                    <TableCell>{room.room_type}</TableCell>
-                    <TableCell>{room.use_by_class || 'Chưa phân'}</TableCell>
+                    <TableCell>
+                      <RoomTypeBadge type={room.room_type}>
+                        {getRoomTypeName(room.room_type)}
+                      </RoomTypeBadge>
+                    </TableCell>
+                    <TableCell>
+                      <AssignedBadge assigned={room.use_by_class}>
+                        {room.use_by_class || 'Chưa có lớp'}
+                      </AssignedBadge>
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={room.room_status}>
                         {room.room_status}
@@ -520,22 +785,30 @@ function RoomManagement() {
                       <ActionMenuButton
                         onClick={() => handleActionMenuToggle(room.id)}
                         ref={actionMenuRef}
+                        aria-label={`Thao tác cho phòng ${room.room_code}`}
                       >
                         ⋯
                       </ActionMenuButton>
                       <ActionDropdown isOpen={openActionMenu === room.id}>
-                        <ActionMenuItem
-                          onClick={() => toast.success('Chức năng đang phát triển')}
-                        >
+                        <ActionMenuItem onClick={() => handleViewDetails(room)}>
                           <ActionMenuText>Xem chi tiết</ActionMenuText>
                         </ActionMenuItem>
                         <ActionMenuItem
-                          onClick={() => toast.success('Chức năng đang phát triển')}
+                          onClick={() => {
+                            setSelectedRoom(room);
+                            setUpdateForm({
+                              room_code: room.room_code,
+                              room_name: room.room_name,
+                              room_type: room.room_type,
+                            });
+                            setShowUpdateModal(true);
+                          }}
                         >
                           <ActionMenuText>Cập nhật</ActionMenuText>
                         </ActionMenuItem>
+
                         <ActionMenuItem
-                          onClick={() => toast.success('Chức năng đang phát triển')}
+                          onClick={() => handleDelete(room.room_code)}
                           style={{ color: '#e74c3c' }}
                         >
                           <ActionMenuText style={{ color: '#e74c3c' }}>Bật/Tắt trạng thái</ActionMenuText>
@@ -550,16 +823,14 @@ function RoomManagement() {
             {totalPages > 1 && (
               <Pagination>
                 <PaginationButton
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                 >
                   ← Trước
                 </PaginationButton>
-
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   const pageNum = Math.max(1, currentPage - 2) + i;
                   if (pageNum > totalPages) return null;
-
                   return (
                     <PaginationButton
                       key={pageNum}
@@ -570,9 +841,8 @@ function RoomManagement() {
                     </PaginationButton>
                   );
                 })}
-
                 <PaginationButton
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                 >
                   Tiếp →
@@ -582,8 +852,177 @@ function RoomManagement() {
           </>
         )}
       </TableContainer>
+
+      {/* Create Room Modal */}
+      {showCreateModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Tạo phòng học mới</ModalTitle>
+            </ModalHeader>
+            <form onSubmit={handleCreateRoom}>
+              <FormGroup>
+                <Label>Mã tòa nhà</Label>
+                <Input
+                  type="text"
+                  placeholder="Nhập mã tòa nhà (không bắt buộc)"
+                  value={createForm.building_prefix}
+                  onChange={(e) => setCreateForm({ ...createForm, building_prefix: e.target.value })}
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label>Tầng *</Label>
+                <Input
+                  type="number"
+                  placeholder="Nhập tầng"
+                  value={createForm.floor}
+                  onChange={(e) => setCreateForm({ ...createForm, floor: e.target.value })}
+                  min="1"
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label>Số lượng *</Label>
+                <Input
+                  type="number"
+                  placeholder="Nhập số lượng"
+                  value={createForm.quantity}
+                  onChange={(e) => setCreateForm({ ...createForm, quantity: e.target.value })}
+                  min="1"
+                  required
+                />
+              </FormGroup>
+              <ModalActions>
+                <ActionButton
+                  type="button"
+                  variant="danger"
+                  onClick={() => setShowCreateModal(false)}
+                  disabled={isSubmitting}
+                >
+                  Hủy
+                </ActionButton>
+                <ActionButton
+                  type="submit"
+                  variant="primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Đang tạo...' : 'Lưu thông tin'}
+                </ActionButton>
+              </ModalActions>
+            </form>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {/* Update Room Modal */}
+      {showUpdateModal && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Cập nhật phòng học</ModalTitle>
+            </ModalHeader>
+            <form onSubmit={handleUpdateRoom}>
+              <FormGroup>
+                <Label>Mã phòng</Label>
+                <Input
+                  type="text"
+                  placeholder="Mã phòng"
+                  value={updateForm.room_code}
+                  readOnly
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label>Tên phòng *</Label>
+                <Input
+                  type="text"
+                  placeholder="Nhập tên phòng"
+                  value={updateForm.room_name}
+                  onChange={(e) => setUpdateForm({ ...updateForm, room_name: e.target.value })}
+                  required
+                />
+              </FormGroup>
+              <FormGroup>
+                <Label>Loại phòng *</Label>
+                <ModalSelect
+                  value={updateForm.room_type}
+                  onChange={(e) => setUpdateForm({ ...updateForm, room_type: e.target.value })}
+                  required
+                >
+                  <option value="">Chọn loại phòng</option>
+                  {roomTypes.map((type) => (
+                    <option key={type.code_id} value={type.code_id}>
+                      {type.caption}
+                    </option>
+                  ))}
+                </ModalSelect>
+              </FormGroup>
+              <ModalActions>
+                <ActionButton
+                  type="button"
+                  variant="danger"
+                  onClick={() => setShowUpdateModal(false)}
+                  disabled={isSubmitting}
+                >
+                  Hủy
+                </ActionButton>
+                <ActionButton
+                  type="submit"
+                  variant="primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Đang cập nhật...' : 'Xác nhận'}
+                </ActionButton>
+              </ModalActions>
+            </form>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {/* Detail Modal */}
+      {isDetailModalOpen && selectedRoom && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Chi tiết phòng học</ModalTitle>
+            </ModalHeader>
+            <DetailItem>
+              <span className="label">Mã phòng:</span>
+              <span className="value">{selectedRoom.room_code}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Tên phòng:</span>
+              <span className="value">{selectedRoom.room_name}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Loại phòng:</span>
+              <span className="value">{getRoomTypeName(selectedRoom.room_type)}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Lớp đang học:</span>
+              <span className="value">{selectedRoom.use_by_class || 'Trống'}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Trạng thái:</span>
+              <span className="value">
+                <StatusBadge status={selectedRoom.room_status}>
+                  {selectedRoom.room_status}
+                </StatusBadge>
+              </span>
+            </DetailItem>
+            <ModalActions>
+              <ActionButton
+                type="button"
+                variant="danger"
+                onClick={() => setIsDetailModalOpen(false)}
+              >
+                Đóng
+              </ActionButton>
+            </ModalActions>
+          </ModalContent>
+        </Modal>
+      )}
     </Container>
   );
 }
 
-export default RoomManagement; 
+export default RoomManagement;

@@ -10,6 +10,7 @@ import {
     deleteUserCommand,
 } from '../../api';
 import styled from 'styled-components';
+import { FcElectricalSensor } from 'react-icons/fc';
 
 const Container = styled.div`
   padding: 20px;
@@ -546,13 +547,18 @@ const UserCommand = () => {
                 toast.showToast('Mã chức năng đã tồn tại.', 'error');
                 return;
             }
-            await createUserCommand(user.token, newCommand);
-            toast.showToast('Tạo chức năng thành công!', 'success');
-            setIsCreateModalOpen(false);
-            const updatedData = await fetchUserCommands(user.token);
-            setAllCommands(updatedData);
-            setNewCommand({ command_id: '', command_name: '', application: '' });
-            setCurrentPage(1); // Reset to page 1 after creating
+            var resultData = await createUserCommand(user.token, newCommand);
+            if (resultData.success) {
+                toast.showToast(resultData.description, 'success');
+                setIsCreateModalOpen(false);
+                const updatedData = await fetchUserCommands(user.token);
+                setAllCommands(updatedData);
+                setNewCommand({ command_id: '', command_name: '', application: '' });
+                setCurrentPage(1); // Reset to page 1 after creating
+            } else {
+                toast.showToast(resultData.description, 'error');
+            }
+
         } catch (error) {
             toast.showToast(error.message || 'Tạo chức năng thất bại.', 'error');
         } finally {
@@ -565,12 +571,17 @@ const UserCommand = () => {
         if (!user?.token) return;
         setLoading(true);
         try {
-            await updateUserCommand(user.token, updateCommand);
-            toast.showToast('Cập nhật chức năng thành công!', 'success');
-            setIsUpdateModalOpen(false);
-            const updatedData = await fetchUserCommands(user.token);
-            setAllCommands(updatedData);
-            setCurrentPage(1); // Reset to page 1 after updating
+            var resultData = await updateUserCommand(user.token, updateCommand);
+            if (resultData.success) {
+                toast.showToast(resultData.description, 'success');
+                setIsUpdateModalOpen(false);
+                const updatedData = await fetchUserCommands(user.token);
+                setAllCommands(updatedData);
+                setCurrentPage(1); // Reset to page 1 after updating
+            }
+            else {
+                toast.showToast(resultData.description, 'error');
+            }
         } catch (error) {
             toast.showToast(error.message || 'Cập nhật chức năng thất bại.', 'error');
         } finally {
@@ -583,11 +594,15 @@ const UserCommand = () => {
         if (!user?.token) return;
         setLoading(true);
         try {
-            await deleteUserCommand(user.token, commandId);
-            toast.showToast('Thành công thay đổi trạng thái hoạt động!', 'success');
-            const updatedData = await fetchUserCommands(user.token);
-            setAllCommands(updatedData);
-            setCurrentPage(1); // Reset to page 1 after deleting
+            var resultData = await deleteUserCommand(user.token, commandId);
+            if (resultData.success) {
+                toast.showToast(resultData.description, 'success');
+                const updatedData = await fetchUserCommands(user.token);
+                setAllCommands(updatedData);
+                setCurrentPage(1);
+            } else {
+                toast.showToast(resultData.description, 'error');
+            }
         } catch (error) {
             toast.showToast(error.message || 'Xóa chức năng thất bại.', 'error');
         } finally {
