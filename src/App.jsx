@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ModernHeader from './components/layout/ModernHeader';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -28,6 +29,7 @@ import UserRole from './pages/admin/UserRole'
 import { useMemo } from 'react';
 import Semesters from './pages/staff/Semesters';
 import ClassScheduleConfig from './pages/staff/ClassScheduleConfig';
+import { listenToForegroundMessage } from './firebase/init.jsx';
 
 function AppRoutes() {
   const { role, abilities, loading } = useAuth();
@@ -198,6 +200,9 @@ function AppRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+    listenToForegroundMessage();
+  }, []);
   return (
     <AuthProvider>
       <AppRoutes />
