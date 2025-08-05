@@ -238,13 +238,17 @@ function TimeslotManagement() {
     const token = localStorage.getItem('token');
 
     try {
-      await updateTimeSlot(token, {
+      var resultData = await updateTimeSlot(token, {
         id: slot.id,
         start_time: slot.start_time,
         end_time: slot.end_time,
-      });
-      toast.success(`Cập nhật tiết ${id} thành công`);
-      fetchTimeslots();
+      }); if (resultData.success) {
+        toast.success(resultData.description || 'Cập nhật tiết học thành công');
+        fetchTimeslots();
+      }
+      else {
+        toast.error(resultData.description || 'Cập nhật tiết học thất bại');
+      }
     } catch (error) {
       toast.error(error.message);
       fetchTimeslots();
@@ -261,14 +265,15 @@ function TimeslotManagement() {
       return;
     }
     try {
-      await createTimeSlot(token, newTimeslot);
-      toast.success('Thêm tiết học thành công');
-
-      // 🔁 Reload lại danh sách tiết học
-      fetchTimeslots();
-
-      // ✅ Reset input
-      setNewSlot({ start_time: '', end_time: '' });
+      var resultData = await createTimeSlot(token, newTimeslot);
+      if (resultData.success) {
+        toast.success(resultData.description || 'Thêm tiết học mới thành công');
+        fetchTimeslots();
+        setNewSlot({ start_time: '', end_time: '' });
+      }
+      else {
+        toast.error(resultData.description || 'Thêm tiết học mới thất bại');
+      }
     } catch (error) {
       toast.error(error.message);
     }

@@ -554,10 +554,14 @@ function RoomManagement() {
         room_type: createForm.room_type,
       };
       const response = await createRoom(user.token, roomData);
-      toast.success(response.description);
-      setShowCreateModal(false);
-      setCreateForm({ building_prefix: '', floor: 1, quantity: 1, room_type: '' });
-      fetchRooms();
+      if (response.success) {
+        toast.success(response.description);
+        setShowCreateModal(false);
+        setCreateForm({ building_prefix: '', floor: 1, quantity: 1, room_type: '' });
+        fetchRooms();
+      } else {
+        toast.error(response.description || 'Không thể tạo phòng học.');
+      }
     } catch (error) {
       console.error('Create room error:', error);
       toast.error(error.message || 'Không thể tạo phòng học.');
@@ -634,10 +638,14 @@ function RoomManagement() {
     setIsSubmitting(true);
     try {
       const response = await deleteRoom(user.token, roomCode);
-      toast.success(response.description);
-      fetchRooms();
+      if (response.success) {
+        toast.success(response.description);
+        fetchRooms();
+      } else {
+        toast.error(response.description);
+      }
     } catch (error) {
-      toast.error(response.description);
+      toast.error(error.message || 'Không thể xóa phòng học.');
     } finally {
       setIsSubmitting(false);
     }

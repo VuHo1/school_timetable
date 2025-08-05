@@ -219,7 +219,11 @@ export default function SystemError() {
       setLoading(true);
       try {
         const data = await fetchSystemLogs(user.token);
-        setAllLogs(data.data_set || []);
+        if (data.success) {
+          setAllLogs(data.data_set || []);
+        } else {
+          toast.showToast(data.description || 'Không thể tải dữ liệu cài đặt.', 'error');
+        }
       } catch (error) {
         console.error('Error fetching system logs:', error);
         toast.showToast('Không thể tải nhật ký hệ thống.', 'error');

@@ -228,7 +228,7 @@ export const createTimeSlot = async (token, request) => {
     if (!response.ok || !data.success) {
         throw new Error(data.description);
     }
-    return true;
+    return data;
 };
 export const updateTimeSlot = async (token, request) => {
     const response = await fetch(`${API_BASE_URL}/api/time-slot/update`, {
@@ -244,7 +244,7 @@ export const updateTimeSlot = async (token, request) => {
     if (!response.ok || !data.success) {
         throw new Error(data.description);
     }
-    return true;
+    return data;
 };
 // Code list APIs
 export const fetchCodeList = async (token) => {
@@ -552,7 +552,7 @@ export const fetchAppSetting = async (token) => {
     });
     if (!response.ok) throw new Error('Failed to fetch app settings');
     const data = await response.json();
-    return data.data_set || [];
+    return data;
 };
 
 export const updateAppSetting = async (token, settingData) => {
@@ -905,7 +905,8 @@ export const createUserCommand = async (token, commandData) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to create user command');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const updateUserCommand = async (token, commandData) => {
@@ -922,7 +923,8 @@ export const updateUserCommand = async (token, commandData) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to update user command');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const deleteUserCommand = async (token, commandId) => {
@@ -937,7 +939,8 @@ export const deleteUserCommand = async (token, commandId) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to delete user command');
     }
-    return await response.json();
+    const data = await response.json();
+    return data;
 };
 
 export const fetchBaseSchedules = async (token) => {
