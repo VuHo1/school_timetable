@@ -126,20 +126,20 @@ const TableHeaderCell = styled.th`
 const ActionButton = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'variant',
 })`
-  background: ${(props) => props.variant === 'primary' ? '#3b82f6'
-    : props.variant === 'update' ? '#6B7280' : '#e74c3c'};
+  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'primary' ? '#3498db' : '#666'};
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
+  margin-right: 5px;
   transition: all 0.3s ease;
+  
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    opacity: 0.8;
   }
+  
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;

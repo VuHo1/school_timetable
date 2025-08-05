@@ -18,7 +18,8 @@ const PAGE_MAPPINGS = {
   'Quản lí môn học': '/subject',
   'Quản lí phòng học': '/room',
   'Quản lí tiết học': '/timeslot',
-  'Thời khóa biểu': '/staff/schedule',
+  'Quản lí thời khóa biểu': '/staff/schedule',
+  'Thời khóa biểu': '/staff/my-schedule',
   'Quản lí học kỳ': '/staff/semesters'
 };
 
@@ -334,6 +335,7 @@ function ModernHeader() {
       'Quản lí phòng học': '🏠',
       'Quản lí tiết học': '⏰',
       'Thời khóa biểu': '📅',
+      'Quản lí thời khóa biểu': '📅',
       'Quản lí học kỳ': '📆',
     };
     return iconMap[ability] || '📄';

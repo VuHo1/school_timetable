@@ -10,6 +10,7 @@ import CodeList from './pages/admin/CodeList';
 import UserCommand from './pages/admin/UserCommand';
 import Setting from './pages/admin/Setting';
 import ViewSchedule from './pages/staff/ViewSchedule';
+import MySchedule from './pages/staff/MySchedule';
 import ClassManagement from './pages/staff/ClassManagement';
 import ClassDetail from './pages/staff/ClassDetail';
 import CreateClass from './pages/staff/CreateClass';
@@ -66,8 +67,13 @@ function AppRoutes() {
           <Route path="/admin/dashboard" element={<Dashboard />} />
           {/* Staff routes */}
           <Route path="/staff/schedule" element={
-            <ProtectedRoute requiredAbility="Thời khóa biểu">
+            <ProtectedRoute requiredAbility="Quản lí thời khóa biểu">
               <ViewSchedule />
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/my-schedule" element={
+            <ProtectedRoute requiredAbility="Thời khóa biểu">
+              <MySchedule />
             </ProtectedRoute>
           } />
           <Route path="/staff/semesters" element={
