@@ -173,11 +173,14 @@ function Notification() {
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const notificationContainerRef = useRef(null);
+
   useEffect(() => {
     const token = user?.token;
     if (token) {
+      console.log('[Notification] Fetching notifications with token:', token);
       fetchNotifications(token)
         .then(data => {
+          console.log('[Notification] Notifications received:', data);
           setNotifications(data);
         })
         .catch(error => console.error('[Notification] Error fetching notifications:', error));
@@ -198,12 +201,17 @@ function Notification() {
   }, [selectedNotification]);
 
   const handleNotificationClick = async (notification) => {
+    console.log('[Notification] Notification clicked:', notification);
     if (!notification.is_read) {
       try {
         await markNotificationAsRead(user?.token, notification.id);
         setNotifications(prev => prev.map(n =>
           n.id === notification.id ? { ...n, is_read: true } : n
         ));
+        console.log('[Notification] Notification marked as read:', notification.id);
+        // Phát custom event để thông báo cho ModernHeader
+        const event = new CustomEvent('notificationMarkedAsRead');
+        window.dispatchEvent(event);
       } catch (error) {
         console.error('[Notification] Error marking notification as read:', error);
       }
@@ -215,13 +223,17 @@ function Notification() {
     try {
       await markAllNotificationsAsRead(user?.token);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-
+      console.log('[Notification] All notifications marked as read');
+      // Phát custom event để thông báo cho ModernHeader
+      const event = new CustomEvent('notificationMarkedAsRead');
+      window.dispatchEvent(event);
     } catch (error) {
-
+      console.error('[Notification] Error marking all notifications as read:', error);
     }
   };
 
   const handleCloseModal = () => {
+    console.log('[Notification] Closing notification modal');
     setSelectedNotification(null);
   };
 
@@ -266,6 +278,10 @@ function Notification() {
               <FaTimes />
             </CloseButton>
             <ModalTitle>Thông báo</ModalTitle>
+            <FormGroup>
+              <Label>Thông báo của:</Label>
+              <Value>{selectedNotification.user_name || 'N/A'}</Value>
+            </FormGroup>
             <FormGroup>
               <Label>Tiêu đề:</Label>
               <Value>{selectedNotification.title}</Value>

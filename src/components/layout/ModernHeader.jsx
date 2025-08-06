@@ -178,7 +178,7 @@ const NotificationCount = styled.span`
   position: absolute;
   top: -4px;
   right: -4px;
-  background: #ff6b6b;
+  background: #5aa7ff;
   color: white;
   border-radius: 50%;
   font-size: 12px;
@@ -304,7 +304,7 @@ const ViewAllButton = styled(ActionButton)`
   color: #3498db;
   
   &:hover {
-    background:#e8e8e8 ;
+    background: #e8e8e8;
   }
 `;
 
@@ -480,6 +480,39 @@ function ModernHeader() {
   const avatarDropdownRef = useRef(null);
   const notificationDropdownRef = useRef(null);
 
+  // Fetch notifications
+  const fetchNotificationsData = async () => {
+    const token = user?.token;
+    if (token) {
+      console.log('[ModernHeader] Fetching notifications with token:', token);
+      try {
+        const data = await fetchNotifications(token);
+        console.log('[ModernHeader] Notifications received:', data);
+        setNotifications(data);
+      } catch (error) {
+        console.error('[ModernHeader] Error fetching notifications:', error);
+      }
+    } else {
+      console.warn('[ModernHeader] No token available for fetching notifications');
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchNotificationsData();
+  }, [user?.token]);
+
+  // Listen for notification marked as read event
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      console.log('[ModernHeader] Received notificationMarkedAsRead event');
+      fetchNotificationsData();
+    };
+
+    window.addEventListener('notificationMarkedAsRead', handleNotificationUpdate);
+    return () => window.removeEventListener('notificationMarkedAsRead', handleNotificationUpdate);
+  }, [user?.token]);
+
   // Update currentAbilities when abilities change
   useEffect(() => {
     const storedAbilities = localStorage.getItem('abilities');
@@ -488,6 +521,7 @@ function ModernHeader() {
     if (storedAbilities) {
       try {
         const parsedAbilities = JSON.parse(storedAbilities);
+        console.log('[ModernHeader] Parsed abilities from localStorage:', parsedAbilities);
         if (Array.isArray(parsedAbilities) && parsedAbilities.length > 0) {
           abilitiesToProcess = parsedAbilities;
         }
@@ -503,22 +537,11 @@ function ModernHeader() {
     const filteredAbilities = abilitiesToProcess.filter(ability =>
       ability !== 'Cá nhân' && ability !== 'Thông báo' && ability !== 'Quản lí học kỳ' && ability !== 'Điểm danh' && ability !== 'Danh mục dùng chung'
     );
+    console.log('[ModernHeader] Filtered abilities:', filteredAbilities);
     setCurrentAbilities(filteredAbilities);
   }, [abilities]);
 
-  useEffect(() => {
-    const token = user?.token;
-    if (token) {
-      fetchNotifications(token)
-        .then(data => {
-          setNotifications(data);
-        })
-        .catch(error => console.error('[ModernHeader] Error fetching notifications:', error));
-    } else {
-      console.warn('[ModernHeader] No token available for fetching notifications');
-    }
-  }, [user?.token]);
-
+  // Handle clicks outside dropdowns and modal
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuDropdownRef.current && !menuDropdownRef.current.contains(event.target)) {
