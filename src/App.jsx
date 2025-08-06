@@ -151,7 +151,7 @@ function AppRoutes() {
           } />
           <Route path="/notification" element={
             <ProtectedRoute requiredAbility="Thông báo">
-              <PlaceholderPage title="Thông báo" icon="📢" />
+              <Notification title="Thông báo" icon="📢" />
             </ProtectedRoute>
           } />
           <Route path="/permission" element={
