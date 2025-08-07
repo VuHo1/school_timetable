@@ -587,7 +587,7 @@ function SubjectManagement() {
         limit: formData.limit,
         fixed_slot: formData.fixed_slot,
         avoid_slot: formData.avoid_slot,
-        also_update_for_class_subject: 'A'
+        also_update_for_class_subject: formData.also_update_for_class_subject || 'N'
       };
       const response = await updateSubject(token, updateData);
       if (response.success) {
@@ -684,6 +684,15 @@ function SubjectManagement() {
       }));
     }
   };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
@@ -875,17 +884,6 @@ function SubjectManagement() {
               )}
             </FormGroup>
             <FormGroup>
-              <Label>Học online</Label>
-              <CheckboxItem>
-                <input
-                  type="checkbox"
-                  checked={formData.is_online_course}
-                  onChange={(e) => handleInputChange('is_online_course', e.target.checked)}
-                />
-                Môn học online
-              </CheckboxItem>
-            </FormGroup>
-            <FormGroup>
               <Label>Số tiết/tuần *</Label>
               <Input
                 type="number"
@@ -921,24 +919,41 @@ function SubjectManagement() {
                 {formData.fixed_slot.length} cố định / {formData.avoid_slot.length} tránh
               </SlotConfigButton>
             </FormGroup>
+            {!isEdit && (
+              <FormGroup>
+                <Label>Khối *</Label>
+                <CheckboxGroup>
+                  {gradeLevels.map(grade => (
+                    <CheckboxItem key={grade.code_id}>
+                      <input
+                        type="checkbox"
+                        checked={formData.grade_level.includes(grade.code_id)}
+                        onChange={(e) => handleGradeLevelChange(grade.code_id, e.target.checked)}
+                      />
+                      {grade.caption}
+                    </CheckboxItem>
+                  ))}
+                </CheckboxGroup>
+              </FormGroup>
+            )}
+            {isEdit && (
+              <FormGroup>
+                <Label htmlFor="alsoUpdateClassSubject">Cập nhật cấu hình lớp học</Label>
+                <Select
+                  id="alsoUpdateClassSubject"
+                  name="also_update_for_class_subject"
+                  value={formData.also_update_for_class_subject}
+                  onChange={handleChange}
+                  title="Chọn phạm vi cập nhật khi thay đổi thông tin môn học"
+                >
+                  <option key="N" value="N">Không cập nhật cấu hình lớp</option>
+                  <option key="G" value="G">Cập nhật các lớp dùng cấu hình mặc định</option>
+                  <option key="I" value="I">Cập nhật các lớp đã tùy chỉnh cấu hình</option>
+                  <option key="A" value="A">Cập nhật tất cả cấu hình lớp</option>
+                </Select>
+              </FormGroup>
+            )}
           </FormGrid>
-          {!isEdit && (
-            <FormGroup>
-              <Label>Khối *</Label>
-              <CheckboxGroup>
-                {gradeLevels.map(grade => (
-                  <CheckboxItem key={grade.code_id}>
-                    <input
-                      type="checkbox"
-                      checked={formData.grade_level.includes(grade.code_id)}
-                      onChange={(e) => handleGradeLevelChange(grade.code_id, e.target.checked)}
-                    />
-                    {grade.caption}
-                  </CheckboxItem>
-                ))}
-              </CheckboxGroup>
-            </FormGroup>
-          )}
         </ModalBody>
         <ModalActions>
           <ActionButton
@@ -1073,10 +1088,6 @@ function SubjectManagement() {
           <DetailItem>
             <span className="label">Số tiết liên tiếp:</span>
             <span className="value">{subject.continuous_slot}</span>
-          </DetailItem>
-          <DetailItem>
-            <span className="label">Phương thức:</span>
-            <span className="value">{subject.is_online_course ? 'Online' : 'Offline'}</span>
           </DetailItem>
           <DetailItem>
             <span className="label">Giới hạn:</span>
@@ -1215,7 +1226,6 @@ function SubjectManagement() {
                   <TableHeaderCell style={{ width: '10%' }}>Khối</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Tiết/tuần</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Tiết liên tiếp</TableHeaderCell>
-                  <TableHeaderCell style={{ width: '10%' }}>Học online</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Giới hạn</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
@@ -1229,11 +1239,6 @@ function SubjectManagement() {
                     <TableCell>{subject.grade_level}</TableCell>
                     <TableCell>{subject.weekly_slot}</TableCell>
                     <TableCell>{subject.continuous_slot}</TableCell>
-                    <TableCell>
-                      <OnlineBadge isOnline={subject.is_online_course}>
-                        {subject.is_online_course ? 'Online' : 'Offline'}
-                      </OnlineBadge>
-                    </TableCell>
                     <TableCell>{subject.limit || 'Không giới hạn'}</TableCell>
                     <TableCell>
                       <StatusBadge status={subject.status}>
