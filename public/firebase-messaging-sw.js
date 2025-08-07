@@ -19,7 +19,7 @@ const messaging = firebase.messaging();
 
 // (Tuỳ chọn) Xử lý khi push đến:
 messaging.onBackgroundMessage(function (payload) {
-  console.log("[firebase-messaging-sw.js] Received background message ", payload);
+
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,

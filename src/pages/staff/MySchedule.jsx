@@ -6,7 +6,7 @@ import { FaSpinner, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import {
     fetchTimeSlots,
     fetchClasses,
-    fetchAvailableTeachers,
+    fetchAvailableTeachers2,
     fetchMyTimeTable,
 } from '../../api';
 import { useAuth } from '../../context/AuthContext';
@@ -377,7 +377,7 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
         if (selectedOption === 'Daily') {
             const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 1 && entry.day_of_week <= 7);
             if (validDetails.length === 0) {
-                console.log('No valid entries for Daily mode');
+
                 return [];
             }
             const firstDate = validDetails[0].date.split('T')[0];
@@ -398,7 +398,7 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
         ];
         const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 1 && entry.day_of_week <= 7);
         const uniqueDates = [...new Set(validDetails.map(entry => entry.date.split('T')[0]))].sort();
-        console.log('Weekly uniqueDates:', uniqueDates);
+
 
         uniqueDates.forEach(date => {
             const entry = validDetails.find(e => e.date.split('T')[0] === date);
@@ -499,7 +499,7 @@ export default function MySchedule() {
     useEffect(() => {
         if (!token || loading) return;
 
-        console.log('[useEffect] Triggered with selectedCurrent:', selectedCurrent);
+
         const fetchData = async () => {
             try {
                 setIsLoading(true);
@@ -507,7 +507,7 @@ export default function MySchedule() {
                 setTimeSlots(timeSlotsData);
                 const classesData = await fetchClasses(token);
                 setClasses(classesData.data_set || []);
-                const teachersData = await fetchAvailableTeachers(token);
+                const teachersData = await fetchAvailableTeachers2(token);
                 setTeachers(teachersData);
                 await fetchTimetableData(selectedCurrent);
             } catch (err) {
@@ -521,7 +521,7 @@ export default function MySchedule() {
 
     const fetchTimetableData = async (current) => {
         if (!token || isLoading) {
-            console.log('[fetchTimetableData] Skipped: token missing or loading');
+
             return;
         }
 
@@ -532,9 +532,9 @@ export default function MySchedule() {
                 params.type = appliedType;
                 params.code = appliedCode;
             }
-            console.log(`[fetchTimetableData] (current=${current}) Params:`, params);
+
             const response = await fetchMyTimeTable(token, params);
-            console.log(`[fetchTimetableData] (current=${current}) Response:`, response);
+
 
             setTimetableData(response.data_set || []);
             setScheduleDescription(response.description || 'Không có mô tả');
@@ -544,11 +544,6 @@ export default function MySchedule() {
                 next: response.pagination?.next ?? null,
                 previous: response.pagination?.previous ?? null,
                 total: response.pagination?.total || 0
-            });
-            console.log(`[fetchTimetableData] (current=${current}) State updated:`, {
-                timetableData: response.data_set?.length || 0,
-                scheduleDescription: response.description,
-                pagination
             });
             setError(null);
         } catch (err) {
@@ -563,7 +558,7 @@ export default function MySchedule() {
 
     const handleAppliedTypeChange = async (newType) => {
         if (newType === appliedType) return;
-        console.log('[handleAppliedTypeChange] Changing type to:', newType);
+
         setAppliedType(newType);
         setAppliedCode('');
         try {
@@ -573,7 +568,7 @@ export default function MySchedule() {
                 params.type = newType;
                 params.code = '';
             }
-            console.log(`[handleAppliedTypeChange] Fetching params:`, params);
+
             const response = await fetchMyTimeTable(token, params);
             setTimetableData(response.data_set || []);
             setScheduleDescription(response.description || 'Không có mô tả');
@@ -583,10 +578,6 @@ export default function MySchedule() {
                 next: response.pagination?.next ?? null,
                 previous: response.pagination?.previous ?? null,
                 total: response.pagination?.total || 0
-            });
-            console.log('[handleAppliedTypeChange] State updated:', {
-                timetableData: response.data_set?.length || 0,
-                scheduleDescription: response.description
             });
             setError(null);
         } catch (err) {
@@ -601,7 +592,7 @@ export default function MySchedule() {
 
     const handleAppliedCodeChange = async (newCode) => {
         if (newCode === appliedCode) return;
-        console.log('[handleAppliedCodeChange] Changing code to:', newCode);
+
         setAppliedCode(newCode);
         if (appliedType !== 'All') {
             try {
@@ -611,7 +602,7 @@ export default function MySchedule() {
                     params.type = appliedType;
                     params.code = newCode;
                 }
-                console.log(`[handleAppliedCodeChange] Fetching params:`, params);
+
                 const response = await fetchMyTimeTable(token, params);
                 setTimetableData(response.data_set || []);
                 setScheduleDescription(response.description || 'Không có mô tả');
@@ -621,10 +612,6 @@ export default function MySchedule() {
                     next: response.pagination?.next ?? null,
                     previous: response.pagination?.previous ?? null,
                     total: response.pagination?.total || 0
-                });
-                console.log('[handleAppliedCodeChange] State updated:', {
-                    timetableData: response.data_set?.length || 0,
-                    scheduleDescription: response.description
                 });
                 setError(null);
             } catch (err) {
@@ -640,7 +627,7 @@ export default function MySchedule() {
 
     const handleOptionChange = async (newOption) => {
         if (newOption === selectedOption) return;
-        console.log('[handleOptionChange] Changing option to:', newOption);
+
         setSelectedOption(newOption);
         setSelectedCurrent(0);
         try {
@@ -650,7 +637,7 @@ export default function MySchedule() {
                 params.type = appliedType;
                 params.code = appliedCode;
             }
-            console.log(`[handleOptionChange] Fetching params:`, params);
+
             const response = await fetchMyTimeTable(token, params);
             setTimetableData(response.data_set || []);
             setScheduleDescription(response.description || 'Không có mô tả');
@@ -660,10 +647,6 @@ export default function MySchedule() {
                 next: response.pagination?.next ?? null,
                 previous: response.pagination?.previous ?? null,
                 total: response.pagination?.total || 0
-            });
-            console.log('[handleOptionChange] State updated:', {
-                timetableData: response.data_set?.length || 0,
-                scheduleDescription: response.description
             });
             setError(null);
         } catch (err) {
@@ -679,7 +662,7 @@ export default function MySchedule() {
     const handlePrevPeriod = async () => {
         if (isLoading) return;
         const newCurrent = selectedCurrent - 1;
-        console.log('[handlePrevPeriod] New current:', newCurrent);
+
         setSelectedCurrent(newCurrent);
         await fetchTimetableData(newCurrent);
     };
@@ -687,7 +670,7 @@ export default function MySchedule() {
     const handleNextPeriod = async () => {
         if (isLoading) return;
         const newCurrent = selectedCurrent + 1;
-        console.log('[handleNextPeriod] New current:', newCurrent);
+
         setSelectedCurrent(newCurrent);
         await fetchTimetableData(newCurrent);
     };

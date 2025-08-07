@@ -421,13 +421,13 @@ export default function CodeList() {
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.token) {
-        console.log('No user token available');
+
         return;
       }
       setLoading(true);
       try {
         const data = await fetchCodeList(user.token);
-        console.log('Fetched code list:', data);
+
         setAllCodes(data || []);
         const uniqueCodeNames = [...new Set(data.map((code) => code.code_name))];
         setCodeNameOptions([
@@ -446,7 +446,7 @@ export default function CodeList() {
 
   // Apply filters and pagination
   const applyFilters = () => {
-    console.log('Applying filters with:', { searchKeyword, filterCodeName, filterStatus });
+
     let filteredCodes = [...allCodes];
 
     if (!filteredCodes.length) {
@@ -494,7 +494,7 @@ export default function CodeList() {
 
   // Handle action menu toggle
   const handleActionMenuToggle = (id) => {
-    console.log('Toggling action menu for id:', id);
+
     setOpenActionMenu(openActionMenu === id ? null : id);
   };
 
@@ -502,18 +502,18 @@ export default function CodeList() {
   const handleCreateCode = async (e) => {
     e.preventDefault();
     if (!user?.token) {
-      console.log('No user token available');
+
       return;
     }
     setLoading(true);
     try {
       const response = await addCode(user.token, newCode);
-      console.log('Add code response:', response);
+
       toast.showToast('Thêm mã thành công!', 'success');
       setIsCreateModalOpen(false);
       setNewCode({ code_id: '', code_name: '', caption: '' });
       const updatedData = await fetchCodeList(user.token);
-      console.log('Fetched code list after add:', updatedData);
+
       setAllCodes(updatedData || []);
       setFilterCodeName('');
       setCurrentPage(1);
@@ -534,18 +534,18 @@ export default function CodeList() {
   const handleUpdateCode = async (e) => {
     e.preventDefault();
     if (!user?.token || !selectedCode) {
-      console.log('No user token or selected code:', { user, selectedCode });
+
       return;
     }
     setLoading(true);
     try {
       const response = await updateCode(user.token, selectedCode.id, selectedCode.caption);
-      console.log('Update code response:', response);
+
       toast.showToast(response.description, 'success');
       setIsEditModalOpen(false);
       setSelectedCode(null);
       const updatedData = await fetchCodeList(user.token);
-      console.log('Fetched code list after update:', updatedData);
+
       setAllCodes(updatedData || []);
       setFilterCodeName('');
       setCurrentPage(1);
@@ -559,18 +559,18 @@ export default function CodeList() {
 
   // Handle delete code
   const handleDeleteCode = async (id) => {
-    console.log('Attempting to delete code with id:', id);
+
     if (!user?.token) {
-      console.log('No user token available');
+
       return;
     }
     setLoading(true);
     try {
       const response = await deleteCode(user.token, id);
-      console.log('Delete code response:', response);
+
       toast.showToast('Thành công thay đổi trạng thái hoạt động', 'success');
       const updatedData = await fetchCodeList(user.token);
-      console.log('Fetched code list after delete:', updatedData);
+
       setAllCodes(updatedData || []);
       setFilterCodeName('');
       setCurrentPage(1);
@@ -589,7 +589,7 @@ export default function CodeList() {
 
   // Handle view detail
   const handleViewDetail = (code) => {
-    console.log('Viewing details for code:', code);
+
     setSelectedCode(code);
     setIsDetailModalOpen(true);
     setOpenActionMenu(null);
@@ -597,7 +597,7 @@ export default function CodeList() {
 
   // Handle open edit modal
   const handleOpenEditModal = (code) => {
-    console.log('Opening edit modal for code:', code);
+
     setSelectedCode(code);
     setIsEditModalOpen(true);
     setOpenActionMenu(null);

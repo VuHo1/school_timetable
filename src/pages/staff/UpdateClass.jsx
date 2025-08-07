@@ -331,18 +331,18 @@ function UpdateClass() {
 
       // If no available teachers/rooms, load all
       if (teachers.length === 0) {
-        console.log('No available teachers, loading all teachers...');
+
         teachers = await fetchAllTeachers(token, { limit: 100 });
       }
 
       if (rooms.length === 0) {
-        console.log('No available rooms, loading all rooms...');
+
         rooms = await fetchAllRooms(token, { limit: 100 });
       }
 
-      console.log('Available Teachers:', teachers);
-      console.log('Available Rooms:', rooms);
-      console.log('Class Data:', classData);
+
+
+
 
       setClassDetail(classData);
       setAvailableTeachers(teachers);
