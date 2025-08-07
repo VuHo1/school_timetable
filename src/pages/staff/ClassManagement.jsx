@@ -523,7 +523,7 @@ function ClassManagement() {
       <FilterSection>
         <SearchInput
           type="text"
-          placeholder="Tìm kiếm theo tên, email, số điện thoại..."
+          placeholder="Tìm kiếm theo mã lớp, khối, mã phòng..."
           value={searchTerm}
           onChange={handleSearch}
         />
