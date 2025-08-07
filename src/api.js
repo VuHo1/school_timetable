@@ -29,7 +29,7 @@ export const updateAvatar = async (token, file) => {
         throw new Error(errorData.description || 'Failed to update avatar');
     }
     const data = await response.json();
-    return data.data;
+    return data;
 };
 
 export const updateUserInfo = async (token, data) => {
@@ -1524,5 +1524,32 @@ export const markNotificationAsRead = async (token, notificationId) => {
     }
     const data = await response.json();
     console.log('[markNotificationAsRead] Response data:', data); // Debug: Log response data
+    return data;
+};
+
+export const fetchReport = async (token, current, option) => {
+    const response = await fetch(`${API_BASE_URL}/api/report?current=${current}&option=${option}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch report');
+    const data = await response.json();
+    return data;
+};
+
+
+export const fetchReportSemester = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/report/semester`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch semester');
+    const data = await response.json();
     return data;
 };

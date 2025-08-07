@@ -29,6 +29,7 @@ import UserRole from './pages/admin/UserRole'
 import { useMemo } from 'react';
 import Semesters from './pages/staff/Semesters';
 import ClassScheduleConfig from './pages/staff/ClassScheduleConfig';
+import ReportPage from './pages/staff/ReportPage';
 import { listenToForegroundMessage } from './firebase/init.jsx';
 
 function AppRoutes() {
@@ -71,6 +72,11 @@ function AppRoutes() {
           <Route path="/staff/schedule" element={
             <ProtectedRoute requiredAbility="Quản lí thời khóa biểu">
               <ViewSchedule />
+            </ProtectedRoute>
+          } />
+          <Route path="/staff/report" element={
+            <ProtectedRoute requiredAbility="Báo cáo thống kê">
+              <ReportPage />
             </ProtectedRoute>
           } />
           <Route path="/staff/my-schedule" element={

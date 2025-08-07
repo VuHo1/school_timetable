@@ -203,6 +203,7 @@ export function AuthProvider({ children }) {
 
     const value = {
         user,
+        setUser,
         role,
         loading,
         abilities,
