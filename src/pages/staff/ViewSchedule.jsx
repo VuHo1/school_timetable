@@ -1468,6 +1468,10 @@ export default function ViewSchedule() {
     const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState('Tất cả');
     const [configs, setConfigs] = useState([]);
+    const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
+    const [holidayDate, setHolidayDate] = useState(null);
+    const [makeupDate, setMakeupDate] = useState(null);
+    const [isMarkingHoliday, setIsMarkingHoliday] = useState(false);
 
     const token = user?.token;
 
@@ -2023,8 +2027,10 @@ export default function ViewSchedule() {
                             </NavButton>
                             {viewMode === 'Applied' && (
                                 <>
+                                    <ButtonAdd onClick={() => setIsHolidayDialogOpen(true)} disabled={isLoading}>
+                                        + Thêm ngày nghỉ
+                                    </ButtonAdd>
                                     <ButtonAdd onClick={() => {
-
                                         setIsApplyDialogOpen(true);
                                     }} disabled={isLoading}>
                                         + Thêm mới
@@ -2273,6 +2279,73 @@ export default function ViewSchedule() {
                                     </DialogButtonGroup>
                                 </Dialog>
                             </>
+                        )}
+                        {isHolidayDialogOpen && (
+                            <DialogOverlay onClick={() => setIsHolidayDialogOpen(false)} />
+                        )}
+                        {isHolidayDialogOpen && (
+                            <Dialog>
+                                <SubHeading>
+                                    + Thêm ngày nghỉ
+                                </SubHeading>
+                                <FormGroup1>
+                                    <Label>Ngày nghỉ <span style={{ color: 'red' }}>*</span></Label>
+                                    <DatePicker
+                                        selected={holidayDate}
+                                        onChange={date => setHolidayDate(date)}
+                                        dateFormat="dd/MM/yyyy"
+                                        placeholderText="Chọn ngày nghỉ"
+                                        customInput={<Input />}
+                                    />
+                                </FormGroup1>
+                                <FormGroup1>
+                                    <Label>Chọn ngày học bù</Label>
+                                    <DatePicker
+                                        selected={makeupDate}
+                                        onChange={date => setMakeupDate(date)}
+                                        dateFormat="dd/MM/yyyy"
+                                        placeholderText="Không bắt buộc"
+                                        customInput={<Input />}
+                                        isClearable
+                                    />
+                                </FormGroup1>
+                                <DialogButtonGroup>
+                                    <CancelButton onClick={() => setIsHolidayDialogOpen(false)} disabled={isMarkingHoliday}>
+                                        Hủy
+                                    </CancelButton>
+                                    <ButtonAdd
+                                        onClick={async () => {
+                                            if (!holidayDate) {
+                                                showToast('Vui lòng chọn ngày nghỉ', 'error');
+                                                return;
+                                            }
+                                            setIsMarkingHoliday(true);
+                                            try {
+                                                var resultData = await markAsHoliday(user.token, {
+                                                    holiday_date: formatDate(holidayDate),
+                                                    makeup_date: makeupDate ? formatDate(makeupDate) : null,
+                                                });
+                                                if (resultData.success) {
+                                                    showToast('Đã thêm ngày nghỉ thành công', 'success');
+                                                    setIsHolidayDialogOpen(false);
+                                                    setHolidayDate(null);
+                                                    setMakeupDate(null);
+                                                    fetchTimetableData('Applied', selectedCurrent);
+                                                } else {
+                                                    showToast(resultData.description, 'error');
+                                                }
+                                            } catch (err) {
+                                                showToast(err.message || 'Thêm ngày nghỉ thất bại', 'error');
+                                            } finally {
+                                                setIsMarkingHoliday(false);
+                                            }
+                                        }}
+                                        disabled={isMarkingHoliday}
+                                    >
+                                        Lưu
+                                    </ButtonAdd>
+                                </DialogButtonGroup>
+                            </Dialog>
                         )}
                     </>
                 )
