@@ -29,7 +29,7 @@ export const updateAvatar = async (token, file) => {
         throw new Error(errorData.description || 'Failed to update avatar');
     }
     const data = await response.json();
-    return data.data;
+    return data;
 };
 
 export const updateUserInfo = async (token, data) => {
@@ -1463,6 +1463,93 @@ export const deleteRoom = async (token, roomCode) => {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to delete room');
     }
+    const data = await response.json();
+    return data;
+};
+
+export const fetchNotifications = async (token) => {
+    console.log('[fetchNotifications] Token:', token); // Debug: Log token
+    const response = await fetch(`${API_BASE_URL}/api/noti`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    console.log('[fetchNotifications] Response status:', response.status); // Debug: Log response status
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[fetchNotifications] Error:', errorData); // Debug: Log error details
+        throw new Error(errorData.description || 'Failed to fetch notifications');
+    }
+    const data = await response.json();
+    console.log('[fetchNotifications] Response data:', data); // Debug: Log full response
+    return data.data_set || [];
+};
+
+export const markAllNotificationsAsRead = async (token) => {
+    console.log('[markAllNotificationsAsRead] Token:', token); // Debug: Log token
+    const response = await fetch(`${API_BASE_URL}/api/noti/mark-as-read/all`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    console.log('[markAllNotificationsAsRead] Response status:', response.status); // Debug: Log response status
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[markAllNotificationsAsRead] Error:', errorData); // Debug: Log error details
+        throw new Error(errorData.description || 'Failed to mark all notifications as read');
+    }
+    const data = await response.json();
+    console.log('[markAllNotificationsAsRead] Response data:', data); // Debug: Log response data
+    return data;
+};
+
+export const markNotificationAsRead = async (token, notificationId) => {
+    console.log('[markNotificationAsRead] Token:', token, 'Notification ID:', notificationId); // Debug: Log inputs
+    const response = await fetch(`${API_BASE_URL}/api/noti/mark-as-read/${notificationId}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    console.log('[markNotificationAsRead] Response status:', response.status); // Debug: Log response status
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[markNotificationAsRead] Error:', errorData); // Debug: Log error details
+        throw new Error(errorData.description || 'Failed to mark notification as read');
+    }
+    const data = await response.json();
+    console.log('[markNotificationAsRead] Response data:', data); // Debug: Log response data
+    return data;
+};
+
+export const fetchReport = async (token, current, option) => {
+    const response = await fetch(`${API_BASE_URL}/api/report?current=${current}&option=${option}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch report');
+    const data = await response.json();
+    return data;
+};
+
+
+export const fetchReportSemester = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/report/semester`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch semester');
     const data = await response.json();
     return data;
 };

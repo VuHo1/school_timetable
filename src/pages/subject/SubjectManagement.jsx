@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
@@ -8,10 +7,10 @@ import {
   updateSubject,
   deleteSubject,
   fetchGradeLevels,
-  fetchSubjectCodeList
+  fetchSubjectCodeList,
+  fetchTimeSlots
 } from '../../api';
 
-// Styled Components
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -200,7 +199,6 @@ const PaginationButton = styled.button.withConfig({
   }
 `;
 
-// Modal Styles
 const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -413,11 +411,63 @@ const DetailItem = styled.div`
     font-weight: 600;
     color: #2c3e50;
     min-width: 150px;
+    
   }
   
   .value {
     color: #666;
     flex: 1;
+  }
+`;
+
+const SlotConfigButton = styled.button`
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+  }
+`;
+
+const EditableTableCell = styled.td.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isSelected' && prop !== 'isEditing' && prop !== 'slotType',
+})`
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+  color: #2c3e50;
+  text-align: center;
+  font-weight: 500;
+  cursor: ${props => props.isEditing ? 'pointer' : 'default'};
+  background: ${props => {
+    if (props.slotType === 'fixed') {
+      return '#d3d3d3';
+    }
+    if (props.slotType === 'avoid') {
+      return '#ffc7ce';
+    }
+    return '#c6efce';
+  }};
+  color: ${props => {
+    if (props.slotType === 'fixed') {
+      return '#000';
+    }
+    if (props.slotType === 'avoid') {
+      return '#9c0006';
+    }
+    return '#006100';
+  }};
+  
+  &:hover {
+    opacity: ${props => props.isEditing ? '0.8' : '1'};
   }
 `;
 
@@ -433,8 +483,13 @@ function SubjectManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showSlotModal, setShowSlotModal] = useState(false);
+  const [showDetailSlotModal, setShowDetailSlotModal] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [openActionMenu, setOpenActionMenu] = useState(null);
+  const [slotModalData, setSlotModalData] = useState({ fixed_slot: [], avoid_slot: [] });
+  const [slotSelectionMode, setSlotSelectionMode] = useState('fixed');
+  const [timeSlots, setTimeSlots] = useState([]);
   const actionMenuRef = useRef(null);
   const [formData, setFormData] = useState({
     subject_code: '',
@@ -479,7 +534,6 @@ function SubjectManagement() {
     }
   };
 
-  // Fetch master data
   const fetchMasterData = async () => {
     try {
       const token = localStorage.getItem('authToken');
@@ -487,23 +541,30 @@ function SubjectManagement() {
       setGradeLevels(grades || []);
       const subjectCodeList = await fetchSubjectCodeList(token);
       setSubjectCodes(subjectCodeList || []);
+      const timeSlotsData = await fetchTimeSlots(token);
+      setTimeSlots(timeSlotsData || []);
     } catch (error) {
       toast.error(error.message);
     }
   };
 
-  // Handle create subject
   const handleCreate = async () => {
     try {
       setModalLoading(true);
+      const token = localStorage.getItem('authToken');
+      const response = await createSubject(token, formData);
       if (!formData.subject_code || formData.grade_level.length === 0) {
-        toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+        toast.error('Vui lòng điền đầy đủ thông tin');
         return;
       }
-      const token = localStorage.getItem('authToken');
-      await createSubject(token, formData);
-      toast.success('Tạo môn học thành công!');
+      if (response.success) {
+        toast.success(response.description);
+        fetchSubjects();
+      } else {
+        toast.error(response.description);
+      }
       setShowCreateModal(false);
+      setShowSlotModal(false);
       resetForm();
       fetchSubjects();
     } catch (error) {
@@ -514,7 +575,6 @@ function SubjectManagement() {
     }
   };
 
-  // Handle update subject
   const handleUpdate = async () => {
     try {
       setModalLoading(true);
@@ -529,9 +589,15 @@ function SubjectManagement() {
         avoid_slot: formData.avoid_slot,
         also_update_for_class_subject: 'A'
       };
-      await updateSubject(token, updateData);
-      toast.success('Cập nhật môn học thành công!');
+      const response = await updateSubject(token, updateData);
+      if (response.success) {
+        toast.success(response.description);
+        fetchSubjects();
+      } else {
+        toast.error(response.description);
+      }
       setShowEditModal(false);
+      setShowSlotModal(false);
       resetForm();
       fetchSubjects();
     } catch (error) {
@@ -542,30 +608,31 @@ function SubjectManagement() {
     }
   };
 
-  // Handle delete subject
   const handleDelete = async (subjectCode) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa môn học này?')) {
-      return;
-    }
     try {
       const token = localStorage.getItem('authToken');
-      await deleteSubject(token, subjectCode);
-      toast.success('Xóa môn học thành công');
-      fetchSubjects();
+      const response = await deleteSubject(token, subjectCode);
+
+      if (response.success) {
+        toast.success(response.description || 'Xóa thành công!');
+        fetchSubjects();
+      } else {
+        toast.error(response.description || 'Xóa thất bại!');
+      }
+
     } catch (error) {
       console.error('Error deleting subject:', error);
-      toast.error('Có lỗi khi xóa môn học: ' + error.message);
+      toast.error('Có lỗi khi xóa môn học: ' + (error.message || 'Không rõ lỗi'));
     }
   };
 
-  // Handle view details
+
   const handleViewDetails = (subject) => {
     setSelectedSubject(subject);
     setShowDetailModal(true);
     setOpenActionMenu(null);
   };
 
-  // Handle edit click
   const handleEdit = (subject) => {
     setSelectedSubject(subject);
     setFormData({
@@ -582,7 +649,6 @@ function SubjectManagement() {
     setOpenActionMenu(null);
   };
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       subject_code: '',
@@ -595,17 +661,16 @@ function SubjectManagement() {
       avoid_slot: []
     });
     setSelectedSubject(null);
+    setSlotModalData({ fixed_slot: [], avoid_slot: [] });
   };
 
-  // Handle form input changes
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
-
-  // Handle grade level selection
   const handleGradeLevelChange = (gradeId, isChecked) => {
     if (isChecked) {
       setFormData(prev => ({
@@ -620,13 +685,11 @@ function SubjectManagement() {
     }
   };
 
-  // Handle search
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
   };
 
-  // Handle filter changes
   const handleFilterChange = (type, value) => {
     if (type === 'grade') {
       setGradeFilter(value);
@@ -636,12 +699,68 @@ function SubjectManagement() {
     setCurrentPage(1);
   };
 
-  // Fetch data when dependencies change
+  const openSlotModal = () => {
+    setSlotModalData({
+      fixed_slot: formData.fixed_slot || [],
+      avoid_slot: formData.avoid_slot || []
+    });
+    setShowSlotModal(true);
+  };
+
+  const handleSlotToggle = (dayKey, slotId) => {
+    const dayMap = {
+      'monday': 'Monday',
+      'tuesday': 'Tuesday',
+      'wednesday': 'Wednesday',
+      'thursday': 'Thursday',
+      'friday': 'Friday',
+      'saturday': 'Saturday',
+      'sunday': 'Sunday'
+    };
+
+    const dayOfWeek = dayMap[dayKey];
+
+    setSlotModalData(prev => {
+      const newData = { ...prev };
+
+      const existsInFixed = newData.fixed_slot.some(s => s.time_slot_id === slotId && s.day_of_week === dayOfWeek);
+      const existsInAvoid = newData.avoid_slot.some(s => s.time_slot_id === slotId && s.day_of_week === dayOfWeek);
+
+      if (slotSelectionMode === 'fixed') {
+        if (existsInFixed) {
+          newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+        } else {
+          newData.fixed_slot = [...newData.fixed_slot, { time_slot_id: slotId, day_of_week: dayOfWeek }];
+          newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+        }
+      } else {
+        if (existsInAvoid) {
+          newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+        } else {
+          newData.avoid_slot = [...newData.avoid_slot, { time_slot_id: slotId, day_of_week: dayOfWeek }];
+          newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+        }
+      }
+
+      return newData;
+    });
+  };
+
+  const handleSlotModalSave = () => {
+    setFormData(prev => ({
+      ...prev,
+      fixed_slot: slotModalData.fixed_slot,
+      avoid_slot: slotModalData.avoid_slot
+    }));
+    setShowSlotModal(false);
+  };
+
+
   useEffect(() => {
     fetchSubjects();
   }, [currentPage, searchTerm, gradeFilter, statusFilter]);
 
-  // Fetch master data on mount
+
   useEffect(() => {
     fetchMasterData();
   }, []);
@@ -660,15 +779,75 @@ function SubjectManagement() {
     setOpenActionMenu(openActionMenu === subject_code ? null : subject_code);
   };
 
-  // Create/Edit Modal Component
+  function SubjectSlotTable({ config, timeSlots, isEditing, onToggleSlot, slotSelectionMode }) {
+    const days = [
+      'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'
+    ];
+    const dayKeys = [
+      'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+    ];
+    const slots = timeSlots;
+    const safeConfig = config && Object.keys(config).length > 0
+      ? config
+      : dayKeys.reduce((acc, key) => { acc[key] = []; return acc; }, {});
+
+    const getSlotType = (dayKey, slotId) => {
+      const slotArr = Array.isArray(safeConfig[dayKey]) ? safeConfig[dayKey] : [];
+      const slot = slotArr.find(s => s.id === slotId);
+      return slot ? slot.type : null;
+    };
+
+    const getSlotText = (dayKey, slotId) => {
+      const slotType = getSlotType(dayKey, slotId);
+      if (slotType === 'fixed') return 'Cố định';
+      if (slotType === 'avoid') return 'Tránh';
+      return 'Trống';
+    };
+
+    return (
+      <TableContainer>
+        <Table>
+          <thead>
+            <tr>
+              <TableHeaderCell>Tiết</TableHeaderCell>
+              {days.map(day => (
+                <TableHeaderCell key={day}>{day}</TableHeaderCell>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {slots.map((slot, i) => (
+              <TableRow key={slot.id || i}>
+                <TableCell>
+                  <b>Tiết {slot.id}</b>
+                </TableCell>
+                {dayKeys.map((dayKey, d) => {
+                  const slotType = getSlotType(dayKey, slot.id);
+                  return (
+                    <EditableTableCell
+                      key={d}
+                      isSelected={!!slotType}
+                      isEditing={isEditing}
+                      slotType={slotType}
+                      onClick={() => isEditing && onToggleSlot(dayKey, slot.id)}
+                    >
+                      {getSlotText(dayKey, slot.id)}
+                    </EditableTableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </tbody>
+        </Table>
+      </TableContainer>
+    );
+  }
+
   const SubjectModal = ({ isEdit = false }) => (
     <ModalOverlay onClick={(e) => e.target === e.currentTarget && (isEdit ? setShowEditModal(false) : setShowCreateModal(false))}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>{isEdit ? 'Chỉnh sửa môn học' : 'Thêm môn học mới'}</ModalTitle>
-          <CloseButton onClick={() => isEdit ? setShowEditModal(false) : setShowCreateModal(false)}>
-            ×
-          </CloseButton>
         </ModalHeader>
         <ModalBody>
           <FormGrid>
@@ -711,7 +890,6 @@ function SubjectManagement() {
               <Input
                 type="number"
                 min="1"
-                max="10"
                 value={formData.weekly_slot}
                 onChange={(e) => handleInputChange('weekly_slot', parseInt(e.target.value) || 1)}
                 required
@@ -722,14 +900,13 @@ function SubjectManagement() {
               <Input
                 type="number"
                 min="1"
-                max="5"
                 value={formData.continuous_slot}
                 onChange={(e) => handleInputChange('continuous_slot', parseInt(e.target.value) || 1)}
                 required
               />
             </FormGroup>
             <FormGroup>
-              <Label>Giới hạn cùng thời điểm</Label>
+              <Label>Giới hạn môn cùng thời điểm</Label>
               <Input
                 type="number"
                 min="0"
@@ -738,10 +915,16 @@ function SubjectManagement() {
                 placeholder="0 = không giới hạn"
               />
             </FormGroup>
+            <FormGroup>
+              <Label>Tiết cố định/Tránh</Label>
+              <SlotConfigButton onClick={openSlotModal}>
+                {formData.fixed_slot.length} cố định / {formData.avoid_slot.length} tránh
+              </SlotConfigButton>
+            </FormGroup>
           </FormGrid>
           {!isEdit && (
             <FormGroup>
-              <Label>Khối học *</Label>
+              <Label>Khối *</Label>
               <CheckboxGroup>
                 {gradeLevels.map(grade => (
                   <CheckboxItem key={grade.code_id}>
@@ -759,7 +942,10 @@ function SubjectManagement() {
         </ModalBody>
         <ModalActions>
           <ActionButton
-            onClick={() => isEdit ? setShowEditModal(false) : setShowCreateModal(false)}
+            onClick={() => {
+              isEdit ? setShowEditModal(false) : setShowCreateModal(false);
+              setShowSlotModal(false);
+            }}
           >
             Hủy
           </ActionButton>
@@ -771,17 +957,101 @@ function SubjectManagement() {
             {modalLoading ? '⏳ Đang lưu...' : (isEdit ? 'Xác nhận' : 'Lưu thông tin')}
           </ActionButton>
         </ModalActions>
+        {showSlotModal && (
+          <ModalOverlay>
+            <ModalContent style={{ maxWidth: '1000px', width: '95%' }}>
+              <ModalHeader>
+                <ModalTitle>Cấu hình tiết học</ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <div style={{ marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                    <div
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        background: slotSelectionMode === 'fixed' ? '#000' : '#f1f5f9',
+                        color: slotSelectionMode === 'fixed' ? '#fff' : '#64748b',
+                        border: '1px solid #e2e8f0'
+                      }}
+                      onClick={() => setSlotSelectionMode('fixed')}
+                    >
+                      Tiết cố định ({slotModalData.fixed_slot.length})
+                    </div>
+                    <div
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        background: slotSelectionMode === 'avoid' ? '#f59e0b' : '#f1f5f9',
+                        color: slotSelectionMode === 'avoid' ? '#fff' : '#64748b',
+                        border: '1px solid #e2e8f0'
+                      }}
+                      onClick={() => setSlotSelectionMode('avoid')}
+                    >
+                      Tiết cần tránh ({slotModalData.avoid_slot.length})
+                    </div>
+                  </div>
+                </div>
+                <SubjectSlotTable
+                  config={{
+                    monday: [
+                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    tuesday: [
+                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    wednesday: [
+                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    thursday: [
+                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    friday: [
+                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    saturday: [
+                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    sunday: [
+                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ]
+                  }}
+                  timeSlots={timeSlots}
+                  isEditing={true}
+                  onToggleSlot={handleSlotToggle}
+                  slotSelectionMode={slotSelectionMode}
+                />
+              </ModalBody>
+              <ModalActions>
+                <ActionButton onClick={() => setShowSlotModal(false)}>
+                  Hủy
+                </ActionButton>
+                <ActionButton variant="primary" onClick={handleSlotModalSave}>
+                  Xác nhận
+                </ActionButton>
+              </ModalActions>
+            </ModalContent>
+          </ModalOverlay>
+        )}
       </ModalContent>
     </ModalOverlay>
   );
 
-  // Detail Modal Component
+
   const DetailModal = ({ subject }) => (
     <ModalOverlay>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>Chi tiết môn học</ModalTitle>
-          <CloseButton onClick={() => setShowDetailModal(false)}>×</CloseButton>
         </ModalHeader>
         <ModalBody>
           <DetailItem>
@@ -805,12 +1075,20 @@ function SubjectManagement() {
             <span className="value">{subject.continuous_slot}</span>
           </DetailItem>
           <DetailItem>
-            <span className="label">Phương thức :</span>
+            <span className="label">Phương thức:</span>
             <span className="value">{subject.is_online_course ? 'Online' : 'Offline'}</span>
           </DetailItem>
           <DetailItem>
             <span className="label">Giới hạn:</span>
             <span className="value">{subject.limit || 'Không giới hạn'}</span>
+          </DetailItem>
+          <DetailItem>
+            <span className="label">Tiết cố định/Tránh:</span>
+            <span className="value">
+              <SlotConfigButton onClick={() => setShowDetailSlotModal(true)}>
+                {subject.fixed_slot.length} cố định / {subject.avoid_slot.length} tránh
+              </SlotConfigButton>
+            </span>
           </DetailItem>
           <DetailItem>
             <span className="label">Trạng thái:</span>
@@ -820,8 +1098,61 @@ function SubjectManagement() {
           </DetailItem>
         </ModalBody>
         <ModalActions>
-          <ActionButton onClick={() => setShowDetailModal(false)}>Đóng</ActionButton>
+          <ActionButton onClick={() => {
+            setShowDetailModal(false);
+            setShowDetailSlotModal(false);
+          }}>Đóng</ActionButton>
         </ModalActions>
+        {showDetailSlotModal && (
+          <ModalOverlay>
+            <ModalContent>
+              <ModalHeader>
+                <ModalTitle>Chi tiết tiết học</ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <SubjectSlotTable
+                  config={{
+                    monday: [
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    tuesday: [
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    wednesday: [
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    thursday: [
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    friday: [
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    saturday: [
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ],
+                    sunday: [
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ]
+                  }}
+                  timeSlots={timeSlots}
+                  isEditing={false}
+                />
+              </ModalBody>
+              <ModalActions>
+                <ActionButton onClick={() => setShowDetailSlotModal(false)}>
+                  Đóng
+                </ActionButton>
+              </ModalActions>
+            </ModalContent>
+          </ModalOverlay>
+        )}
       </ModalContent>
     </ModalOverlay>
   );
@@ -861,7 +1192,7 @@ function SubjectManagement() {
         >
           <option value="">Tất cả trạng thái</option>
           <option value="Đang hoạt động">Đang hoạt động</option>
-          <option value="Dừng hoạt động">Dừng hoạt động</option>
+          <option value="Ngưng hoạt động">Ngưng hoạt động</option>
         </Select>
       </FilterSection>
       <TableContainer>

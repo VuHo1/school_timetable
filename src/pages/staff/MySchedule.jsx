@@ -450,7 +450,8 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                                                     onClick={() => setModalEntries([entry])}
                                                     style={{ cursor: 'pointer' }}
                                                 >
-                                                    <p>{entry.class_code}-{entry.subject_code} ({entry.teacher_user_name})</p>
+                                                    <p>{entry.class_code}-{entry.subject_code}</p>
+                                                    <p>P.{entry.room_code}</p>
                                                     <p><StatusBadge status={entry.status}>{entry.status || 'N/A'}</StatusBadge></p>
                                                 </Entry>
                                             ))}

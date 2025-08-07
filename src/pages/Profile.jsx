@@ -75,7 +75,19 @@ const Input = styled.input`
   border-radius: 4px;
   box-sizing: border-box;
   padding-right: 30px; /* Space for the eye icon */
+
+  /* Ẩn icon con mắt mặc định */
+  &::-ms-reveal,
+  &::-ms-clear {
+    display: none;
+  }
+
+  &::-webkit-credentials-auto-fill-button {
+    display: none !important;
+    visibility: hidden;
+  }
 `;
+
 
 const EyeIcon = styled.span`
   position: absolute;
@@ -105,25 +117,42 @@ const ButtonContainer = styled.div`
 
 const EditButton = styled.button`
   padding: 8px 16px;
-  background-color: #1E90FF;
+  background-color: #3b82f6;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   margin-right: 10px;
+  font-size: 14px;
+  font-weight: 500;
   &:hover {
     background-color: #0056b3;
   }
 `;
-
 const ForgotButton = styled.button`
   padding: 8px 16px;
   background-color: white;
   color: black;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   margin-right: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  &:hover {
+    background-color: #d1d5d9;
+  }
+`;
+const CancelButton = styled.button`
+  padding: 8px 16px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-right: 10px;
+  font-size: 14px;
+  font-weight: 500;
   &:hover {
     background-color: #d1d5d9;
   }
@@ -188,11 +217,13 @@ function Profile() {
             try {
                 const token = localStorage.getItem('authToken');
                 const response = await updateAvatar(token, file);
-                const updatedUser = await fetchUserProfile(token);
-                if (setUser && updatedUser) {
+                if (response.success) {
+
+                    toast.showToast('Cập nhật avatar thành công!', 'success');
+                    const updatedUser = await fetchUserProfile(token);
                     setUser(prevUser => ({ ...prevUser, ...updatedUser }));
                 } else {
-                    toast.showToast('Cập nhật avatar thành công!', 'success', 2000);
+                    toast.showToast(response.description, 'error');
                 }
             } catch (error) {
                 console.error('Avatar upload error:', error);
@@ -204,34 +235,20 @@ function Profile() {
     const handleUpdateInfo = async (e) => {
         e.preventDefault();
         const currentDate = new Date();
-        const inputDate = new Date(dob);
-        const phoneRegex = /^0\d{9}$/;
-        if (!phoneRegex.test(phone)) {
-            toast.showToast('Số điện thoại không hợp lệ', 'error');
-            return;
-        }
-        if (inputDate > currentDate) {
-            toast.showToast('Ngày sinh không được là ngày tương lai.', 'error');
-            return;
-        }
         const updateData = {
             full_name: fullName,
             phone,
             gender,
-            dob: new Date(dob).toISOString()
+            dob: dob ? new Date(dob).toISOString() : currentDate
         };
         try {
             const token = localStorage.getItem('authToken');
             const data = await updateUserInfo(token, updateData);
             if (!data.success) throw new Error(data.description || 'Update failed');
             const updatedUser = await fetchUserProfile(token);
-            if (setUser && updatedUser) {
-                setUser(prevUser => ({ ...prevUser, ...updatedUser }));
-            } else {
-                setTimeout(() => window.location.reload(), 2000);
-            }
-            setIsEditProfile(false);
+            setUser(prevUser => ({ ...prevUser, ...updatedUser }));
             toast.showToast('Cập nhật thông tin thành công!', 'success');
+            setIsEditProfile(false);
         } catch (error) {
             console.error('Update info error:', error);
             toast.showToast(error.message || 'Cập nhật thông tin thất bại', 'error');
@@ -297,6 +314,7 @@ function Profile() {
                                 <Label>Tình trạng:</Label> {user.status || 'N/A'}
                             </InfoItem>
                             <ButtonContainer>
+                                <ForgotButton onClick={() => setIsChangePassword(true)}>Đổi mật khẩu</ForgotButton>
                                 <EditButton onClick={() => {
                                     if (isGenderOptionsReady) {
                                         setFullName(user.full_name || '');
@@ -306,7 +324,6 @@ function Profile() {
                                         setIsEditProfile(true);
                                     }
                                 }}>Sửa hồ sơ</EditButton>
-                                <ForgotButton onClick={() => setIsChangePassword(true)}>Đổi mật khẩu</ForgotButton>
                             </ButtonContainer>
                         </>
                     )}
@@ -339,8 +356,8 @@ function Profile() {
                                 <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
                             </InfoItem>
                             <ButtonContainer>
-                                <EditButton type="submit">Lưu</EditButton>
-                                <ForgotButton onClick={() => setIsEditProfile(false)}>Hủy</ForgotButton>
+                                <CancelButton onClick={() => setIsEditProfile(false)}>Hủy</CancelButton>
+                                <EditButton type="submit">Xác nhận</EditButton>
                             </ButtonContainer>
                         </form>
                     )}
@@ -386,8 +403,8 @@ function Profile() {
                                 </PasswordInputWrapper>
                             </InfoItem>
                             <ButtonContainer>
-                                <EditButton type="submit">Thay đổi</EditButton>
-                                <ForgotButton onClick={() => setIsChangePassword(false)}>Hủy</ForgotButton>
+                                <CancelButton onClick={() => setIsChangePassword(false)}>Hủy</CancelButton>
+                                <EditButton type="submit">Xác nhận</EditButton>
                             </ButtonContainer>
                         </form>
                     )}

@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import styled from 'styled-components';
-import { FaPlus, FaTrash, FaCalendarAlt, FaTimes, FaCheck } from 'react-icons/fa';
-// Page mappings based on abilities (excluding items in avatar dropdown)
+import { FaBell, FaTimes, FaCheck, FaList } from 'react-icons/fa';
+import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../../api';
+
+// Page mappings based on abilities
 const PAGE_MAPPINGS = {
   'Cấu hình hệ thống': '/admin/setting',
   'Danh mục dùng chung': '/admin/code_list',
@@ -20,7 +22,8 @@ const PAGE_MAPPINGS = {
   'Quản lí tiết học': '/timeslot',
   'Quản lí thời khóa biểu': '/staff/schedule',
   'Thời khóa biểu': '/staff/my-schedule',
-  'Quản lí học kỳ': '/staff/semesters'
+  'Quản lí học kỳ': '/staff/semesters',
+  'Báo cáo thống kê': '/staff/report',
 };
 
 const Container = styled.div`
@@ -44,7 +47,6 @@ const Header = styled.header`
   right: 0;
   z-index: 1000;
 `;
-
 
 const LeftSection = styled.div`
   display: flex;
@@ -145,12 +147,225 @@ const LogoSub = styled.div`
   letter-spacing: 1px;
 `;
 
-
 const RightSection = styled.div`
   display: flex;
   align-items: center;
   gap: 15px;
   justify-self: end;
+`;
+
+const NotificationButton = styled.button`
+  position: relative;
+  background: none;
+  border: none;
+  color: white;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  width: 40px;
+  height: 40px;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const NotificationCount = styled.span`
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  background: #5aa7ff;
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const NotificationDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 350px;
+  max-height: 400px;
+  z-index: 1001;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+`;
+
+const NotificationList = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+`;
+
+const NotificationItem = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isRead',
+})`
+  position: relative;
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f0f0f0;
+  
+  &:hover {
+    background: #f8f9fa;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const NotificationContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  font-weight: ${props => props.isRead ? 'normal' : 'bold'};
+`;
+
+const NotificationTitle = styled.div`
+  font-size: 14px;
+  color: #2c3e50;
+  margin-bottom: 7px;
+`;
+
+const NotificationBody = styled.div`
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 5px;
+`;
+
+const NotificationDate = styled.div`
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: right;
+`;
+
+const UnreadDot = styled.span`
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: #5AA7FF;
+  border-radius: 50%;
+`;
+
+const ActionButtonContainer = styled.div`
+  display: flex;
+  justify-content: space-around;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  z-index: 1;
+`;
+
+const ActionButton = styled.p`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+`;
+
+const MarkAllReadButton = styled(ActionButton)`
+  background: white;
+  color: #2ecc71;
+  
+  &:hover {
+    background: #e8e8e8;
+  }
+`;
+
+const ViewAllButton = styled(ActionButton)`
+  background: white;
+  color: #3498db;
+  
+  &:hover {
+    background: #e8e8e8;
+  }
+`;
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  position: relative;
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #6b7280;
+`;
+
+const ModalTitle = styled.h2`
+  font-size: 20px;
+  color: #2c3e50;
+  margin-bottom: 20px;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+`;
+
+const Label = styled.label`
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+  width: 120px;
+  flex-shrink: 0;
+`;
+
+const Value = styled.div`
+  font-size: 14px;
+  color: #6b7280;
+  flex: 1;
 `;
 
 const AvatarDropdownContainer = styled.div`
@@ -233,7 +448,7 @@ const AvatarMenuItem = styled.div`
 
 const Content = styled.main`
   min-height: calc(100vh - 70px);
-  padding-top: 0px; 
+  padding-top: 0px;
 `;
 
 const Overlay = styled.div.withConfig({
@@ -257,25 +472,62 @@ function ModernHeader() {
   const [currentAbilities, setCurrentAbilities] = useState([]);
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [showAvatarDropdown, setShowAvatarDropdown] = useState(false);
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
   const menuDropdownRef = useRef(null);
   const avatarDropdownRef = useRef(null);
+  const notificationDropdownRef = useRef(null);
 
-  // Update currentAbilities when abilities change (filter out avatar dropdown items)
+  // Fetch notifications
+  const fetchNotificationsData = async () => {
+    const token = user?.token;
+    if (token) {
+      console.log('[ModernHeader] Fetching notifications with token:', token);
+      try {
+        const data = await fetchNotifications(token);
+        console.log('[ModernHeader] Notifications received:', data);
+        setNotifications(data);
+      } catch (error) {
+        console.error('[ModernHeader] Error fetching notifications:', error);
+      }
+    } else {
+      console.warn('[ModernHeader] No token available for fetching notifications');
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchNotificationsData();
+  }, [user?.token]);
+
+  // Listen for notification marked as read event
+  useEffect(() => {
+    const handleNotificationUpdate = () => {
+      console.log('[ModernHeader] Received notificationMarkedAsRead event');
+      fetchNotificationsData();
+    };
+
+    window.addEventListener('notificationMarkedAsRead', handleNotificationUpdate);
+    return () => window.removeEventListener('notificationMarkedAsRead', handleNotificationUpdate);
+  }, [user?.token]);
+
+  // Update currentAbilities when abilities change
   useEffect(() => {
     const storedAbilities = localStorage.getItem('abilities');
-
     let abilitiesToProcess = [];
 
     if (storedAbilities) {
       try {
         const parsedAbilities = JSON.parse(storedAbilities);
+        console.log('[ModernHeader] Parsed abilities from localStorage:', parsedAbilities);
         if (Array.isArray(parsedAbilities) && parsedAbilities.length > 0) {
           abilitiesToProcess = parsedAbilities;
         }
       } catch (error) {
-        console.error('Error parsing abilities from localStorage:', error);
+        console.error('[ModernHeader] Error parsing abilities from localStorage:', error);
       }
     }
 
@@ -283,15 +535,14 @@ function ModernHeader() {
       abilitiesToProcess = abilities;
     }
 
-    // Filter out abilities that are available in avatar dropdown
     const filteredAbilities = abilitiesToProcess.filter(ability =>
       ability !== 'Cá nhân' && ability !== 'Thông báo' && ability !== 'Quản lí học kỳ' && ability !== 'Điểm danh' && ability !== 'Danh mục dùng chung'
     );
-
+    console.log('[ModernHeader] Filtered abilities:', filteredAbilities);
     setCurrentAbilities(filteredAbilities);
   }, [abilities]);
 
-  // Handle clicks outside dropdowns
+  // Handle clicks outside dropdowns and modal
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuDropdownRef.current && !menuDropdownRef.current.contains(event.target)) {
@@ -300,13 +551,20 @@ function ModernHeader() {
       if (avatarDropdownRef.current && !avatarDropdownRef.current.contains(event.target)) {
         setShowAvatarDropdown(false);
       }
+      if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(event.target)) {
+        setShowNotificationDropdown(false);
+      }
+      if (selectedNotification && !event.target.closest('.modal-content')) {
+        setSelectedNotification(null);
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [selectedNotification]);
 
   const handleLogout = async () => {
+    console.log('[ModernHeader] Logging out user:', user?.user_name);
     await logout();
     navigate('/login');
   };
@@ -314,9 +572,48 @@ function ModernHeader() {
   const handleMenuClick = (ability) => {
     const path = PAGE_MAPPINGS[ability];
     if (path) {
+      console.log('[ModernHeader] Navigating to:', path);
       navigate(path);
       setShowMenuDropdown(false);
     }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    console.log('[ModernHeader] Notification clicked:', notification);
+    if (!notification.is_read) {
+      try {
+        await markNotificationAsRead(user?.token, notification.id);
+        setNotifications(prev => prev.map(n =>
+          n.id === notification.id ? { ...n, is_read: true } : n
+        ));
+        console.log('[ModernHeader] Notification marked as read:', notification.id);
+      } catch (error) {
+        console.error('[ModernHeader] Error marking notification as read:', error);
+      }
+    }
+    setSelectedNotification(notification);
+    setShowNotificationDropdown(false);
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead(user?.token);
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      console.log('[ModernHeader] All notifications marked as read');
+    } catch (error) {
+      console.error('[ModernHeader] Error marking all notifications as read:', error);
+    }
+  };
+
+  const handleViewAll = () => {
+    console.log('[ModernHeader] Navigating to /notification');
+    navigate('/notification');
+    setShowNotificationDropdown(false);
+  };
+
+  const handleCloseModal = () => {
+    console.log('[ModernHeader] Closing notification modal');
+    setSelectedNotification(null);
   };
 
   const getMenuIcon = (ability) => {
@@ -337,15 +634,19 @@ function ModernHeader() {
       'Thời khóa biểu': '📅',
       'Quản lí thời khóa biểu': '📅',
       'Quản lí học kỳ': '📆',
+      'Báo cáo thống kê': '📊',
     };
     return iconMap[ability] || '📄';
   };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+  console.log('[ModernHeader] Unread notification count:', unreadCount);
+  console.log('[ModernHeader] Notifications state:', notifications);
 
   return (
     <Container>
       <Header>
         <LeftSection>
-          {/* Menu Dropdown */}
           <MenuDropdownContainer ref={menuDropdownRef}>
             <MenuButton
               onClick={() => setShowMenuDropdown(!showMenuDropdown)}
@@ -375,17 +676,63 @@ function ModernHeader() {
             )}
           </MenuDropdownContainer>
 
-          {/* Logo */}
           <Logo onClick={() => navigate('/dashboard')} style={{ cursor: 'pointer' }}>
             <LogoMain>TKB</LogoMain>
             <LogoSub>THỜI KHÓA BIỂU</LogoSub>
           </Logo>
         </LeftSection>
 
-        {/* Search Section */}
-
-        {/* Avatar Dropdown */}
         <RightSection>
+          <MenuDropdownContainer ref={notificationDropdownRef}>
+            <NotificationButton
+              onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
+            >
+              <FaBell />
+              {unreadCount > 0 && (
+                <NotificationCount>{unreadCount}</NotificationCount>
+              )}
+            </NotificationButton>
+
+            {showNotificationDropdown && (
+              <NotificationDropdown>
+                <NotificationList>
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <NotificationItem
+                        key={notification.id}
+                        isRead={notification.is_read}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <NotificationContent isRead={notification.is_read}>
+                          <NotificationTitle>{notification.title}</NotificationTitle>
+                          <NotificationBody>{notification.body}</NotificationBody>
+                          <NotificationDate>
+                            {new Date(notification.created_date).toLocaleString('vi-VN')}
+                          </NotificationDate>
+                        </NotificationContent>
+                        {!notification.is_read && <UnreadDot />}
+                      </NotificationItem>
+                    ))
+                  ) : (
+                    <NotificationItem isRead={true}>
+                      <NotificationTitle>Không có thông báo</NotificationTitle>
+                    </NotificationItem>
+                  )}
+                </NotificationList>
+                {notifications.length > 0 && (
+                  <ActionButtonContainer>
+                    <ViewAllButton onClick={handleViewAll}>
+                      <FaList /> Xem tất cả
+                    </ViewAllButton>
+                    <MarkAllReadButton onClick={handleMarkAllAsRead}>
+                      <FaCheck /> Đánh dấu đã đọc tất cả
+                    </MarkAllReadButton>
+                  </ActionButtonContainer>
+                )}
+              </NotificationDropdown>
+            )}
+          </MenuDropdownContainer>
+
           <AvatarDropdownContainer ref={avatarDropdownRef}>
             <AvatarButton onClick={() => setShowAvatarDropdown(!showAvatarDropdown)}>
               {user?.avatar && !avatarError ? (
@@ -411,14 +758,6 @@ function ModernHeader() {
                   <span>Tài khoản</span>
                 </AvatarMenuItem>
 
-                <AvatarMenuItem onClick={() => {
-                  navigate('/notification');
-                  setShowAvatarDropdown(false);
-                }}>
-                  <span>🔔</span>
-                  <span>Thông báo</span>
-                </AvatarMenuItem>
-
                 <AvatarMenuItem
                   className="logout"
                   onClick={handleLogout}
@@ -433,12 +772,37 @@ function ModernHeader() {
       </Header>
 
       <Overlay
-        show={showMenuDropdown || showAvatarDropdown}
+        show={showMenuDropdown || showAvatarDropdown || showNotificationDropdown || selectedNotification}
         onClick={() => {
           setShowMenuDropdown(false);
           setShowAvatarDropdown(false);
+          setShowNotificationDropdown(false);
+          setSelectedNotification(null);
         }}
       />
+
+      {selectedNotification && (
+        <Modal>
+          <ModalContent className="modal-content">
+            <CloseButton onClick={handleCloseModal}>
+              <FaTimes />
+            </CloseButton>
+            <ModalTitle>Thông báo</ModalTitle>
+            <FormGroup>
+              <Label>Tiêu đề:</Label>
+              <Value>{selectedNotification.title}</Value>
+            </FormGroup>
+            <FormGroup>
+              <Label>Nội dung:</Label>
+              <Value>{selectedNotification.body}</Value>
+            </FormGroup>
+            <FormGroup>
+              <Label>Ngày tạo:</Label>
+              <Value>{new Date(selectedNotification.created_date).toLocaleString('vi-VN')}</Value>
+            </FormGroup>
+          </ModalContent>
+        </Modal>
+      )}
 
       <Content>
         <Outlet />
@@ -447,4 +811,4 @@ function ModernHeader() {
   );
 }
 
-export default ModernHeader; 
+export default ModernHeader;
