@@ -192,7 +192,7 @@ function ClassScheduleConfig() {
 
             }
 
-            console.log('📦 [SENDING PAYLOAD]', payload);
+
 
             const res = await addClassScheduleConfig(token, payload);
 

@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
 import '../../styles/date.css'
-import { FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft, FaArrowRight, FaTimes, FaCheck, FaEllipsisH } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft, FaArrowRight, FaTimes, FaCheck, FaEllipsisH, FaEye } from 'react-icons/fa';
 import {
     fetchBaseSchedules,
     fetchScheduleDetails,
     fetchTimeSlots,
     generateSchedule,
     fetchClasses,
-    fetchAvailableTeachers,
+    fetchAvailableTeachers2,
     fetchTimeTable,
     fetchMyTimeTable,
     deleteBaseSchedule,
@@ -22,10 +22,18 @@ import {
     getDatesInUse,
     fetchScheduleConfig,
     updateScheduleConfig,
+    moveSchedule,
+    markAsAbsent,
+    markAsAttendance,
+    markAsLate,
+    markAsHoliday
 } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { result } from 'lodash';
 
 const Spinner = styled.div`
   border: 4px solid #e2e8f0;
@@ -539,6 +547,127 @@ const PeriodText = styled.p`
   font-weight: 500;
 `;
 
+const EyeIcon = styled.button`
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #3b82f6;
+    background: #f3f4f6;
+  }
+`;
+
+const AttendanceModal = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 1001;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+`;
+
+const AttendanceModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+`;
+
+const AttendanceInfo = styled.div`
+  margin-bottom: 24px;
+`;
+
+const AttendanceImage = styled.img`
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+  border: 1px solid #e5e7eb;
+`;
+
+const PlaceholderText = styled.p`
+  color: #6b7280;
+  font-style: italic;
+  margin: 8px 0;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  text-align: center;
+`;
+
+const AttendanceButtons = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+`;
+
+const AttendanceButton = styled.button`
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  
+  &.late {
+    background: #fef3c7;
+    color: #d97706;
+    
+    &:hover {
+      background: #fde68a;
+    }
+  }
+  
+  &.absent {
+    background: #fee2e2;
+    color: #ef4444;
+    
+    &:hover {
+      background: #fecaca;
+    }
+  }
+  
+  &.attendance {
+    background: #d1fae5;
+    color: #10b981;
+    
+    &:hover {
+      background: #a7f3d0;
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const StatusRow = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
 const formatTime = (timeStr) => {
     if (!timeStr) return '';
 
@@ -550,7 +679,16 @@ const formatTime = (timeStr) => {
     return timeStr; // fallback
 };
 
-const SlotModal = ({ entries, onClose, viewMode }) => (
+const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData }) => (
     <>
         <ModalOverlay onClick={onClose} />
         <Modal>
@@ -578,7 +716,11 @@ const SlotModal = ({ entries, onClose, viewMode }) => (
                                 <p><b>Trạng thái:</b>
                                     <StatusBadge status={entry.status}>
                                         {entry.status || 'N/A'}
-                                    </StatusBadge></p>
+                                    </StatusBadge>
+                                    <EyeIcon onClick={() => setAttendanceModalData(entry)}>
+                                        <FaEye />
+                                    </EyeIcon>
+                                </p>
                                 <p><b>Thời lượng giảng dạy:</b> {entry.duration} phút</p>
                                 <p><StatusBadge status={entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}>
                                     {entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}
@@ -616,8 +758,8 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
             setIsGenerating(true);
             const response = await addSemester(token, {
                 semester_name: newSemesterName,
-                start_date: new Date(newSemesterStartDate).toISOString().split('T')[0],
-                end_date: new Date(newSemesterEndDate).toISOString().split('T')[0],
+                start_date: formatDate(newSemesterStartDate),
+                end_date: formatDate(newSemesterEndDate),
             });
             if (response.success) {
                 showToast(response.description, 'success');
@@ -666,20 +808,29 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
                         </FormGroup1>
                         <FormGroup1>
                             <Label>Ngày bắt đầu</Label>
-                            <Input
-                                type="date"
-                                value={newSemesterStartDate}
-                                onChange={(e) => setNewSemesterStartDate(e.target.value)}
+                            <DatePicker
+                                selected={newSemesterStartDate}
+                                onChange={(date) => {
+                                    setNewSemesterStartDate(date);
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Chọn ngày bắt đầu"
                                 disabled={isGenerating}
+                                customInput={<Input />}
                             />
                         </FormGroup1>
                         <FormGroup1>
                             <Label>Ngày kết thúc</Label>
-                            <Input
-                                type="date"
-                                value={newSemesterEndDate}
-                                onChange={(e) => setNewSemesterEndDate(e.target.value)}
+
+                            <DatePicker
+                                selected={newSemesterEndDate}
+                                onChange={(date) => {
+                                    setNewSemesterEndDate(date);
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Chọn ngày kết thúc"
                                 disabled={isGenerating}
+                                customInput={<Input />}
                             />
                         </FormGroup1>
                         {semesterError && <DialogError>{semesterError}</DialogError>}
@@ -1158,8 +1309,65 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
     );
 };
 
-const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOption }) => {
+const ENTRY_TYPE = 'ENTRY';
+
+function DraggableEntry({ entry, onClick, children, viewMode }) {
+    const [{ isDragging }, drag] = useDrag({
+        type: ENTRY_TYPE,
+        item: {
+            id: entry.id,
+            class_code: entry.class_code,
+            current_time_slot_id: entry.time_slot_id,
+            current_day_of_week: entry.day_of_week,
+            entry,
+        },
+        canDrag: viewMode === 'Base',
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+    return (
+        <div
+            ref={drag}
+            style={{ opacity: isDragging ? 0.5 : 1 }}
+            onClick={onClick}
+        >
+            {children}
+        </div>
+    );
+}
+
+function DroppableTd({ slotId, dayId, children, onDropEntry, canDropEntry, viewMode }) {
+    const [{ isOver, canDrop }, drop] = useDrop({
+        accept: ENTRY_TYPE,
+        canDrop: (item) => viewMode === 'Base' && canDropEntry(item, slotId, dayId),
+        drop: (item) => {
+            if (viewMode === 'Base') {
+                onDropEntry(item, slotId, dayId);
+            }
+        },
+        collect: (monitor) => ({
+            isOver: monitor.isOver(),
+            canDrop: monitor.canDrop(),
+        }),
+    });
+    return (
+        <Td
+            ref={drop}
+            style={{
+                background: isOver && canDrop ? '#e0e7ff' : undefined,
+                minHeight: 60,
+            }}
+        >
+            {children}
+        </Td>
+    );
+}
+
+const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOption, refreshData, attendanceModalData, setAttendanceModalData }) => {
     const [modalEntries, setModalEntries] = useState(null);
+    const { user } = useAuth();
+    const { showToast } = useToast();
     const dayOfWeekMap = {
         1: 'Thứ 2',
         2: 'Thứ 3',
@@ -1167,7 +1375,16 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
         4: 'Thứ 5',
         5: 'Thứ 6',
         6: 'Thứ 7',
-        7: 'Chủ nhật'
+        0: 'Chủ nhật'
+    };
+    const dayOfWeekEnglish = {
+        1: 'Monday',
+        2: 'Tuesday',
+        3: 'Wednesday',
+        4: 'Thursday',
+        5: 'Friday',
+        6: 'Saturday',
+        0: 'Sunday',
     };
 
     const getDateColumns = (details) => {
@@ -1179,14 +1396,14 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                 { id: 4, label: 'Thứ 5' },
                 { id: 5, label: 'Thứ 6' },
                 { id: 6, label: 'Thứ 7' },
-                { id: 7, label: 'Chủ nhật' }
+                { id: 0, label: 'Chủ nhật' }
             ];
         }
 
         if (selectedOption === 'Daily') {
             const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 1 && entry.day_of_week <= 7);
             if (validDetails.length === 0) {
-                console.log('No valid entries for Daily mode');
+
                 return [];
             }
             const firstDate = validDetails[0].date.split('T')[0];
@@ -1203,11 +1420,11 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
             { id: 4, label: 'Thứ 5', date: null },
             { id: 5, label: 'Thứ 6', date: null },
             { id: 6, label: 'Thứ 7', date: null },
-            { id: 7, label: 'Chủ nhật', date: null }
+            { id: 0, label: 'Chủ nhật', date: null }
         ];
         const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 1 && entry.day_of_week <= 7);
         const uniqueDates = [...new Set(validDetails.map(entry => entry.date.split('T')[0]))].sort();
-        console.log('Weekly uniqueDates:', uniqueDates);
+
 
         uniqueDates.forEach(date => {
             const entry = validDetails.find(e => e.date.split('T')[0] === date);
@@ -1221,72 +1438,246 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
 
     const dateColumns = getDateColumns(data);
 
+    const handleDropEntry = async (item, newSlotId, newDayId) => {
+        if (
+            item.current_time_slot_id === newSlotId &&
+            item.current_day_of_week === newDayId
+        ) {
+            return; // No move
+        }
+        try {
+            var resultData = await moveSchedule(
+                user.token,
+                {
+                    schedule_id: item.entry.schedule_id,
+                    class_code: item.class_code,
+                    current_time_slot_id: item.current_time_slot_id,
+                    current_day_of_week: dayOfWeekEnglish[item.current_day_of_week] || item.current_day_of_week,
+                    new_time_slot_id: newSlotId,
+                    new_day_of_week: dayOfWeekEnglish[newDayId] || newDayId,
+                }
+            );
+            if (resultData.success) {
+                showToast('Di chuyển thành công', 'success');
+                if (refreshData) refreshData();
+            } else {
+                showToast(resultData.description, 'error');
+            }
+        } catch (err) {
+            showToast(err.message || 'Di chuyển thất bại', 'error');
+        }
+    };
+    const canDropEntry = (item, slotId, dayId) => {
+        // Only allow drop if not same cell
+        return item.current_time_slot_id !== slotId || item.current_day_of_week !== dayId;
+    };
+
     return (
-        <TimetableWrapper>
-            {data.length === 0 && (
-                <InfoMessage>
-                    Không có lịch: {scheduleDescription}.
-                </InfoMessage>
-            )}
-            {data.length > 0 && timeSlots.length > 0 && dateColumns.length > 0 && (
-                <Table>
-                    <thead>
-                        <tr>
-                            <Th style={{ width: '9%' }}></Th>
-                            {dateColumns.map((col) => (
-                                <Th style={{ width: '13%' }} key={col.date || col.id}>{col.label}</Th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {timeSlots.map((slot) => (
-                            <tr key={slot.id}>
-                                <Td>Tiết {slot.id}</Td>
-                                {dateColumns.map((col) => {
-                                    const entries = data.filter((entry) => {
-                                        if (viewMode === 'Base') {
-                                            return entry.time_slot_id === slot.id && entry.day_of_week === col.id;
-                                        }
-                                        return entry.time_slot_id === slot.id && entry.date?.split('T')[0] === col.date;
-                                    });
-                                    const maxDisplay = 3;
-                                    const displayedEntries = entries.slice(0, maxDisplay);
-                                    return (
-                                        <Td key={col.date || col.id}>
-                                            {displayedEntries.map((entry) => (
-                                                <Entry
-                                                    key={entry.id}
-                                                    onClick={() => setModalEntries([entry])}
-                                                    style={{ cursor: 'pointer' }}
-                                                >
-                                                    <p>{entry.class_code}-{entry.subject_code} ({entry.teacher_user_name})</p>
-                                                    {entry.status && (
-                                                        <p>
-                                                            <StatusBadge status={entry.status}>{entry.status}</StatusBadge>
-                                                        </p>
-                                                    )}
-                                                </Entry>
-                                            ))}
-                                            {entries.length > maxDisplay && (
-                                                <Button
-                                                    onClick={() => setModalEntries(entries)}
-                                                    style={{ marginTop: '8px', fontSize: '12px', padding: '4px 8px' }}
-                                                >
-                                                    +{entries.length - maxDisplay} Xem thêm
-                                                </Button>
-                                            )}
-                                        </Td>
-                                    );
-                                })}
+        <DndProvider backend={HTML5Backend}>
+            <TimetableWrapper>
+                {data.length === 0 && (
+                    <InfoMessage>
+                        Không có lịch: {scheduleDescription}.
+                    </InfoMessage>
+                )}
+                {data.length > 0 && timeSlots.length > 0 && dateColumns.length > 0 && (
+                    <Table>
+                        <thead>
+                            <tr>
+                                <Th style={{ width: '9%' }}></Th>
+                                {dateColumns.map((col) => (
+                                    <Th style={{ width: '13%' }} key={col.date || col.id}>{col.label}</Th>
+                                ))}
                             </tr>
-                        ))}
-                    </tbody>
-                </Table>
-            )}
-            {modalEntries && (
-                <SlotModal entries={modalEntries} onClose={() => setModalEntries(null)} viewMode={viewMode} />
-            )}
-        </TimetableWrapper>
+                        </thead>
+                        <tbody>
+                            {timeSlots.map((slot) => (
+                                <tr key={slot.id}>
+                                    <Td>Tiết {slot.id}</Td>
+                                    {dateColumns.map((col) => {
+                                        const entries = data.filter((entry) => {
+                                            if (viewMode === 'Base') {
+                                                return entry.time_slot_id === slot.id && entry.day_of_week === col.id;
+                                            }
+                                            return entry.time_slot_id === slot.id && entry.date?.split('T')[0] === col.date;
+                                        });
+                                        const maxDisplay = 3;
+                                        const displayedEntries = entries.slice(0, maxDisplay);
+                                        return (
+                                            <DroppableTd
+                                                key={col.date || col.id}
+                                                slotId={slot.id}
+                                                dayId={col.id}
+                                                onDropEntry={handleDropEntry}
+                                                canDropEntry={canDropEntry}
+                                                viewMode={viewMode}
+                                            >
+                                                {displayedEntries.map((entry) => (
+                                                    <DraggableEntry
+                                                        key={entry.id}
+                                                        entry={entry}
+                                                        onClick={() => setModalEntries([entry])}
+                                                        viewMode={viewMode}
+                                                    >
+                                                        <Entry>
+                                                            <p>{entry.class_code}-{entry.subject_code} ({entry.teacher_user_name})</p>
+                                                            {entry.status && (
+                                                                <p>
+                                                                    <StatusBadge status={entry.status}>{entry.status}</StatusBadge>
+                                                                </p>
+                                                            )}
+                                                        </Entry>
+                                                    </DraggableEntry>
+                                                ))}
+                                                {entries.length > maxDisplay && (
+                                                    <Button
+                                                        onClick={() => setModalEntries(entries)}
+                                                        style={{ marginTop: '8px', fontSize: '12px', padding: '4px 8px' }}
+                                                    >
+                                                        +{entries.length - maxDisplay} Xem thêm
+                                                    </Button>
+                                                )}
+                                            </DroppableTd>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                )}
+                {modalEntries && (
+                    <SlotModal
+                        entries={modalEntries}
+                        onClose={() => setModalEntries(null)}
+                        viewMode={viewMode}
+                        setAttendanceModalData={setAttendanceModalData}
+                    />
+                )}
+                {attendanceModalData && (
+                    <>
+                        <AttendanceModalOverlay onClick={() => setAttendanceModalData(null)} />
+                        <AttendanceModal>
+                            <SubHeading>
+                                Chi tiết điểm danh
+                                <CloseButton
+                                    onClick={() => setAttendanceModalData(null)}
+                                    style={{ marginLeft: 'auto', padding: '4px 8px' }}
+                                >
+                                    <FaTimes />
+                                </CloseButton>
+                            </SubHeading>
+                            <AttendanceInfo>
+                                <p><b>Check-in time:</b> {attendanceModalData.check_in_time || 'N/A'}</p>
+                                {attendanceModalData.check_in_path ? (
+                                    <AttendanceImage src={attendanceModalData.check_in_path} alt="Check-in" />
+                                ) : (
+                                    <PlaceholderText>Không có thông tin vào lớp</PlaceholderText>
+                                )}
+
+                                <p><b>Check-out time:</b> {attendanceModalData.check_out_time || 'N/A'}</p>
+                                {attendanceModalData.check_out_path ? (
+                                    <AttendanceImage src={attendanceModalData.check_out_path} alt="Check-out" />
+                                ) : (
+                                    <PlaceholderText>Không có thông tin ra về</PlaceholderText>
+                                )}
+                            </AttendanceInfo>
+
+                            <AttendanceButtons>
+                                <AttendanceButton
+                                    className="late"
+                                    onClick={async () => {
+                                        try {
+                                            const result = await markAsLate(user.token, {
+                                                schedule_id: attendanceModalData.id,
+                                                reason: ""
+                                            });
+                                            if (result.success) {
+                                                showToast('Đã đánh dấu là trễ', 'success');
+                                                setAttendanceModalData(null);
+                                                if (modalEntries && setModalEntries) {
+                                                    setModalEntries(modalEntries.map(entry =>
+                                                        entry.id === attendanceModalData.id
+                                                            ? { ...entry, status: 'Trễ' }
+                                                            : entry
+                                                    ));
+                                                }
+                                                if (refreshData) refreshData();
+                                            } else {
+                                                showToast(result.description, 'error');
+                                            }
+                                        } catch (err) {
+                                            showToast(err.message || 'Thao tác thất bại', 'error');
+                                        }
+                                    }}
+                                >
+                                    Đánh dấu là trễ
+                                </AttendanceButton>
+
+                                <AttendanceButton
+                                    className="absent"
+                                    onClick={async () => {
+                                        try {
+                                            const result = await markAsAbsent(user.token, {
+                                                schedule_id: attendanceModalData.id,
+                                                reason: ""
+                                            });
+                                            if (result.success) {
+                                                showToast('Đã đánh dấu là vắng', 'success');
+                                                setAttendanceModalData(null);
+                                                if (modalEntries && setModalEntries) {
+                                                    setModalEntries(modalEntries.map(entry =>
+                                                        entry.id === attendanceModalData.id
+                                                            ? { ...entry, status: 'Vắng mặt' }
+                                                            : entry
+                                                    ));
+                                                }
+                                                if (refreshData) refreshData();
+                                            } else {
+                                                showToast(result.description, 'error');
+                                            }
+                                        } catch (err) {
+                                            showToast(err.message || 'Thao tác thất bại', 'error');
+                                        }
+                                    }}
+                                >
+                                    Đánh dấu là vắng
+                                </AttendanceButton>
+
+                                <AttendanceButton
+                                    className="attendance"
+                                    onClick={async () => {
+                                        try {
+                                            const result = await markAsAttendance(user.token, {
+                                                schedule_id: attendanceModalData.id,
+                                                reason: ""
+                                            });
+                                            if (result.success) {
+                                                showToast('Đã đánh dấu là đúng giờ', 'success');
+                                                setAttendanceModalData(null);
+                                                if (modalEntries && setModalEntries) {
+                                                    setModalEntries(modalEntries.map(entry =>
+                                                        entry.id === attendanceModalData.id
+                                                            ? { ...entry, status: 'Hoàn thành' }
+                                                            : entry
+                                                    ));
+                                                }
+                                                if (refreshData) refreshData();
+                                            } else {
+                                                showToast(result.description, 'error');
+                                            }
+                                        } catch (err) {
+                                            showToast(err.message || 'Thao tác thất bại', 'error');
+                                        }
+                                    }}
+                                >
+                                    Đánh dấu là đúng giờ
+                                </AttendanceButton>
+                            </AttendanceButtons>
+                        </AttendanceModal>
+                    </>
+                )}
+            </TimetableWrapper>
+        </DndProvider>
     );
 };
 
@@ -1330,13 +1721,18 @@ export default function ViewSchedule() {
     const [isGeneratingTemplate, setIsGeneratingTemplate] = useState(false);
     const [selectedApplication, setSelectedApplication] = useState('Tất cả');
     const [configs, setConfigs] = useState([]);
+    const [isHolidayDialogOpen, setIsHolidayDialogOpen] = useState(false);
+    const [holidayDate, setHolidayDate] = useState(null);
+    const [makeupDate, setMakeupDate] = useState(null);
+    const [isMarkingHoliday, setIsMarkingHoliday] = useState(false);
+    const [attendanceModalData, setAttendanceModalData] = useState(null);
 
     const token = user?.token;
 
     useEffect(() => {
         if (!token || loading) return;
 
-        console.log('[useEffect] Triggered with viewMode:', viewMode, 'selectedCurrent:', selectedCurrent);
+
         const fetchData = async () => {
             try {
                 setIsLoading(true);
@@ -1353,7 +1749,7 @@ export default function ViewSchedule() {
                     setTimeSlots(timeSlotsData);
                     const classesData = await fetchClasses(token);
                     setClasses(classesData.data_set || []);
-                    const teachersData = await fetchAvailableTeachers(token);
+                    const teachersData = await fetchAvailableTeachers2(token);
                     setTeachers(teachersData);
                     const semestersData = await fetchSemesters(token);
                     setSemesters(semestersData);
@@ -1372,7 +1768,7 @@ export default function ViewSchedule() {
 
     const fetchTimetableData = async (mode, current) => {
         if (!token || isLoading) {
-            console.log('[fetchTimetableData] Skipped: token missing or loading');
+
             return;
         }
 
@@ -1383,11 +1779,11 @@ export default function ViewSchedule() {
                 params.type = appliedType;
                 params.code = appliedCode;
             }
-            console.log(`[fetchTimetableData] (${mode}, current=${current}) Params:`, params);
+
             const response = await (mode === 'Applied'
                 ? fetchTimeTable(token, params)
                 : fetchMyTimeTable(token, params));
-            console.log(`[fetchTimetableData] (${mode}, current=${current}) Response:`, response);
+
 
             setTimetableData(response.data_set || []);
             setScheduleDescription(response.description || 'Không có mô tả');
@@ -1397,11 +1793,6 @@ export default function ViewSchedule() {
                 next: response.pagination?.next ?? null,
                 previous: response.pagination?.previous ?? null,
                 total: response.pagination?.total || 0
-            });
-            console.log(`[fetchTimetableData] (${mode}, current=${current}) State updated:`, {
-                timetableData: response.data_set?.length || 0,
-                scheduleDescription: response.description,
-                pagination
             });
             setError(null);
         } catch (err) {
@@ -1454,7 +1845,7 @@ export default function ViewSchedule() {
             try {
                 setIsLoading(true);
                 const params = { code: '', type: newType };
-                console.log(`[handleBaseTypeChange] Fetching for scheduleId=${selectedScheduleId}, params:`, params);
+
                 const details = await fetchScheduleDetails(token, selectedScheduleId, '', newType);
                 setScheduleDetails(details || []);
                 setScheduleDescription('');
@@ -1469,7 +1860,7 @@ export default function ViewSchedule() {
 
     const handleAppliedTypeChange = async (newType) => {
         if (newType === appliedType) return;
-        console.log('[handleAppliedTypeChange] Changing type to:', newType);
+
         setAppliedType(newType);
         setAppliedCode('');
         if (viewMode !== 'Base') {
@@ -1480,7 +1871,7 @@ export default function ViewSchedule() {
                     params.type = newType;
                     params.code = '';
                 }
-                console.log(`[handleAppliedTypeChange] Fetching for ${viewMode}, params:`, params);
+
                 const response = await (viewMode === 'Applied'
                     ? fetchTimeTable(token, params)
                     : fetchMyTimeTable(token, params));
@@ -1492,10 +1883,6 @@ export default function ViewSchedule() {
                     next: response.pagination?.next ?? null,
                     previous: response.pagination?.previous ?? null,
                     total: response.pagination?.total || 0
-                });
-                console.log('[handleAppliedTypeChange] State updated:', {
-                    timetableData: response.data_set?.length || 0,
-                    scheduleDescription: response.description
                 });
                 setError(null);
             } catch (err) {
@@ -1511,7 +1898,7 @@ export default function ViewSchedule() {
 
     const handleAppliedCodeChange = async (newCode) => {
         if (newCode === appliedCode) return;
-        console.log('[handleAppliedCodeChange] Changing code to:', newCode);
+
         setAppliedCode(newCode);
         if (viewMode !== 'Base' && appliedType !== 'All') {
             try {
@@ -1521,7 +1908,7 @@ export default function ViewSchedule() {
                     params.type = appliedType;
                     params.code = newCode;
                 }
-                console.log(`[handleAppliedCodeChange] Fetching for ${viewMode}, params:`, params);
+
                 const response = await (viewMode === 'Applied'
                     ? fetchTimeTable(token, params)
                     : fetchMyTimeTable(token, params));
@@ -1533,10 +1920,6 @@ export default function ViewSchedule() {
                     next: response.pagination?.next ?? null,
                     previous: response.pagination?.previous ?? null,
                     total: response.pagination?.total || 0
-                });
-                console.log('[handleAppliedCodeChange] State updated:', {
-                    timetableData: response.data_set?.length || 0,
-                    scheduleDescription: response.description
                 });
                 setError(null);
             } catch (err) {
@@ -1552,7 +1935,7 @@ export default function ViewSchedule() {
 
     const handleOptionChange = async (newOption) => {
         if (newOption === selectedOption) return;
-        console.log('[handleOptionChange] Changing option to:', newOption);
+
         setSelectedOption(newOption);
         setSelectedCurrent(0);
         if (viewMode !== 'Base') {
@@ -1563,7 +1946,7 @@ export default function ViewSchedule() {
                     params.type = appliedType;
                     params.code = appliedCode;
                 }
-                console.log(`[handleOptionChange] Fetching for ${viewMode}, params:`, params);
+
                 const response = await (viewMode === 'Applied'
                     ? fetchTimeTable(token, params)
                     : fetchMyTimeTable(token, params));
@@ -1575,10 +1958,6 @@ export default function ViewSchedule() {
                     next: response.pagination?.next ?? null,
                     previous: response.pagination?.previous ?? null,
                     total: response.pagination?.total || 0
-                });
-                console.log('[handleOptionChange] State updated:', {
-                    timetableData: response.data_set?.length || 0,
-                    scheduleDescription: response.description
                 });
                 setError(null);
             } catch (err) {
@@ -1595,7 +1974,7 @@ export default function ViewSchedule() {
     const handlePrevPeriod = async () => {
         if (isLoading) return;
         const newCurrent = selectedCurrent - 1;
-        console.log('[handlePrevPeriod] New current:', newCurrent);
+
         setSelectedCurrent(newCurrent);
         if (viewMode !== 'Base') {
             await fetchTimetableData(viewMode, newCurrent);
@@ -1605,7 +1984,7 @@ export default function ViewSchedule() {
     const handleNextPeriod = async () => {
         if (isLoading) return;
         const newCurrent = selectedCurrent + 1;
-        console.log('[handleNextPeriod] New current:', newCurrent);
+
         setSelectedCurrent(newCurrent);
         if (viewMode !== 'Base') {
             await fetchTimetableData(viewMode, newCurrent);
@@ -1769,13 +2148,13 @@ export default function ViewSchedule() {
                                     value={baseCode}
                                     onChange={async (e) => {
                                         const newCode = e.target.value;
-                                        console.log('[baseCodeSelect] Changing code to:', newCode);
+
                                         setBaseCode(newCode);
                                         if (selectedScheduleId && newCode) {
                                             try {
                                                 setIsLoading(true);
                                                 const params = { code: newCode, type: baseType };
-                                                console.log(`[baseCodeSelect] Fetching for scheduleId=${selectedScheduleId}, params:`, params);
+
                                                 const details = await fetchScheduleDetails(token, selectedScheduleId, newCode, baseType);
                                                 setScheduleDetails(details || []);
                                                 setScheduleDescription('');
@@ -1824,6 +2203,15 @@ export default function ViewSchedule() {
                                 viewMode={viewMode}
                                 scheduleDescription={scheduleDescription}
                                 selectedOption={selectedOption}
+                                attendanceModalData={attendanceModalData}
+                                setAttendanceModalData={setAttendanceModalData}
+                                refreshData={() => {
+                                    if (viewMode === 'Base') {
+                                        handleSelectTemplate(selectedScheduleId);
+                                    } else {
+                                        fetchTimetableData(viewMode, selectedCurrent);
+                                    }
+                                }}
                             />
                         )}
                     </Grid>
@@ -1895,8 +2283,10 @@ export default function ViewSchedule() {
                             </NavButton>
                             {viewMode === 'Applied' && (
                                 <>
+                                    <ButtonAdd onClick={() => setIsHolidayDialogOpen(true)} disabled={isLoading}>
+                                        + Thêm ngày nghỉ
+                                    </ButtonAdd>
                                     <ButtonAdd onClick={() => {
-                                        console.log('[ApplyDialog] Opening dialog. Semesters:', semesters, 'Templates:', templates);
                                         setIsApplyDialogOpen(true);
                                     }} disabled={isLoading}>
                                         + Thêm mới
@@ -1946,6 +2336,9 @@ export default function ViewSchedule() {
                             viewMode={viewMode}
                             scheduleDescription={scheduleDescription}
                             selectedOption={selectedOption}
+                            attendanceModalData={attendanceModalData}
+                            setAttendanceModalData={setAttendanceModalData}
+                            refreshData={() => fetchTimetableData('Applied', selectedCurrent)}
                         />
                         {isApplyDialogOpen && (
                             <>
@@ -1973,11 +2366,11 @@ export default function ViewSchedule() {
                                                 setApplyScheduleId('');
                                                 setApplyDateError('');
                                                 setDatesInUse([]);
-                                                console.log('[ApplyDialog] Selected semesterId:', newSemesterId, 'Type:', typeof newSemesterId, 'Semesters:', semesters, 'Templates:', templates);
+
                                                 if (newSemesterId) {
                                                     getDatesInUse(token, newSemesterId)
                                                         .then(response => {
-                                                            console.log('[ApplyDialog] Dates in use:', response.data_set);
+
                                                             setDatesInUse(response.data_set || []);
                                                         })
                                                         .catch(err => {
@@ -1999,7 +2392,7 @@ export default function ViewSchedule() {
                                         <Select
                                             value={applyScheduleId}
                                             onChange={(e) => {
-                                                console.log('[ApplyDialog] Selected scheduleId:', e.target.value);
+
                                                 setApplyScheduleId(e.target.value);
                                                 setApplyDateError('');
                                             }}
@@ -2009,10 +2402,10 @@ export default function ViewSchedule() {
                                             {(() => {
                                                 const filteredTemplates = templates.filter(template => {
                                                     const match = Number(template.semester_id) === Number(applySemesterId);
-                                                    console.log(`[ApplyDialog] Template ${template.id} semester_id: ${template.semester_id} (type: ${typeof template.semester_id}), applySemesterId: ${applySemesterId} (type: ${typeof applySemesterId}), match: ${match}`);
+
                                                     return match;
                                                 });
-                                                console.log('[ApplyDialog] Filtered templates:', filteredTemplates);
+
                                                 return filteredTemplates.length > 0 ? (
                                                     filteredTemplates.map((template) => (
                                                         <option key={template.id} value={template.id}>
@@ -2106,24 +2499,26 @@ export default function ViewSchedule() {
                                     </SubHeading>
                                     <FormGroup1>
                                         <Label>Ngày bắt đầu</Label>
-                                        <Input
-                                            type="date"
-                                            value={removeBeginDate}
-                                            onChange={(e) => {
-                                                setRemoveBeginDate(e.target.value);
-                                                setRemoveDateError('');
+                                        <DatePicker
+                                            selected={removeBeginDate}
+                                            onChange={(date) => {
+                                                setRemoveBeginDate(date);
                                             }}
+                                            dateFormat="dd/MM/yyyy"
+                                            placeholderText="Chọn ngày bắt đầu"
+                                            customInput={<Input />}
                                         />
                                     </FormGroup1>
                                     <FormGroup1>
                                         <Label>Ngày kết thúc</Label>
-                                        <Input
-                                            type="date"
-                                            value={removeEndDate}
-                                            onChange={(e) => {
-                                                setRemoveEndDate(e.target.value);
-                                                setRemoveDateError('');
+                                        <DatePicker
+                                            selected={removeEndDate}
+                                            onChange={(date) => {
+                                                setRemoveEndDate(date);
                                             }}
+                                            dateFormat="dd/MM/yyyy"
+                                            placeholderText="Chọn ngày kết thúc"
+                                            customInput={<Input />}
                                         />
                                     </FormGroup1>
                                     {removeDateError && <DialogError>{removeDateError}</DialogError>}
@@ -2142,6 +2537,73 @@ export default function ViewSchedule() {
                                     </DialogButtonGroup>
                                 </Dialog>
                             </>
+                        )}
+                        {isHolidayDialogOpen && (
+                            <DialogOverlay onClick={() => setIsHolidayDialogOpen(false)} />
+                        )}
+                        {isHolidayDialogOpen && (
+                            <Dialog>
+                                <SubHeading>
+                                    + Thêm ngày nghỉ
+                                </SubHeading>
+                                <FormGroup1>
+                                    <Label>Ngày nghỉ <span style={{ color: 'red' }}>*</span></Label>
+                                    <DatePicker
+                                        selected={holidayDate}
+                                        onChange={date => setHolidayDate(date)}
+                                        dateFormat="dd/MM/yyyy"
+                                        placeholderText="Chọn ngày nghỉ"
+                                        customInput={<Input />}
+                                    />
+                                </FormGroup1>
+                                <FormGroup1>
+                                    <Label>Chọn ngày học bù</Label>
+                                    <DatePicker
+                                        selected={makeupDate}
+                                        onChange={date => setMakeupDate(date)}
+                                        dateFormat="dd/MM/yyyy"
+                                        placeholderText="Không bắt buộc"
+                                        customInput={<Input />}
+                                        isClearable
+                                    />
+                                </FormGroup1>
+                                <DialogButtonGroup>
+                                    <CancelButton onClick={() => setIsHolidayDialogOpen(false)} disabled={isMarkingHoliday}>
+                                        Hủy
+                                    </CancelButton>
+                                    <ButtonAdd
+                                        onClick={async () => {
+                                            if (!holidayDate) {
+                                                showToast('Vui lòng chọn ngày nghỉ', 'error');
+                                                return;
+                                            }
+                                            setIsMarkingHoliday(true);
+                                            try {
+                                                var resultData = await markAsHoliday(user.token, {
+                                                    holiday_date: formatDate(holidayDate),
+                                                    makeup_date: makeupDate ? formatDate(makeupDate) : null,
+                                                });
+                                                if (resultData.success) {
+                                                    showToast('Đã thêm ngày nghỉ thành công', 'success');
+                                                    setIsHolidayDialogOpen(false);
+                                                    setHolidayDate(null);
+                                                    setMakeupDate(null);
+                                                    fetchTimetableData('Applied', selectedCurrent);
+                                                } else {
+                                                    showToast(resultData.description, 'error');
+                                                }
+                                            } catch (err) {
+                                                showToast(err.message || 'Thêm ngày nghỉ thất bại', 'error');
+                                            } finally {
+                                                setIsMarkingHoliday(false);
+                                            }
+                                        }}
+                                        disabled={isMarkingHoliday}
+                                    >
+                                        Lưu
+                                    </ButtonAdd>
+                                </DialogButtonGroup>
+                            </Dialog>
                         )}
                     </>
                 )

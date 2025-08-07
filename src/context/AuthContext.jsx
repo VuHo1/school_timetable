@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
                 setUser(prevUser => {
                     const isAvatarChanged = prevUser?.avatar !== data.data.avatar;
                     if (isAvatarChanged || JSON.stringify(prevUser?.data) !== JSON.stringify(data.data)) {
-                        console.log('Updating user due to avatar change or other differences:', { ...data.data, token });
+
                         return { ...data.data, token };
                     }
                     return prevUser;

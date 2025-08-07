@@ -485,10 +485,10 @@ function ModernHeader() {
   const fetchNotificationsData = async () => {
     const token = user?.token;
     if (token) {
-      console.log('[ModernHeader] Fetching notifications with token:', token);
+
       try {
         const data = await fetchNotifications(token);
-        console.log('[ModernHeader] Notifications received:', data);
+
         setNotifications(data);
       } catch (error) {
         console.error('[ModernHeader] Error fetching notifications:', error);
@@ -506,7 +506,7 @@ function ModernHeader() {
   // Listen for notification marked as read event
   useEffect(() => {
     const handleNotificationUpdate = () => {
-      console.log('[ModernHeader] Received notificationMarkedAsRead event');
+
       fetchNotificationsData();
     };
 
@@ -522,7 +522,7 @@ function ModernHeader() {
     if (storedAbilities) {
       try {
         const parsedAbilities = JSON.parse(storedAbilities);
-        console.log('[ModernHeader] Parsed abilities from localStorage:', parsedAbilities);
+
         if (Array.isArray(parsedAbilities) && parsedAbilities.length > 0) {
           abilitiesToProcess = parsedAbilities;
         }
@@ -538,7 +538,7 @@ function ModernHeader() {
     const filteredAbilities = abilitiesToProcess.filter(ability =>
       ability !== 'Cá nhân' && ability !== 'Thông báo' && ability !== 'Quản lí học kỳ' && ability !== 'Điểm danh' && ability !== 'Danh mục dùng chung'
     );
-    console.log('[ModernHeader] Filtered abilities:', filteredAbilities);
+
     setCurrentAbilities(filteredAbilities);
   }, [abilities]);
 
@@ -564,7 +564,7 @@ function ModernHeader() {
   }, [selectedNotification]);
 
   const handleLogout = async () => {
-    console.log('[ModernHeader] Logging out user:', user?.user_name);
+
     await logout();
     navigate('/login');
   };
@@ -572,21 +572,21 @@ function ModernHeader() {
   const handleMenuClick = (ability) => {
     const path = PAGE_MAPPINGS[ability];
     if (path) {
-      console.log('[ModernHeader] Navigating to:', path);
+
       navigate(path);
       setShowMenuDropdown(false);
     }
   };
 
   const handleNotificationClick = async (notification) => {
-    console.log('[ModernHeader] Notification clicked:', notification);
+
     if (!notification.is_read) {
       try {
         await markNotificationAsRead(user?.token, notification.id);
         setNotifications(prev => prev.map(n =>
           n.id === notification.id ? { ...n, is_read: true } : n
         ));
-        console.log('[ModernHeader] Notification marked as read:', notification.id);
+
       } catch (error) {
         console.error('[ModernHeader] Error marking notification as read:', error);
       }
@@ -599,20 +599,20 @@ function ModernHeader() {
     try {
       await markAllNotificationsAsRead(user?.token);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      console.log('[ModernHeader] All notifications marked as read');
+
     } catch (error) {
       console.error('[ModernHeader] Error marking all notifications as read:', error);
     }
   };
 
   const handleViewAll = () => {
-    console.log('[ModernHeader] Navigating to /notification');
+
     navigate('/notification');
     setShowNotificationDropdown(false);
   };
 
   const handleCloseModal = () => {
-    console.log('[ModernHeader] Closing notification modal');
+
     setSelectedNotification(null);
   };
 
@@ -640,8 +640,8 @@ function ModernHeader() {
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
-  console.log('[ModernHeader] Unread notification count:', unreadCount);
-  console.log('[ModernHeader] Notifications state:', notifications);
+
+
 
   return (
     <Container>

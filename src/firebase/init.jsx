@@ -23,7 +23,7 @@ const messaging = getMessaging(firebaseApp);
 
 const listenToForegroundMessage = () => {
   onMessage(messaging, (payload) => {
-    console.log('[FCM] Tin nhắn foreground:', payload);
+
     const title = payload?.notification?.title || 'Thông báo';
     const body = payload?.notification?.body || '';
     toast.success(

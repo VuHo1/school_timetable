@@ -77,7 +77,7 @@ export const fetchClasses = async (token, params = {}) => {
         });
     }
     const url = `${API_BASE_URL}/api/class?${queryParams.toString()}`;
-    console.log('[FETCH URL]', url);
+
 
     const response = await fetch(url, {
         method: 'GET',
@@ -328,6 +328,18 @@ export const fetchAvailableTeachers = async (token) => {
     const data = await response.json();
     return data.data_set || []; // Trả về mảng data_set
 };
+export const fetchAvailableTeachers2 = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/teacher/available2`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) throw new Error('Failed to fetch available teachers');
+    const data = await response.json();
+    return data.data_set || []; // Trả về mảng data_set
+};
 
 export const fetchAvailableRooms = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/room/available`, {
@@ -356,7 +368,7 @@ export const fetchAllTeachers = async (token, params = {}) => {
         });
     }
     const url = `${API_BASE_URL}/api/teacher?${queryParams.toString()}`;
-    console.log('[FETCH URL]', url);
+
 
     const response = await fetch(url, {
         method: 'GET',
@@ -392,7 +404,7 @@ export const fetchAllRooms = async (token, params = {}) => {
     }
 
     const url = `${API_BASE_URL}/api/room?${queryParams.toString()}`;
-    console.log('Fetching rooms from:', url); // Debug log
+    // Debug log
     const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -407,7 +419,7 @@ export const fetchAllRooms = async (token, params = {}) => {
         );
     }
     const data = await response.json();
-    console.log('Raw API response:', data); // Debug log
+    // Debug log
     const rooms = (
         data.data_set ||
         data.data ||
@@ -988,7 +1000,7 @@ export const fetchTimeTable = async (token, { code, type = 'All', option = 'Week
     if (current !== null && current !== undefined) queryParams.append('current', current);
 
     const url = `${API_BASE_URL}/api/schedule/time-table?${queryParams.toString()}`;
-    console.log('[fetchTimeTable] URL:', url);
+
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -997,14 +1009,14 @@ export const fetchTimeTable = async (token, { code, type = 'All', option = 'Week
                 'Authorization': `Bearer ${token}`,
             },
         });
-        console.log('[fetchTimeTable] Response status:', response.status, 'Headers:', Object.fromEntries(response.headers));
+
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             console.error('[fetchTimeTable] Error:', errorData);
             throw new Error(errorData.description || `Lỗi khi gọi API: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
-        console.log('[fetchTimeTable] Response data:', data);
+
 
         return {
             success: data.success ?? true,
@@ -1024,7 +1036,7 @@ export const fetchMyTimeTable = async (token, { option = 'Weekly', current = 0 }
     if (current !== null && current !== undefined) queryParams.append('current', current);
 
     const url = `${API_BASE_URL}/api/schedule/my-time-table?${queryParams.toString()}`;
-    console.log('[fetchMyTimeTable] URL:', url);
+
     try {
         const response = await fetch(url, {
             method: 'GET',
@@ -1033,14 +1045,14 @@ export const fetchMyTimeTable = async (token, { option = 'Weekly', current = 0 }
                 'Authorization': `Bearer ${token}`,
             },
         });
-        console.log('[fetchMyTimeTable] Response status:', response.status, 'Headers:', Object.fromEntries(response.headers));
+
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             console.error('[fetchMyTimeTable] Error:', errorData);
             throw new Error(errorData.description || `Lỗi khi gọi API: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
-        console.log('[fetchMyTimeTable] Response data:', data);
+
 
         return {
             success: data.success ?? true,
@@ -1055,7 +1067,7 @@ export const fetchMyTimeTable = async (token, { option = 'Weekly', current = 0 }
 };
 
 export const addSchedule = async (token, scheduleData) => {
-    console.log('[addSchedule] Gọi API thêm thời khóa biểu:', scheduleData);
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/schedule/add`, {
             method: 'POST',
@@ -1126,7 +1138,7 @@ export const updateBaseSchedule = async (token, { id, schedule_name }) => {
 };
 
 export const removeTimeTable = async (token, { begin_date, end_date }) => {
-    console.log(`[removeTimeTable] Gọi API xóa thời khóa biểu với begin_date=${begin_date}, end_date=${end_date}`);
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/remove`, {
             method: 'DELETE',
@@ -1156,7 +1168,7 @@ export const removeTimeTable = async (token, { begin_date, end_date }) => {
     }
 };
 export const deleteBaseSchedule = async (token, scheduleId) => {
-    console.log(`[deleteBaseSchedule] Gọi API xóa scheduleId=${scheduleId}`);
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/schedule/base/remove/${scheduleId}`, {
             method: 'DELETE',
@@ -1275,7 +1287,7 @@ export const removeSemester = async (token, semesterId) => {
     };
 };
 export const getDatesInUse = async (token, semesterId) => {
-    console.log(`[getDatesInUse] Gọi API lấy ngày đã có lịch với semesterId=${semesterId}`);
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/schedule/date-in-use/${semesterId}`, {
             method: 'GET',
@@ -1320,7 +1332,7 @@ export const addClassSubject = async (token, classSubjectData) => {
 };
 
 export const addClassScheduleConfig = async (token, scheduleConfigData) => {
-    console.log('🔁 [API CALL] addClassScheduleConfig - Payload:', scheduleConfigData);
+
 
     const response = await fetch(`${API_BASE_URL}/api/class/class-schedule-config/add`, {
         method: 'POST',
@@ -1333,7 +1345,7 @@ export const addClassScheduleConfig = async (token, scheduleConfigData) => {
     });
 
     const text = await response.text();
-    console.log('📩 [API RESPONSE TEXT]', text);
+
 
     let data;
     try {
@@ -1348,7 +1360,7 @@ export const addClassScheduleConfig = async (token, scheduleConfigData) => {
         throw new Error(data.description || 'Lỗi không xác định');
     }
 
-    console.log('✅ [API SUCCESS] addClassScheduleConfig:', data);
+
     return data;
 };
 
@@ -1468,7 +1480,7 @@ export const deleteRoom = async (token, roomCode) => {
 };
 
 export const fetchNotifications = async (token) => {
-    console.log('[fetchNotifications] Token:', token); // Debug: Log token
+    // Debug: Log token
     const response = await fetch(`${API_BASE_URL}/api/noti`, {
         method: 'GET',
         headers: {
@@ -1476,19 +1488,19 @@ export const fetchNotifications = async (token) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    console.log('[fetchNotifications] Response status:', response.status); // Debug: Log response status
+    // Debug: Log response status
     if (!response.ok) {
         const errorData = await response.json();
         console.error('[fetchNotifications] Error:', errorData); // Debug: Log error details
         throw new Error(errorData.description || 'Failed to fetch notifications');
     }
     const data = await response.json();
-    console.log('[fetchNotifications] Response data:', data); // Debug: Log full response
+    // Debug: Log full response
     return data.data_set || [];
 };
 
 export const markAllNotificationsAsRead = async (token) => {
-    console.log('[markAllNotificationsAsRead] Token:', token); // Debug: Log token
+    // Debug: Log token
     const response = await fetch(`${API_BASE_URL}/api/noti/mark-as-read/all`, {
         method: 'PUT',
         headers: {
@@ -1496,19 +1508,19 @@ export const markAllNotificationsAsRead = async (token) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    console.log('[markAllNotificationsAsRead] Response status:', response.status); // Debug: Log response status
+    // Debug: Log response status
     if (!response.ok) {
         const errorData = await response.json();
         console.error('[markAllNotificationsAsRead] Error:', errorData); // Debug: Log error details
         throw new Error(errorData.description || 'Failed to mark all notifications as read');
     }
     const data = await response.json();
-    console.log('[markAllNotificationsAsRead] Response data:', data); // Debug: Log response data
+    // Debug: Log response data
     return data;
 };
 
 export const markNotificationAsRead = async (token, notificationId) => {
-    console.log('[markNotificationAsRead] Token:', token, 'Notification ID:', notificationId); // Debug: Log inputs
+    // Debug: Log inputs
     const response = await fetch(`${API_BASE_URL}/api/noti/mark-as-read/${notificationId}`, {
         method: 'PUT',
         headers: {
@@ -1516,14 +1528,14 @@ export const markNotificationAsRead = async (token, notificationId) => {
             'Authorization': `Bearer ${token}`,
         },
     });
-    console.log('[markNotificationAsRead] Response status:', response.status); // Debug: Log response status
+    // Debug: Log response status
     if (!response.ok) {
         const errorData = await response.json();
         console.error('[markNotificationAsRead] Error:', errorData); // Debug: Log error details
         throw new Error(errorData.description || 'Failed to mark notification as read');
     }
     const data = await response.json();
-    console.log('[markNotificationAsRead] Response data:', data); // Debug: Log response data
+    // Debug: Log response data
     return data;
 };
 
@@ -1550,6 +1562,93 @@ export const fetchReportSemester = async (token) => {
         },
     });
     if (!response.ok) throw new Error('Failed to fetch semester');
+    const data = await response.json();
+    return data;
+};
+
+export const moveSchedule = async (token, updateData) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/base/move-schedule`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update base template');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const markAsAbsent = async (token, updateData) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/mark-as-absent`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
+    const data = await response.json();
+    return data;
+};
+export const markAsAttendance = async (token, updateData) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/mark-as-attendance`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
+    const data = await response.json();
+    return data;
+};
+export const markAsLate = async (token, updateData) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/mark-as-late`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
+    const data = await response.json();
+    return data;
+};
+export const markAsHoliday = async (token, updateData) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/mark-as-holiday`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
     const data = await response.json();
     return data;
 };

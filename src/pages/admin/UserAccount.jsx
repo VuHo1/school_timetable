@@ -605,18 +605,18 @@ export default function UserAccount() {
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.token) {
-        console.log('No token found in user object:', user);
+
         return;
       }
       setLoading(true);
       try {
-        console.log('Fetching user list and roles with token:', user.token);
+
         const [userData, rolesData] = await Promise.all([
           fetchUserList(user.token),
           fetchRoles(user.token),
         ]);
-        console.log('Fetched user data:', userData);
-        console.log('Fetched roles data:', rolesData);
+
+
         if (Array.isArray(userData)) {
           setAllUsers(userData);
         } else {
@@ -636,7 +636,7 @@ export default function UserAccount() {
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.showToast('Không thể tải dữ liệu. Chi tiết:', 'error');
-        console.log('Error details:', error.message);
+
       } finally {
         setLoading(false);
         applyFilters();

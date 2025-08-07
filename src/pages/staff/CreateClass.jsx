@@ -245,7 +245,7 @@ function CreateClass() {
       const result = await createClass(token, formData);
 
       setSuccess('Tạo lớp học thành công!');
-      console.log('Created classes:', result);
+
 
       // Reset form
       setFormData({

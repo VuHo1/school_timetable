@@ -744,7 +744,7 @@ function ClassDetail() {
       const token = localStorage.getItem('authToken');
       let teachers = await fetchAvailableTeachers(token);
       if (teachers.length === 0) {
-        console.log('No available teachers, loading all teachers...');
+
         teachers = await fetchAllTeachers(token, { limit: 100 });
       }
       setAvailableTeachers(teachers);
@@ -758,7 +758,7 @@ function ClassDetail() {
     try {
       const token = localStorage.getItem('authToken');
       const rooms = await fetchAvailableRooms(token);
-      console.log('Available rooms:', rooms);
+
       setAvailableRooms(rooms);
     } catch (err) {
       setError('Không thể tải danh sách phòng học: ' + err.message);
@@ -930,7 +930,7 @@ function ClassDetail() {
         payload[day] = daySlots.filter(Boolean).join('|');
       }
 
-      console.log('📦 [SENDING SCHEDULE PAYLOAD]', payload);
+
       const response = await addClassScheduleConfig(token, payload);
 
       toast.success(response.description || 'Lưu cấu hình lịch thành công!');

@@ -248,7 +248,7 @@ export default function Setting() {
   useEffect(() => {
     const fetchSettings = async () => {
       if (!user?.token) {
-        console.log('No token found in user object:', user);
+
         return;
       }
       setLoading(true);
