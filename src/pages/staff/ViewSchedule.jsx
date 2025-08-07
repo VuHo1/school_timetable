@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
 import '../../styles/date.css'
-import { FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft, FaArrowRight, FaTimes, FaCheck, FaEllipsisH } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft, FaArrowRight, FaTimes, FaCheck, FaEllipsisH, FaEye } from 'react-icons/fa';
 import {
     fetchBaseSchedules,
     fetchScheduleDetails,
@@ -547,6 +547,127 @@ const PeriodText = styled.p`
   font-weight: 500;
 `;
 
+const EyeIcon = styled.button`
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #3b82f6;
+    background: #f3f4f6;
+  }
+`;
+
+const AttendanceModal = styled.div`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 1001;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+`;
+
+const AttendanceModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+`;
+
+const AttendanceInfo = styled.div`
+  margin-bottom: 24px;
+`;
+
+const AttendanceImage = styled.img`
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+  border: 1px solid #e5e7eb;
+`;
+
+const PlaceholderText = styled.p`
+  color: #6b7280;
+  font-style: italic;
+  margin: 8px 0;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  text-align: center;
+`;
+
+const AttendanceButtons = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+`;
+
+const AttendanceButton = styled.button`
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  
+  &.late {
+    background: #fef3c7;
+    color: #d97706;
+    
+    &:hover {
+      background: #fde68a;
+    }
+  }
+  
+  &.absent {
+    background: #fee2e2;
+    color: #ef4444;
+    
+    &:hover {
+      background: #fecaca;
+    }
+  }
+  
+  &.attendance {
+    background: #d1fae5;
+    color: #10b981;
+    
+    &:hover {
+      background: #a7f3d0;
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const StatusRow = styled.div`
+  display: flex;
+  align-items: center;
+`;
+
 const formatTime = (timeStr) => {
     if (!timeStr) return '';
 
@@ -567,7 +688,7 @@ const formatDate = (date) => {
     return `${year}-${month}-${day}`;
 };
 
-const SlotModal = ({ entries, onClose, viewMode }) => (
+const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData }) => (
     <>
         <ModalOverlay onClick={onClose} />
         <Modal>
@@ -595,7 +716,11 @@ const SlotModal = ({ entries, onClose, viewMode }) => (
                                 <p><b>Trạng thái:</b>
                                     <StatusBadge status={entry.status}>
                                         {entry.status || 'N/A'}
-                                    </StatusBadge></p>
+                                    </StatusBadge>
+                                    <EyeIcon onClick={() => setAttendanceModalData(entry)}>
+                                        <FaEye />
+                                    </EyeIcon>
+                                </p>
                                 <p><b>Thời lượng giảng dạy:</b> {entry.duration} phút</p>
                                 <p><StatusBadge status={entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}>
                                     {entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}
@@ -1239,7 +1364,7 @@ function DroppableTd({ slotId, dayId, children, onDropEntry, canDropEntry, viewM
     );
 }
 
-const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOption, refreshData }) => {
+const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOption, refreshData, attendanceModalData, setAttendanceModalData }) => {
     const [modalEntries, setModalEntries] = useState(null);
     const { user } = useAuth();
     const { showToast } = useToast();
@@ -1421,7 +1546,135 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                     </Table>
                 )}
                 {modalEntries && (
-                    <SlotModal entries={modalEntries} onClose={() => setModalEntries(null)} viewMode={viewMode} />
+                    <SlotModal
+                        entries={modalEntries}
+                        onClose={() => setModalEntries(null)}
+                        viewMode={viewMode}
+                        setAttendanceModalData={setAttendanceModalData}
+                    />
+                )}
+                {attendanceModalData && (
+                    <>
+                        <AttendanceModalOverlay onClick={() => setAttendanceModalData(null)} />
+                        <AttendanceModal>
+                            <SubHeading>
+                                Chi tiết điểm danh
+                                <CloseButton
+                                    onClick={() => setAttendanceModalData(null)}
+                                    style={{ marginLeft: 'auto', padding: '4px 8px' }}
+                                >
+                                    <FaTimes />
+                                </CloseButton>
+                            </SubHeading>
+                            <AttendanceInfo>
+                                <p><b>Check-in time:</b> {attendanceModalData.check_in_time || 'N/A'}</p>
+                                {attendanceModalData.check_in_path ? (
+                                    <AttendanceImage src={attendanceModalData.check_in_path} alt="Check-in" />
+                                ) : (
+                                    <PlaceholderText>Không có thông tin vào lớp</PlaceholderText>
+                                )}
+
+                                <p><b>Check-out time:</b> {attendanceModalData.check_out_time || 'N/A'}</p>
+                                {attendanceModalData.check_out_path ? (
+                                    <AttendanceImage src={attendanceModalData.check_out_path} alt="Check-out" />
+                                ) : (
+                                    <PlaceholderText>Không có thông tin ra về</PlaceholderText>
+                                )}
+                            </AttendanceInfo>
+
+                            <AttendanceButtons>
+                                <AttendanceButton
+                                    className="late"
+                                    onClick={async () => {
+                                        try {
+                                            const result = await markAsLate(user.token, {
+                                                schedule_id: attendanceModalData.id,
+                                                reason: ""
+                                            });
+                                            if (result.success) {
+                                                showToast('Đã đánh dấu là trễ', 'success');
+                                                setAttendanceModalData(null);
+                                                if (modalEntries && setModalEntries) {
+                                                    setModalEntries(modalEntries.map(entry =>
+                                                        entry.id === attendanceModalData.id
+                                                            ? { ...entry, status: 'Trễ' }
+                                                            : entry
+                                                    ));
+                                                }
+                                                if (refreshData) refreshData();
+                                            } else {
+                                                showToast(result.description, 'error');
+                                            }
+                                        } catch (err) {
+                                            showToast(err.message || 'Thao tác thất bại', 'error');
+                                        }
+                                    }}
+                                >
+                                    Đánh dấu là trễ
+                                </AttendanceButton>
+
+                                <AttendanceButton
+                                    className="absent"
+                                    onClick={async () => {
+                                        try {
+                                            const result = await markAsAbsent(user.token, {
+                                                schedule_id: attendanceModalData.id,
+                                                reason: ""
+                                            });
+                                            if (result.success) {
+                                                showToast('Đã đánh dấu là vắng', 'success');
+                                                setAttendanceModalData(null);
+                                                if (modalEntries && setModalEntries) {
+                                                    setModalEntries(modalEntries.map(entry =>
+                                                        entry.id === attendanceModalData.id
+                                                            ? { ...entry, status: 'Vắng mặt' }
+                                                            : entry
+                                                    ));
+                                                }
+                                                if (refreshData) refreshData();
+                                            } else {
+                                                showToast(result.description, 'error');
+                                            }
+                                        } catch (err) {
+                                            showToast(err.message || 'Thao tác thất bại', 'error');
+                                        }
+                                    }}
+                                >
+                                    Đánh dấu là vắng
+                                </AttendanceButton>
+
+                                <AttendanceButton
+                                    className="attendance"
+                                    onClick={async () => {
+                                        try {
+                                            const result = await markAsAttendance(user.token, {
+                                                schedule_id: attendanceModalData.id,
+                                                reason: ""
+                                            });
+                                            if (result.success) {
+                                                showToast('Đã đánh dấu là đúng giờ', 'success');
+                                                setAttendanceModalData(null);
+                                                if (modalEntries && setModalEntries) {
+                                                    setModalEntries(modalEntries.map(entry =>
+                                                        entry.id === attendanceModalData.id
+                                                            ? { ...entry, status: 'Hoàn thành' }
+                                                            : entry
+                                                    ));
+                                                }
+                                                if (refreshData) refreshData();
+                                            } else {
+                                                showToast(result.description, 'error');
+                                            }
+                                        } catch (err) {
+                                            showToast(err.message || 'Thao tác thất bại', 'error');
+                                        }
+                                    }}
+                                >
+                                    Đánh dấu là đúng giờ
+                                </AttendanceButton>
+                            </AttendanceButtons>
+                        </AttendanceModal>
+                    </>
                 )}
             </TimetableWrapper>
         </DndProvider>
@@ -1472,6 +1725,7 @@ export default function ViewSchedule() {
     const [holidayDate, setHolidayDate] = useState(null);
     const [makeupDate, setMakeupDate] = useState(null);
     const [isMarkingHoliday, setIsMarkingHoliday] = useState(false);
+    const [attendanceModalData, setAttendanceModalData] = useState(null);
 
     const token = user?.token;
 
@@ -1949,6 +2203,8 @@ export default function ViewSchedule() {
                                 viewMode={viewMode}
                                 scheduleDescription={scheduleDescription}
                                 selectedOption={selectedOption}
+                                attendanceModalData={attendanceModalData}
+                                setAttendanceModalData={setAttendanceModalData}
                                 refreshData={() => {
                                     if (viewMode === 'Base') {
                                         handleSelectTemplate(selectedScheduleId);
@@ -2080,6 +2336,8 @@ export default function ViewSchedule() {
                             viewMode={viewMode}
                             scheduleDescription={scheduleDescription}
                             selectedOption={selectedOption}
+                            attendanceModalData={attendanceModalData}
+                            setAttendanceModalData={setAttendanceModalData}
                             refreshData={() => fetchTimetableData('Applied', selectedCurrent)}
                         />
                         {isApplyDialogOpen && (

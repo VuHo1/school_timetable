@@ -1619,7 +1619,7 @@ export const markAsAttendance = async (token, updateData) => {
     return data;
 };
 export const markAsLate = async (token, updateData) => {
-    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/mark-as-attendance`, {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/mark-as-late`, {
         method: 'PUT',
         headers: {
             'Accept': 'text/plain',
