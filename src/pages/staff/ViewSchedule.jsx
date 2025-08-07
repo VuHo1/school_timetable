@@ -550,6 +550,15 @@ const formatTime = (timeStr) => {
     return timeStr; // fallback
 };
 
+const formatDate = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 const SlotModal = ({ entries, onClose, viewMode }) => (
     <>
         <ModalOverlay onClick={onClose} />
@@ -616,8 +625,8 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
             setIsGenerating(true);
             const response = await addSemester(token, {
                 semester_name: newSemesterName,
-                start_date: new Date(newSemesterStartDate).toISOString().split('T')[0],
-                end_date: new Date(newSemesterEndDate).toISOString().split('T')[0],
+                start_date: formatDate(newSemesterStartDate),
+                end_date: formatDate(newSemesterEndDate),
             });
             if (response.success) {
                 showToast(response.description, 'success');
@@ -666,20 +675,29 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
                         </FormGroup1>
                         <FormGroup1>
                             <Label>Ngày bắt đầu</Label>
-                            <Input
-                                type="date"
-                                value={newSemesterStartDate}
-                                onChange={(e) => setNewSemesterStartDate(e.target.value)}
+                            <DatePicker
+                                selected={newSemesterStartDate}
+                                onChange={(date) => {
+                                    setNewSemesterStartDate(date);
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Chọn ngày bắt đầu"
                                 disabled={isGenerating}
+                                customInput={<Input />}
                             />
                         </FormGroup1>
                         <FormGroup1>
                             <Label>Ngày kết thúc</Label>
-                            <Input
-                                type="date"
-                                value={newSemesterEndDate}
-                                onChange={(e) => setNewSemesterEndDate(e.target.value)}
+
+                            <DatePicker
+                                selected={newSemesterEndDate}
+                                onChange={(date) => {
+                                    setNewSemesterEndDate(date);
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Chọn ngày kết thúc"
                                 disabled={isGenerating}
+                                customInput={<Input />}
                             />
                         </FormGroup1>
                         {semesterError && <DialogError>{semesterError}</DialogError>}
@@ -2106,24 +2124,26 @@ export default function ViewSchedule() {
                                     </SubHeading>
                                     <FormGroup1>
                                         <Label>Ngày bắt đầu</Label>
-                                        <Input
-                                            type="date"
-                                            value={removeBeginDate}
-                                            onChange={(e) => {
-                                                setRemoveBeginDate(e.target.value);
-                                                setRemoveDateError('');
+                                        <DatePicker
+                                            selected={removeBeginDate}
+                                            onChange={(date) => {
+                                                setRemoveBeginDate(date);
                                             }}
+                                            dateFormat="dd/MM/yyyy"
+                                            placeholderText="Chọn ngày bắt đầu"
+                                            customInput={<Input />}
                                         />
                                     </FormGroup1>
                                     <FormGroup1>
                                         <Label>Ngày kết thúc</Label>
-                                        <Input
-                                            type="date"
-                                            value={removeEndDate}
-                                            onChange={(e) => {
-                                                setRemoveEndDate(e.target.value);
-                                                setRemoveDateError('');
+                                        <DatePicker
+                                            selected={removeEndDate}
+                                            onChange={(date) => {
+                                                setRemoveEndDate(date);
                                             }}
+                                            dateFormat="dd/MM/yyyy"
+                                            placeholderText="Chọn ngày kết thúc"
+                                            customInput={<Input />}
                                         />
                                     </FormGroup1>
                                     {removeDateError && <DialogError>{removeDateError}</DialogError>}
