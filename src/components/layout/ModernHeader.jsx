@@ -177,8 +177,8 @@ const NotificationButton = styled.button`
 
 const NotificationCount = styled.span`
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: 1px;
+  right: 1px;
   background: #5aa7ff;
   color: white;
   border-radius: 50%;
@@ -799,10 +799,6 @@ function ModernHeader() {
             <FormGroup>
               <Label>Ngày tạo:</Label>
               <Value>{new Date(selectedNotification.created_date).toLocaleString('vi-VN')}</Value>
-            </FormGroup>
-            <FormGroup>
-              <Label>Ngày cập nhật:</Label>
-              <Value>{new Date(selectedNotification.updated_date).toLocaleString('vi-VN')}</Value>
             </FormGroup>
           </ModalContent>
         </Modal>

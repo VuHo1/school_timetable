@@ -7,24 +7,28 @@ import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead 
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f5f5;
-  min-height: calc(100vh - 70px);
+  min-height: 80vh;
+  overflow-x: hidden;
 `;
 
 const NotificationContainer = styled.div`
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  max-width: 800px;
+  max-width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  min-height: 400px;
+  flex-grow: 1;
+  min-height: 0;
+  overflow-y: none;
 `;
 
 const NotificationList = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  max-height: 80vh; 
+  padding-right: 8px; 
 `;
 
 const NotificationItem = styled.div.withConfig({
@@ -279,10 +283,6 @@ function Notification() {
             </CloseButton>
             <ModalTitle>Thông báo</ModalTitle>
             <FormGroup>
-              <Label>Thông báo của:</Label>
-              <Value>{selectedNotification.user_name || 'N/A'}</Value>
-            </FormGroup>
-            <FormGroup>
               <Label>Tiêu đề:</Label>
               <Value>{selectedNotification.title}</Value>
             </FormGroup>
@@ -293,10 +293,6 @@ function Notification() {
             <FormGroup>
               <Label>Ngày tạo:</Label>
               <Value>{new Date(selectedNotification.created_date).toLocaleString('vi-VN')}</Value>
-            </FormGroup>
-            <FormGroup>
-              <Label>Ngày cập nhật:</Label>
-              <Value>{new Date(selectedNotification.updated_date).toLocaleString('vi-VN')}</Value>
             </FormGroup>
           </ModalContent>
         </Modal>

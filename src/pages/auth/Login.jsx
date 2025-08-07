@@ -195,7 +195,6 @@ function Login() {
             const deviceId = await getDeviceId();
             const response = await login(userName, password, deviceId || "");
             if (response.success) {
-                showToast(response.description || 'Đăng nhập thành công!', 'success');
                 setTimeout(() => {
                     navigate('/admin/dashboard');
                 }, 3000);
@@ -218,7 +217,6 @@ function Login() {
             const deviceId = await getDeviceId();
             const response = await signInWithGoogle(credential, deviceId || "");
             if (response.success) {
-                showToast(response.description || 'Đăng nhập thành công!', 'success');
                 setTimeout(() => {
                     navigate('/admin/dashboard');
                 }, 3000);
