@@ -6,7 +6,7 @@ import { fetchRequestById, addRequestComment } from '../../api';
 import { toast } from 'react-hot-toast';
 import { FaCommentAlt, FaSpinner, FaArrowLeft } from 'react-icons/fa';
 
-// Styled Components (matching Request.jsx style)
+// Styled Components (unchanged except for new styles for content_detail list)
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -27,6 +27,7 @@ const Title = styled.h1`
   display: flex;
   justify-content: center;
 `;
+
 const Title1 = styled.h1`
   color: #2c3e50;
   font-size: 22px;
@@ -76,10 +77,37 @@ const DetailItem = styled.div`
     color: #2c3e50;
     min-width: 150px;
   }
+  .label1{
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 150px;
+    color: red;
+  }
   
   .value {
     color: #666;
     flex: 1;
+  }
+`;
+
+const ContentDetailList = styled.div`
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  .label1{
+     font-weight: 600;
+    color: #2c3e50;
+    min-width: 150px;
+    color: red;
+  }
+`;
+
+const ContentDetailItem = styled.div`
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  &:last-child {
+    border-bottom: none;
   }
 `;
 
@@ -110,9 +138,6 @@ const CommentList = styled.div`
 const Comment = styled.div`
   border-bottom: 1px solid #eee;
   padding: 1px 15px;
-  p{
-    
-  }
 `;
 
 const CommentInput = styled.textarea`
@@ -245,29 +270,39 @@ const RequestDetail = () => {
                                 <span className="label">Mô tả:</span>
                                 <span className="value">{request.description || 'Không có mô tả'}</span>
                             </DetailItem>
-                            {request.content_detail && (
-                                <>
-                                    <DetailItem>
-                                        <span className="label">Ngày dạy:</span>
-                                        <span className="value">{new Date(request.content_detail.date).toLocaleDateString('vi-VN')}</span>
-                                    </DetailItem>
-                                    <DetailItem>
-                                        <span className="label">Ca học:</span>
-                                        <span className="value">{request.content_detail.time_slot_id}</span>
-                                    </DetailItem>
-                                    <DetailItem>
-                                        <span className="label">Lớp:</span>
-                                        <span className="value">{request.content_detail.class_code}</span>
-                                    </DetailItem>
-                                    <DetailItem>
-                                        <span className="label">Môn học:</span>
-                                        <span className="value">{request.content_detail.subject_code}</span>
-                                    </DetailItem>
-                                    <DetailItem>
-                                        <span className="label">Phòng:</span>
-                                        <span className="value">{request.content_detail.room_code}</span>
-                                    </DetailItem>
-                                </>
+                            {request.content_detail && request.content_detail.length > 0 ? (
+                                <ContentDetailList>
+                                    <span className="label1">Nội dung:</span>
+                                    {request.content_detail.map((detail, index) => (
+                                        <ContentDetailItem key={detail.id || index}>
+                                            <DetailItem>
+                                                <span className="label">Ngày dạy:</span>
+                                                <span className="value">{detail.day_of_week_str}, {new Date(detail.date).toLocaleDateString('vi-VN')}</span>
+                                            </DetailItem>
+                                            <DetailItem>
+                                                <span className="label">Ca học:</span>
+                                                <span className="value">{detail.time_slot_id}</span>
+                                            </DetailItem>
+                                            <DetailItem>
+                                                <span className="label">Lớp:</span>
+                                                <span className="value">{detail.class_code}</span>
+                                            </DetailItem>
+                                            <DetailItem>
+                                                <span className="label">Môn học:</span>
+                                                <span className="value">{detail.subject_code}</span>
+                                            </DetailItem>
+                                            <DetailItem>
+                                                <span className="label">Phòng:</span>
+                                                <span className="value">{detail.room_code}</span>
+                                            </DetailItem>
+                                        </ContentDetailItem>
+                                    ))}
+                                </ContentDetailList>
+                            ) : (
+                                <DetailItem>
+                                    <span className="label1">Nội dung:</span>
+                                    <span className="value">Không có chi tiết nội dung</span>
+                                </DetailItem>
                             )}
                             {request.sub_status && (
                                 <DetailItem>
@@ -317,7 +352,7 @@ const RequestDetail = () => {
                             )}
                         </RequestInfo>
                         <CommentSection>
-                            <Title1 >Bình luận</Title1>
+                            <Title1>Bình luận</Title1>
                             <CommentList>
                                 {request.request_comment?.length > 0 ? (
                                     request.request_comment.map((comment, index) => (
