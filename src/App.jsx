@@ -30,6 +30,9 @@ import { useMemo } from 'react';
 import Semesters from './pages/staff/Semesters';
 import ClassScheduleConfig from './pages/staff/ClassScheduleConfig';
 import ReportPage from './pages/staff/ReportPage';
+import Request from './pages/admin/Request.jsx'
+import RequestDetail from './pages/admin/RequestDetail.jsx'
+
 import { listenToForegroundMessage } from './firebase/init.jsx';
 
 function AppRoutes() {
@@ -168,6 +171,16 @@ function AppRoutes() {
           <Route path="/role" element={
             <ProtectedRoute requiredAbility="Quản lí vai trò">
               <UserRole title="Quản lí vai trò" icon="👥" />
+            </ProtectedRoute>
+          } />
+          <Route path="/request" element={
+            <ProtectedRoute requiredAbility="Quản lí yêu cầu">
+              <Request title="Quản lí yêu cầu" icon="📝" />
+            </ProtectedRoute>
+          } />
+          <Route path="/request/:id" element={
+            <ProtectedRoute requiredAbility="Quản lí yêu cầu">
+              <RequestDetail />
             </ProtectedRoute>
           } />
           <Route path="/log" element={

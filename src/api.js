@@ -1652,3 +1652,86 @@ export const markAsHoliday = async (token, updateData) => {
     const data = await response.json();
     return data;
 };
+
+// Request Management APIs
+export const fetchMyRequests = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/request/my-request`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch my requests');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const fetchRequestById = async (token, requestId) => {
+    const response = await fetch(`${API_BASE_URL}/api/request/${requestId}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch request details');
+    }
+    const data = await response.json();
+    return data.data;
+};
+
+export const addRequestComment = async (token, requestId, content) => {
+    const queryParams = new URLSearchParams({ content });
+    const response = await fetch(`${API_BASE_URL}/api/request/comment/${requestId}?${queryParams.toString()}`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to add request comment');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const approveRequest = async (token, requestId) => {
+    const response = await fetch(`${API_BASE_URL}/api/request/primary/approve/${requestId}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to approve request');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const rejectRequest = async (token, requestId, rejectReason) => {
+    const queryParams = new URLSearchParams({ reject_reason: rejectReason });
+    const response = await fetch(`${API_BASE_URL}/api/request/primary/reject/${requestId}?${queryParams.toString()}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to reject request');
+    }
+    const data = await response.json();
+    return data;
+};

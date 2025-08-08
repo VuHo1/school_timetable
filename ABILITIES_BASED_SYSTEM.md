@@ -47,7 +47,8 @@ const PAGE_MAPPINGS = {
   'Quản lí chức năng': '/admin/user_command',
   'Cấu hình hệ thống': '/admin/setting',
   'Danh mục dùng chung': '/admin/code_list',
-  'Nhật ký & Giám sát': '/log'
+  'Nhật ký & Giám sát': '/log',
+  'Quản lí yêu cầu' : '/request',
 };
 ```
 
