@@ -1401,7 +1401,7 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
         }
 
         if (selectedOption === 'Daily') {
-            const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 1 && entry.day_of_week <= 7);
+            const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 0 && entry.day_of_week <= 7);
             if (validDetails.length === 0) {
 
                 return [];
@@ -1422,15 +1422,18 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
             { id: 6, label: 'Thứ 7', date: null },
             { id: 0, label: 'Chủ nhật', date: null }
         ];
-        const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 1 && entry.day_of_week <= 7);
+        const validDetails = details.filter(entry => entry.date && typeof entry.day_of_week === 'number' && entry.day_of_week >= 0 && entry.day_of_week <= 7);
         const uniqueDates = [...new Set(validDetails.map(entry => entry.date.split('T')[0]))].sort();
 
 
         uniqueDates.forEach(date => {
             const entry = validDetails.find(e => e.date.split('T')[0] === date);
-            if (entry && entry.day_of_week >= 1 && entry.day_of_week <= 7) {
-                days[entry.day_of_week - 1].date = date;
-                days[entry.day_of_week - 1].label = `${dayOfWeekMap[entry.day_of_week] || entry.day_of_week_str} (${new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})`
+            if (entry && entry.day_of_week >= 0 && entry.day_of_week <= 7) {
+                const dayItem = days.find(d => d.id === entry.day_of_week);
+                if (dayItem) {
+                    dayItem.date = date;
+                    dayItem.label = `${dayOfWeekMap[entry.day_of_week] || entry.day_of_week_str} (${new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})`;
+                }
             }
         });
         return days;
