@@ -431,8 +431,13 @@ const Request = () => {
         try {
             setActionLoading(true);
             const response = await approveRequest(user.token, requestId);
-            toast.success(response.description);
-            await loadRequests();
+            if (response.success) {
+                toast.success(response.description);
+                await loadRequests();
+            } else {
+                toast.error(response.description);
+            }
+
         } catch (error) {
             toast.error(error.message || 'Không thể xác nhận yêu cầu');
         } finally {
@@ -453,11 +458,16 @@ const Request = () => {
         try {
             setActionLoading(true);
             const response = await rejectRequest(user.token, selectedRequestId, rejectReason || '');
-            toast.success(response.description);
-            await loadRequests();
-            setIsRejectDialogOpen(false);
-            setRejectReason('');
-            setSelectedRequestId(null);
+            if (toast.success) {
+                toast.success(response.description);
+                await loadRequests();
+                setIsRejectDialogOpen(false);
+                setRejectReason('');
+                setSelectedRequestId(null);
+            } else {
+                toast.error(response.description);
+            }
+
         } catch (error) {
             toast.error(error.message || 'Không thể từ chối yêu cầu');
         } finally {

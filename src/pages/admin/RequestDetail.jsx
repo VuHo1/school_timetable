@@ -130,6 +130,7 @@ const CommentSection = styled.div`
 const CommentList = styled.div`
   max-height: 400px;
   overflow-y: auto;
+    overflow-x: hidden;
   margin-bottom: 15px;
   padding-right: 10px;
   border: 2px solid rgba(0, 0, 0, 0.11);
@@ -138,6 +139,12 @@ const CommentList = styled.div`
 const Comment = styled.div`
   border-bottom: 1px solid #eee;
   padding: 1px 15px;
+  p {
+  max-width: 100%;             
+  overflow-wrap: break-word;    
+  white-space: normal;         
+}
+
 `;
 
 const CommentInput = styled.textarea`
@@ -231,10 +238,15 @@ const RequestDetail = () => {
         try {
             setActionLoading(true);
             const response = await addRequestComment(user.token, request.id, comment);
-            toast.success(response.description);
-            const details = await fetchRequestById(user.token, request.id);
-            setRequest(details);
-            setComment('');
+            if (response.success) {
+                toast.success(response.description);
+                const details = await fetchRequestById(user.token, request.id);
+                setRequest(details);
+                setComment('');
+            } else {
+                toast.error(response.description);
+            }
+
         } catch (error) {
             toast.error(error.message || 'Không thể thêm bình luận');
         } finally {
