@@ -1193,7 +1193,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                             </Select>
                         </FormGroup1>
                         <FormGroup>
-                            <div>
+                            {/* <div>
                                 <Label>Phương thức xếp lịch</Label>
                                 <Select
                                     value={option}
@@ -1205,7 +1205,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                     <option value="SpreadEven">Dàn đều</option>
                                     <option value="BackLoad">Dồn cuối tuần</option>
                                 </Select>
-                            </div>
+                            </div> */}
                             <CheckboxLabel>
                                 <Checkbox
                                     type="checkbox"
