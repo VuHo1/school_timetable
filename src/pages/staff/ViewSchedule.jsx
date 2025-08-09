@@ -631,8 +631,8 @@ const AttendanceButton = styled.button`
   min-width: 120px;
   
   &.late {
-    background: #fef3c7;
-    color: #d97706;
+    background: #fff3cd;
+    color: #856404;
     
     &:hover {
       background: #fde68a;
@@ -640,8 +640,8 @@ const AttendanceButton = styled.button`
   }
   
   &.absent {
-    background: #fee2e2;
-    color: #ef4444;
+    background: #f8d7da;
+    color: #721c24;
     
     &:hover {
       background: #fecaca;
@@ -649,8 +649,8 @@ const AttendanceButton = styled.button`
   }
   
   &.attendance {
-    background: #d1fae5;
-    color: #10b981;
+    background: #d4edda;
+    color: #155724;
     
     &:hover {
       background: #a7f3d0;
@@ -1193,7 +1193,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                             </Select>
                         </FormGroup1>
                         <FormGroup>
-                            <div>
+                            {/* <div>
                                 <Label>Phương thức xếp lịch</Label>
                                 <Select
                                     value={option}
@@ -1205,7 +1205,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                     <option value="SpreadEven">Dàn đều</option>
                                     <option value="BackLoad">Dồn cuối tuần</option>
                                 </Select>
-                            </div>
+                            </div> */}
                             <CheckboxLabel>
                                 <Checkbox
                                     type="checkbox"

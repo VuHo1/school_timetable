@@ -5,7 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import {
     fetchMyRequests,
     approveRequest,
-    rejectRequest
+    rejectRequest,
+    subApproveRequest,
+    subRejectRequest,
+    creatorApproveRequest,
+    creatorRejectRequest,
+    creatorCancelRequest
 } from '../../api';
 import { toast } from 'react-hot-toast';
 import { FaCheckCircle, FaTimesCircle, FaEye, FaSpinner } from 'react-icons/fa';
@@ -104,7 +109,7 @@ const StatusBadge = styled.span`
 `;
 
 const ActionButton = styled.button`
-  background: ${props => props.type === 'approve' ? '#10B981' : props.type === 'reject' ? '#e74c3c' : '#4f46e5'};
+  background: ${props => props.type === 'approve' ? '#3b82f6' : props.type === 'reject' ? '#e74c3c' : '#6B7280'};
   color: white;
   border: none;
   padding: 6px 12px;
@@ -336,6 +341,7 @@ const Request = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [rejectType, setRejectType] = useState('');
     const [filters, setFilters] = useState({
         primary_status: '',
         sub_status: '',
@@ -346,7 +352,7 @@ const Request = () => {
     const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
     const [rejectReason, setRejectReason] = useState('');
     const [selectedRequestId, setSelectedRequestId] = useState(null);
-
+    const userName = user?.user_name;
     const ITEMS_PER_PAGE = 10;
 
     // Extract unique filter options
@@ -444,30 +450,107 @@ const Request = () => {
             setActionLoading(false);
         }
     };
+    // Handle approve
+    const handleCreatorApprove = async (requestId) => {
+        try {
+            setActionLoading(true);
+            const response = await creatorApproveRequest(user.token, requestId);
+            if (response.success) {
+                toast.success(response.description);
+                await loadRequests();
+            } else {
+                toast.error(response.description);
+            }
+
+        } catch (error) {
+            toast.error(error.message || 'Không thể xác nhận yêu cầu');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+    // Handle cancel
+    const handleCreatorCancel = async (requestId) => {
+        try {
+            setActionLoading(true);
+            const response = await creatorCancelRequest(user.token, requestId);
+            if (response.success) {
+                toast.success(response.description);
+                await loadRequests();
+            } else {
+                toast.error(response.description);
+            }
+
+        } catch (error) {
+            toast.error(error.message || 'Không thể xác nhận yêu cầu');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+    // Handle approve
+    const handleSubApprove = async (requestId) => {
+        try {
+            setActionLoading(true);
+            const response = await subApproveRequest(user.token, requestId);
+            if (response.success) {
+                toast.success(response.description);
+                await loadRequests();
+            } else {
+                toast.error(response.description);
+            }
+
+        } catch (error) {
+            toast.error(error.message || 'Không thể xác nhận yêu cầu');
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
     // Handle reject
     const handleReject = (requestId) => {
         setSelectedRequestId(requestId);
         setRejectReason('');
+        setRejectType('primary');
         setIsRejectDialogOpen(true);
     };
 
-    // Handle reject submission
+    const handleCreatorReject = (requestId) => {
+        setSelectedRequestId(requestId);
+        setRejectReason('');
+        setRejectType('creator');
+        setIsRejectDialogOpen(true);
+    };
+
+    const handleSubReject = (requestId) => {
+        setSelectedRequestId(requestId);
+        setRejectReason('');
+        setRejectType('sub');
+        setIsRejectDialogOpen(true);
+    };
+
     const handleRejectSubmit = async () => {
         if (!selectedRequestId) return;
         try {
             setActionLoading(true);
-            const response = await rejectRequest(user.token, selectedRequestId, rejectReason || '');
-            if (toast.success) {
+            let response;
+
+            if (rejectType === 'primary') {
+                response = await rejectRequest(user.token, selectedRequestId, rejectReason || '');
+            } else if (rejectType === 'creator') {
+                response = await creatorRejectRequest(user.token, selectedRequestId, rejectReason || '');
+            } else if (rejectType === 'sub') {
+                response = await subRejectRequest(user.token, selectedRequestId, rejectReason || '');
+            }
+
+            if (response?.success) {
                 toast.success(response.description);
                 await loadRequests();
                 setIsRejectDialogOpen(false);
                 setRejectReason('');
                 setSelectedRequestId(null);
+                setRejectType(''); // Reset reject type
             } else {
-                toast.error(response.description);
+                toast.error(response?.description || 'Có lỗi xảy ra');
             }
-
         } catch (error) {
             toast.error(error.message || 'Không thể từ chối yêu cầu');
         } finally {
@@ -542,16 +625,19 @@ const Request = () => {
                         </TableHeader>
                         <tbody>
                             {paginatedRequests.map(request => {
-                                const hasApprove = request.action_button?.some(btn => btn.label === 'Xác nhận');
-                                const hasReject = request.action_button?.some(btn => btn.label === 'Từ chối');
+                                const canPrimaryApprove = request.action_button?.some(btn => btn.label === 'Xác nhận') && request.primary_approver === userName;
+                                const canPrimaryReject = request.action_button?.some(btn => btn.label === 'Từ chối') && request.primary_approver === userName;
+                                // const canCreatorApprove = request.action_button?.some(btn => btn.label === 'Xác nhận') && request.creator === userName;
+                                // const canCreatorReject = request.action_button?.some(btn => btn.label === 'Từ chối') && request.creator === userName;
+                                const canCreatorCancel = request.action_button?.some(btn => btn.label === 'Hủy') && request.creator === userName;
+                                const canSubApprove = request.action_button?.some(btn => btn.label === 'Xác nhận') && request.sub_approver === userName && request.creator !== userName;
+                                const canSubReject = request.action_button?.some(btn => btn.label === 'Từ chối') && request.sub_approver === userName && request.creator !== userName;
                                 return (
                                     <TableRow key={request.id}>
                                         <TableCell>{request.id}</TableCell>
                                         <TableCell>{request.description || '-'}</TableCell>
                                         <TableCell>{request.type_name}</TableCell>
-                                        <TableCell>
-                                            <StatusBadge status={request.primary_status}>{request.primary_status}</StatusBadge>
-                                        </TableCell>
+                                        <TableCell>{request.primary_status}</TableCell>
                                         <TableCell>{request.sub_status || '-'}</TableCell>
                                         <TableCell>{new Date(request.created_date).toLocaleString('vi-VN')}</TableCell>
                                         <TableCell>{request.creator}</TableCell>
@@ -565,26 +651,57 @@ const Request = () => {
                                             >
                                                 Xem
                                             </ActionButton>
-                                            <ActionButton
-                                                type="approve"
-                                                disabled={!hasApprove || actionLoading}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleApprove(request.id);
-                                                }}
-                                            >
-                                                <FaCheckCircle /> Xác nhận
-                                            </ActionButton>
-                                            <ActionButton
-                                                type="reject"
-                                                disabled={!hasReject || actionLoading}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleReject(request.id);
-                                                }}
-                                            >
-                                                <FaTimesCircle /> Từ chối
-                                            </ActionButton>
+                                            {canCreatorCancel && (
+                                                <>
+                                                    <ActionButton
+                                                        type="reject"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleCreatorCancel(request.id);
+                                                        }}
+                                                    >
+                                                        <FaTimesCircle /> Hủy đơn
+                                                    </ActionButton>
+                                                </>
+                                            )}
+                                            {(canPrimaryApprove || canSubApprove) && (
+                                                <>
+                                                    <ActionButton
+                                                        type="approve"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (canPrimaryApprove) {
+                                                                handleApprove(request.id);
+                                                                // } else if (canCreatorApprove) {
+                                                                //     handleCreatorApprove(request.id);
+                                                            } else if (canSubApprove) {
+                                                                handleSubApprove(request.id);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <FaCheckCircle /> Xác nhận
+                                                    </ActionButton>
+                                                </>
+                                            )}
+                                            {(canPrimaryReject || canSubReject) && (
+                                                <>
+                                                    <ActionButton
+                                                        type="reject"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (canPrimaryReject) {
+                                                                handleReject(request.id);
+                                                                // } else if (canCreatorReject) {
+                                                                //     handleCreatorReject(request.id);
+                                                            } else if (canSubReject) {
+                                                                handleSubReject(request.id);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <FaTimesCircle /> Từ chối
+                                                    </ActionButton>
+                                                </>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 );

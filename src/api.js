@@ -1735,3 +1735,83 @@ export const rejectRequest = async (token, requestId, rejectReason) => {
     const data = await response.json();
     return data;
 };
+
+
+export const subApproveRequest = async (token, requestId) => {
+    const response = await fetch(`${API_BASE_URL}/api/request/substitute/approve/${requestId}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to approve request');
+    }
+    const data = await response.json();
+    return data;
+};
+
+export const subRejectRequest = async (token, requestId, rejectReason) => {
+    const queryParams = new URLSearchParams({ reject_reason: rejectReason });
+    const response = await fetch(`${API_BASE_URL}/api/request/substitute/reject/${requestId}?${queryParams.toString()}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to reject request');
+    }
+    const data = await response.json();
+    return data;
+};
+export const creatorApproveRequest = async (token, requestId) => {
+    const response = await fetch(`${API_BASE_URL}/api/request/creator/approve/${requestId}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to approve request');
+    }
+    const data = await response.json();
+    return data;
+};
+export const creatorCancelRequest = async (token, requestId) => {
+    const response = await fetch(`${API_BASE_URL}/api/request/creator/cancel/${requestId}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to approve request');
+    }
+    const data = await response.json();
+    return data;
+};
+export const creatorRejectRequest = async (token, requestId, rejectReason) => {
+    const queryParams = new URLSearchParams({ reject_reason: rejectReason });
+    const response = await fetch(`${API_BASE_URL}/api/request/creator/reject/${requestId}?${queryParams.toString()}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to reject request');
+    }
+    const data = await response.json();
+    return data;
+};
