@@ -183,14 +183,14 @@ const PaginationButton = styled.button.withConfig({
 })`
   padding: 8px 12px;
   border: 1px solid #ddd;
-  background: ${props => props.active ? '#27ae60' : 'white'};
+  background: ${props => props.active ? '#667eea' : 'white'};
   color: ${props => props.active ? 'white' : '#2c3e50'};
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
   
   &:hover {
-    background: ${props => props.active ? '#27ae60' : '#f8f9fa'};
+    background: ${props => props.active ? '#667eea' : '#f8f9fa'};
   }
   
   &:disabled {

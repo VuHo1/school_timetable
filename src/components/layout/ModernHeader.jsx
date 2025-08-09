@@ -24,6 +24,7 @@ const PAGE_MAPPINGS = {
   'Thời khóa biểu': '/staff/my-schedule',
   'Quản lí học kỳ': '/staff/semesters',
   'Báo cáo thống kê': '/staff/report',
+  'Quản lí yêu cầu': '/request',
 };
 
 const Container = styled.div`
@@ -634,6 +635,7 @@ function ModernHeader() {
       'Thời khóa biểu': '📅',
       'Quản lí thời khóa biểu': '📅',
       'Quản lí học kỳ': '📆',
+      'Quản lí yêu cầu': '📝',
       'Báo cáo thống kê': '📊',
     };
     return iconMap[ability] || '📄';
