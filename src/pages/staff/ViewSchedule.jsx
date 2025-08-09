@@ -631,8 +631,8 @@ const AttendanceButton = styled.button`
   min-width: 120px;
   
   &.late {
-    background: #fef3c7;
-    color: #d97706;
+    background: #fff3cd;
+    color: #856404;
     
     &:hover {
       background: #fde68a;
@@ -640,8 +640,8 @@ const AttendanceButton = styled.button`
   }
   
   &.absent {
-    background: #fee2e2;
-    color: #ef4444;
+    background: #f8d7da;
+    color: #721c24;
     
     &:hover {
       background: #fecaca;
@@ -649,8 +649,8 @@ const AttendanceButton = styled.button`
   }
   
   &.attendance {
-    background: #d1fae5;
-    color: #10b981;
+    background: #d4edda;
+    color: #155724;
     
     &:hover {
       background: #a7f3d0;
