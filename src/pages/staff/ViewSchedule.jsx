@@ -2856,8 +2856,8 @@ export default function ViewSchedule() {
                                             setIsMarkingHoliday(true);
                                             try {
                                                 var resultData = await markAsHoliday(user.token, {
-                                                    holiday_date: formatDate(holidayDate),
-                                                    makeup_date: makeupDate ? formatDate(makeupDate) : null,
+                                                    current_date: formatDate(holidayDate),
+                                                    new_date: makeupDate ? formatDate(makeupDate) : null,
                                                 });
                                                 if (resultData.success) {
                                                     showToast('Đã thêm ngày nghỉ thành công', 'success');
