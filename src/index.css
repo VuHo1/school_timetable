@@ -1,0 +1,15 @@
+/* Ngăn container gốc của react-hot-toast cắt bớt toast */
+#__react-hot-toast {
+  overflow: visible !important;
+}
+
+/* Đảm bảo toast có thể cuộn bên trong */
+.react-hot-toast {
+  overflow: visible !important;
+}
+
+/* Nếu toast quá cao, cuộn bên trong thay vì bị cắt */
+.react-hot-toast-container {
+  overflow: auto !important;
+  max-height: 80vh !important;
+}

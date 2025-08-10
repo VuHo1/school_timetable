@@ -1584,6 +1584,24 @@ export const moveSchedule = async (token, updateData) => {
     return data;
 };
 
+export const moveScheduleDetail = async (token, updateData) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/move-schedule`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update base template');
+    }
+    const data = await response.json();
+    return data;
+};
+
 export const markAsAbsent = async (token, updateData) => {
     const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/mark-as-absent`, {
         method: 'PUT',
