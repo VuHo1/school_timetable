@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
 import '../../styles/date.css'
@@ -818,6 +818,7 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
                                 placeholderText="Chọn ngày bắt đầu"
                                 disabled={isGenerating}
                                 customInput={<Input />}
+                                minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
                             />
                         </FormGroup1>
                         <FormGroup1>
@@ -832,6 +833,7 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
                                 placeholderText="Chọn ngày kết thúc"
                                 disabled={isGenerating}
                                 customInput={<Input />}
+                                minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
                             />
                         </FormGroup1>
                         {semesterError && <DialogError>{semesterError}</DialogError>}
@@ -1797,6 +1799,20 @@ export default function ViewSchedule() {
     const [moveScheduleNewTimeSlot, setMoveScheduleNewTimeSlot] = useState('');
     const [isMovingSchedule, setIsMovingSchedule] = useState(false);
 
+    // State variables for Applied view "Dời lịch" feature
+    const [isMoveScheduleDetailDialogOpen, setIsMoveScheduleDetailDialogOpen] = useState(false);
+    const [moveScheduleDetailType, setMoveScheduleDetailType] = useState('All');
+    const [moveScheduleDetailCode, setMoveScheduleDetailCode] = useState('');
+    const [moveScheduleDetailCurrentDate, setMoveScheduleDetailCurrentDate] = useState(null);
+    const [moveScheduleDetailNewDate, setMoveScheduleDetailNewDate] = useState(null);
+    const [moveScheduleDetailNewTimeSlot, setMoveScheduleDetailNewTimeSlot] = useState('');
+    const [isMovingScheduleDetail, setIsMovingScheduleDetail] = useState(false);
+
+    // NEW: State variables for 'Slot' type in Applied view move schedule
+    const [moveScheduleDetailSelectedClass, setMoveScheduleDetailSelectedClass] = useState('');
+    const [moveScheduleDetailLessons, setMoveScheduleDetailLessons] = useState([]);
+    const [moveScheduleDetailSelectedLessonId, setMoveScheduleDetailSelectedLessonId] = useState('');
+
     const token = user?.token;
 
     useEffect(() => {
@@ -1835,6 +1851,56 @@ export default function ViewSchedule() {
         };
         fetchData();
     }, [token, loading, viewMode]);
+
+    // NEW: useEffect to fetch lessons when type is 'Slot', class and date are selected
+    useEffect(() => {
+        const fetchLessonsForMove = async () => {
+            if (moveScheduleDetailType === 'Slot' && moveScheduleDetailSelectedClass && moveScheduleDetailCurrentDate && token) {
+                try {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    const targetDate = new Date(moveScheduleDetailCurrentDate);
+                    targetDate.setHours(0, 0, 0, 0);
+
+                    const diffTime = targetDate - today;
+                    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+                    // Tạo params object ổn định
+                    const params = {
+                        option: 'Daily',
+                        current: diffDays,
+                        type: 'Class',
+                        code: moveScheduleDetailSelectedClass,
+                    };
+
+                    const response = await fetchTimeTable(token, params);
+
+                    // Tính toán formattedDate một lần
+                    const formattedCurrentDate = formatDate(moveScheduleDetailCurrentDate);
+
+                    // Filter the response to get only entries for the exact selected date
+                    const filteredLessons = (response.data_set || []).filter(entry =>
+                        entry.class_code === moveScheduleDetailSelectedClass &&
+                        entry.date?.split('T')[0] === formattedCurrentDate
+                    );
+
+                    setMoveScheduleDetailLessons(filteredLessons);
+                } catch (err) {
+                    showToast(`Lỗi khi tải tiết học: ${err.message}`, 'error');
+                    setMoveScheduleDetailLessons([]);
+                }
+            } else {
+                setMoveScheduleDetailLessons([]);
+            }
+        };
+
+        fetchLessonsForMove();
+    }, [moveScheduleDetailType, moveScheduleDetailSelectedClass, moveScheduleDetailCurrentDate, token]);
+
+    const formatDateMemo = useCallback((date) => {
+        return new Date(date).toISOString().split('T')[0];
+    }, []);
 
     const fetchTimetableData = async (mode, current) => {
         if (!token || isLoading) {
@@ -2222,6 +2288,84 @@ export default function ViewSchedule() {
         }
     };
 
+    const handleMoveScheduleDetail = async () => {
+        if (moveScheduleDetailType === 'Slot') {
+            if (!moveScheduleDetailSelectedClass) {
+                showToast('Vui lòng chọn lớp', 'error');
+                return;
+            }
+            if (!moveScheduleDetailSelectedLessonId) {
+                showToast('Vui lòng chọn tiết học hiện tại', 'error');
+                return;
+            }
+        } else if (moveScheduleDetailType !== 'All' && !moveScheduleDetailCode) {
+            showToast('Vui lòng chọn lớp hoặc giáo viên cần di chuyển', 'error');
+            return;
+        }
+        if (!moveScheduleDetailCurrentDate) {
+            showToast('Vui lòng chọn ngày hiện tại', 'error');
+            return;
+        }
+        if (!moveScheduleDetailNewDate) {
+            showToast('Vui lòng chọn ngày mới', 'error');
+            return;
+        }
+        if (moveScheduleDetailCurrentDate.getTime() === moveScheduleDetailNewDate.getTime()) {
+            showToast('Vui lòng chọn ngày khác', 'error');
+            return;
+        }
+        if (!moveScheduleDetailNewTimeSlot) {
+            showToast('Vui lòng chọn tiết học mới', 'error');
+            return;
+        }
+
+        try {
+            setIsMovingScheduleDetail(true);
+            let payload = {};
+
+            if (moveScheduleDetailType === 'Slot') {
+                payload = {
+                    code: moveScheduleDetailSelectedLessonId, // Use selected lesson ID as code
+                    type: 'Slot', // Type is 'Slot'
+                    current_date: formatDate(moveScheduleDetailCurrentDate),
+                    new_date: formatDate(moveScheduleDetailNewDate),
+                    new_time_slot_id: parseInt(moveScheduleDetailNewTimeSlot),
+                };
+            } else {
+                payload = {
+                    code: moveScheduleDetailCode || '',
+                    type: moveScheduleDetailType,
+                    current_date: formatDate(moveScheduleDetailCurrentDate),
+                    new_date: formatDate(moveScheduleDetailNewDate),
+                    new_time_slot_id: parseInt(moveScheduleDetailNewTimeSlot),
+                };
+            }
+
+            const response = await moveScheduleDetail(token, payload);
+            if (response.success) {
+                showToast(response.description, 'success');
+                setIsMoveScheduleDetailDialogOpen(false);
+                // Reset all states for the modal
+                setMoveScheduleDetailType('All');
+                setMoveScheduleDetailCode('');
+                setMoveScheduleDetailCurrentDate(null);
+                setMoveScheduleDetailNewDate(null);
+                setMoveScheduleDetailNewTimeSlot('');
+                setMoveScheduleDetailSelectedClass('');
+                setMoveScheduleDetailLessons([]);
+                setMoveScheduleDetailSelectedLessonId('');
+                // Refresh the timetable data
+                await fetchTimetableData(viewMode, selectedCurrent);
+            } else {
+                showToast(response.description || 'Di chuyển lịch thất bại', 'error');
+            }
+        } catch (err) {
+            showToast(`Lỗi: ${err.message}`, 'error');
+        } finally {
+            setIsMovingScheduleDetail(false);
+        }
+    };
+
     if (!token) {
         return <Container>Vui lòng đăng nhập để xem thời khóa biểu.</Container>;
     }
@@ -2415,6 +2559,9 @@ export default function ViewSchedule() {
                                         setIsApplyDialogOpen(true);
                                     }} disabled={isLoading}>
                                         + Thêm mới
+                                    </ButtonAdd>
+                                    <ButtonAdd onClick={() => setIsMoveScheduleDetailDialogOpen(true)} disabled={isLoading}>
+                                        Dời lịch
                                     </ButtonAdd>
                                     <ButtonDelete onClick={() => setIsRemoveDialogOpen(true)} disabled={isLoading}>
                                         <FaTrash /> Xóa
@@ -2632,6 +2779,7 @@ export default function ViewSchedule() {
                                             dateFormat="dd/MM/yyyy"
                                             placeholderText="Chọn ngày bắt đầu"
                                             customInput={<Input />}
+                                            minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
                                         />
                                     </FormGroup1>
                                     <FormGroup1>
@@ -2644,6 +2792,7 @@ export default function ViewSchedule() {
                                             dateFormat="dd/MM/yyyy"
                                             placeholderText="Chọn ngày kết thúc"
                                             customInput={<Input />}
+                                            minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
                                         />
                                     </FormGroup1>
                                     {removeDateError && <DialogError>{removeDateError}</DialogError>}
@@ -2679,6 +2828,7 @@ export default function ViewSchedule() {
                                         dateFormat="dd/MM/yyyy"
                                         placeholderText="Chọn ngày nghỉ"
                                         customInput={<Input />}
+                                        minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
                                     />
                                 </FormGroup1>
                                 <FormGroup1>
@@ -2689,6 +2839,7 @@ export default function ViewSchedule() {
                                         dateFormat="dd/MM/yyyy"
                                         placeholderText="Không bắt buộc"
                                         customInput={<Input />}
+                                        minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
                                         isClearable
                                     />
                                 </FormGroup1>
@@ -2836,6 +2987,195 @@ export default function ViewSchedule() {
                     </Dialog>
                 </>
             )}
+            {isMoveScheduleDetailDialogOpen && (
+                <>
+                    <DialogOverlay onClick={() => {
+                        setIsMoveScheduleDetailDialogOpen(false);
+                        setMoveScheduleDetailType('All');
+                        setMoveScheduleDetailCode('');
+                        setMoveScheduleDetailCurrentDate(null);
+                        setMoveScheduleDetailNewDate(null);
+                        setMoveScheduleDetailNewTimeSlot('');
+                        setMoveScheduleDetailSelectedClass('');
+                        setMoveScheduleDetailLessons([]);
+                        setMoveScheduleDetailSelectedLessonId('');
+                    }} />
+                    <Dialog>
+                        <SubHeading>
+                            Dời lịch <br></br>
+                            <p style={{ color: 'red', fontSize: '12px' }}>
+                                Lưu ý: Chỉ các tiết có trạng thái "Chưa diễn ra" và không rơi vào ngày lễ mới được dời.
+                            </p>
+                        </SubHeading>
+                        <FormGroup1>
+                            <Label>Di chuyển</Label>
+                            <Select
+                                value={moveScheduleDetailType}
+                                onChange={(e) => {
+                                    setMoveScheduleDetailType(e.target.value);
+                                    setMoveScheduleDetailCode('');
+                                    setMoveScheduleDetailSelectedClass('');
+                                    setMoveScheduleDetailLessons([]);
+                                    setMoveScheduleDetailSelectedLessonId('');
+                                    setMoveScheduleDetailNewTimeSlot('');
+                                }}
+                                disabled={isMovingScheduleDetail}
+                            >
+                                <option value="All">Tất cả</option>
+                                <option value="Class">Lớp</option>
+                                <option value="Teacher">Giáo viên</option>
+                                <option value="Slot">Tiết</option>
+                            </Select>
+                        </FormGroup1>
+                        {moveScheduleDetailType === 'Class' && (
+                            <FormGroup1>
+                                <Label>Mã lớp</Label>
+                                <Select
+                                    value={moveScheduleDetailCode}
+                                    onChange={(e) => setMoveScheduleDetailCode(e.target.value)}
+                                    disabled={isMovingScheduleDetail}
+                                >
+                                    <option value="">-- Chọn --</option>
+                                    {classes.map((cls) => (
+                                        <option key={cls.class_code} value={cls.class_code}>
+                                            {cls.class_code}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </FormGroup1>
+                        )}
+                        {moveScheduleDetailType === 'Teacher' && (
+                            <FormGroup1>
+                                <Label>Mã giáo viên</Label>
+                                <Select
+                                    value={moveScheduleDetailCode}
+                                    onChange={(e) => setMoveScheduleDetailCode(e.target.value)}
+                                    disabled={isMovingScheduleDetail}
+                                >
+                                    <option value="">-- Chọn --</option>
+                                    {teachers.map((teacher) => (
+                                        <option key={teacher.user_name} value={teacher.user_name}>
+                                            {teacher.user_name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </FormGroup1>
+                        )}
+                        {moveScheduleDetailType === 'Slot' && (
+                            <FormGroup1>
+                                <Label>Mã lớp</Label>
+                                <Select
+                                    value={moveScheduleDetailSelectedClass}
+                                    onChange={(e) => {
+                                        setMoveScheduleDetailSelectedClass(e.target.value);
+                                        setMoveScheduleDetailLessons([]);
+                                        setMoveScheduleDetailSelectedLessonId('');
+                                        setMoveScheduleDetailNewTimeSlot('');
+                                    }}
+                                    disabled={isMovingScheduleDetail}
+                                >
+                                    <option value="">-- Chọn lớp --</option>
+                                    {classes.map((cls) => (
+                                        <option key={cls.class_code} value={cls.class_code}>
+                                            {cls.class_code}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </FormGroup1>
+                        )}
+                        <FormGroup1>
+                            <Label>Ngày hiện tại</Label>
+                            <DatePicker
+                                selected={moveScheduleDetailCurrentDate}
+                                onChange={(date) => {
+                                    setMoveScheduleDetailCurrentDate(date);
+                                    setMoveScheduleDetailLessons([]);
+                                    setMoveScheduleDetailSelectedLessonId('');
+                                    setMoveScheduleDetailNewTimeSlot('');
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Chọn ngày hiện tại"
+                                disabled={isMovingScheduleDetail}
+                                className="date-picker"
+                                customInput={<Input />}
+                                minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
+                            />
+                        </FormGroup1>
+                        {moveScheduleDetailType === 'Slot' && moveScheduleDetailSelectedClass && moveScheduleDetailCurrentDate && (
+                            <FormGroup1>
+                                <Label>Tiết học hiện tại</Label>
+                                <Select
+                                    value={moveScheduleDetailSelectedLessonId}
+                                    onChange={(e) => {
+                                        const selectedLesson = moveScheduleDetailLessons.find(lesson => lesson.id === parseInt(e.target.value));
+                                        setMoveScheduleDetailSelectedLessonId(e.target.value);
+                                        if (selectedLesson) {
+                                            setMoveScheduleDetailNewTimeSlot(selectedLesson.time_slot_id);
+                                        }
+                                    }}
+                                    disabled={isMovingScheduleDetail}
+                                >
+                                    <option value="">-- Chọn tiết học --</option>
+                                    {moveScheduleDetailLessons.map((lesson) => (
+                                        <option key={lesson.id} value={lesson.id}>
+                                            {lesson.class_code} - {lesson.subject_code} ({lesson.teacher_user_name}) - Tiết {lesson.time_slot_id}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </FormGroup1>
+                        )}
+                        <FormGroup1>
+                            <Label>Ngày mới</Label>
+                            <DatePicker
+                                selected={moveScheduleDetailNewDate}
+                                onChange={(date) => setMoveScheduleDetailNewDate(date)}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Chọn ngày mới"
+                                disabled={isMovingScheduleDetail}
+                                className="date-picker"
+                                customInput={<Input />}
+                                minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
+                            />
+                        </FormGroup1>
+                        {moveScheduleDetailType === 'Slot' && (
+                            <FormGroup1>
+                                <Label>Tiết học mới</Label>
+                                <Select
+                                    value={moveScheduleDetailNewTimeSlot}
+                                    onChange={(e) => setMoveScheduleDetailNewTimeSlot(e.target.value)}
+                                    disabled={isMovingScheduleDetail}
+                                >
+                                    <option value="">-- Chọn tiết --</option>
+                                    {timeSlots.map((slot) => (
+                                        <option key={slot.id} value={slot.id}>
+                                            Tiết {slot.id}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </FormGroup1>
+                        )}
+                        <DialogButtonGroup>
+                            <CancelButton onClick={() => {
+                                setIsMoveScheduleDetailDialogOpen(false);
+                                setMoveScheduleDetailType('All');
+                                setMoveScheduleDetailCode('');
+                                setMoveScheduleDetailCurrentDate(null);
+                                setMoveScheduleDetailNewDate(null);
+                                setMoveScheduleDetailNewTimeSlot('');
+                                setMoveScheduleDetailSelectedClass('');
+                                setMoveScheduleDetailLessons([]);
+                                setMoveScheduleDetailSelectedLessonId('');
+                            }} disabled={isMovingScheduleDetail}>
+                                Hủy
+                            </CancelButton>
+                            <ButtonAdd onClick={handleMoveScheduleDetail} disabled={isMovingScheduleDetail}>
+                                {isMovingScheduleDetail ? 'Đang xử lý...' : 'Xác nhận'}
+                            </ButtonAdd>
+                        </DialogButtonGroup>
+                    </Dialog>
+                </>
+            )
+            }
         </Container >
     );
 }
