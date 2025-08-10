@@ -23,6 +23,7 @@ import {
     fetchScheduleConfig,
     updateScheduleConfig,
     moveSchedule,
+    moveScheduleDetail,
     markAsAbsent,
     markAsAttendance,
     markAsLate,
@@ -1319,9 +1320,10 @@ function DraggableEntry({ entry, onClick, children, viewMode }) {
             class_code: entry.class_code,
             current_time_slot_id: entry.time_slot_id,
             current_day_of_week: entry.day_of_week,
+            current_date: entry.date,
             entry,
         },
-        canDrag: viewMode === 'Base',
+        canDrag: viewMode === 'Base' || viewMode === 'Applied' || viewMode === 'Personal',
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
         }),
@@ -1337,12 +1339,12 @@ function DraggableEntry({ entry, onClick, children, viewMode }) {
     );
 }
 
-function DroppableTd({ slotId, dayId, children, onDropEntry, canDropEntry, viewMode }) {
+function DroppableTd({ slotId, dayId, date, children, onDropEntry, canDropEntry, viewMode }) {
     const [{ isOver, canDrop }, drop] = useDrop({
         accept: ENTRY_TYPE,
-        canDrop: (item) => viewMode === 'Base' && canDropEntry(item, slotId, dayId),
+        canDrop: (item) => (viewMode === 'Base' || viewMode === 'Applied' || viewMode === 'Personal') && canDropEntry(item, slotId, dayId, date),
         drop: (item) => {
-            if (viewMode === 'Base') {
+            if (viewMode === 'Base' || viewMode === 'Applied' || viewMode === 'Personal') {
                 onDropEntry(item, slotId, dayId);
             }
         },
@@ -1441,25 +1443,76 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
 
     const dateColumns = getDateColumns(data);
 
-    const handleDropEntry = async (item, newSlotId, newDayId) => {
-        if (
-            item.current_time_slot_id === newSlotId &&
-            item.current_day_of_week === newDayId
-        ) {
-            return; // No move
+    const calculateTargetDate = (currentDate, targetDayOfWeek) => {
+        if (!currentDate) return null;
+
+        const current = new Date(currentDate);
+        const currentDayOfWeek = current.getDay() === 0 ? 7 : current.getDay();
+        const jsDayOfWeek = targetDayOfWeek === 0 ? 7 : targetDayOfWeek;
+
+        let dayDifference = jsDayOfWeek - currentDayOfWeek;
+
+        if (dayDifference === 0) {
+            return currentDate;
         }
+
+        const targetDate = new Date(current);
+        targetDate.setDate(current.getDate() + dayDifference);
+        return formatDate(targetDate);
+    };
+
+    const handleDropEntry = async (item, newSlotId, newDayId) => {
+        if (viewMode === 'Base') {
+            if (
+                item.current_time_slot_id === newSlotId &&
+                item.current_day_of_week === newDayId
+            ) {
+                return;
+            }
+        } else {
+            const targetDate = calculateTargetDate(item.current_date, newDayId);
+            if (
+                item.current_time_slot_id === newSlotId &&
+                item.current_date === targetDate
+            ) {
+                return;
+            }
+        }
+
         try {
-            var resultData = await moveSchedule(
-                user.token,
-                {
-                    schedule_id: item.entry.schedule_id,
-                    code: `${item.entry.id}`,
-                    type: 'Slot',
-                    current_day_of_week: dayOfWeekEnglish[item.current_day_of_week] || item.current_day_of_week,
-                    new_day_of_week: dayOfWeekEnglish[newDayId] || newDayId,
-                    new_time_slot_id: newSlotId,
+            let resultData;
+
+            if (viewMode === 'Base') {
+                resultData = await moveSchedule(
+                    user.token,
+                    {
+                        schedule_id: item.entry.schedule_id,
+                        code: `${item.entry.id}`,
+                        type: 'Slot',
+                        current_day_of_week: dayOfWeekEnglish[item.current_day_of_week] || item.current_day_of_week,
+                        new_day_of_week: dayOfWeekEnglish[newDayId] || newDayId,
+                        new_time_slot_id: newSlotId,
+                    }
+                );
+            } else {
+                const targetDate = calculateTargetDate(item.current_date, newDayId);
+                if (!targetDate) {
+                    showToast('Không thể xác định ngày đích', 'error');
+                    return;
                 }
-            );
+
+                resultData = await moveScheduleDetail(
+                    user.token,
+                    {
+                        code: `${item.entry.id}`,
+                        type: 'Slot',
+                        current_date: item.current_date,
+                        new_date: targetDate,
+                        new_time_slot_id: newSlotId,
+                    }
+                );
+            }
+
             if (resultData.success) {
                 showToast('Di chuyển thành công', 'success');
                 if (refreshData) refreshData();
@@ -1470,9 +1523,15 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
             showToast(err.message || 'Di chuyển thất bại', 'error');
         }
     };
-    const canDropEntry = (item, slotId, dayId) => {
-        // Only allow drop if not same cell
-        return item.current_time_slot_id !== slotId || item.current_day_of_week !== dayId;
+    const canDropEntry = (item, slotId, dayId, date) => {
+        if (viewMode === 'Base') {
+            // Only allow drop if not same cell for Base view
+            return item.current_time_slot_id !== slotId || item.current_day_of_week !== dayId;
+        } else {
+            // For Applied/Personal view, calculate target date and check if not same time slot and date
+            const targetDate = calculateTargetDate(item.current_date, dayId);
+            return item.current_time_slot_id !== slotId || item.current_date !== targetDate;
+        }
     };
 
     return (
@@ -1511,6 +1570,7 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                                                 key={col.date || col.id}
                                                 slotId={slot.id}
                                                 dayId={col.id}
+                                                date={col.date}
                                                 onDropEntry={handleDropEntry}
                                                 canDropEntry={canDropEntry}
                                                 viewMode={viewMode}
