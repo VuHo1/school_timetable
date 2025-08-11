@@ -506,7 +506,7 @@ const StatusBadge = styled.span`
             case 'Trễ': return '#FEF3C7';
             case 'Đã xin nghỉ': return '#EDE9FE';
             case 'Đã bị huỷ': return '#E5E7EB';
-            case 'Ngày lễ': return '#FEE2E2';
+            case 'Ngày lễ': return '#D1FAE5';
             case 'Nghỉ lễ': return '#D1FAE5';
             case 'Ngày thường': return '#D1FAE5';
             default: return '#F3F4F6';
@@ -522,7 +522,7 @@ const StatusBadge = styled.span`
             case 'Trễ': return '#D97706';
             case 'Đã xin nghỉ': return '#7C3AED';
             case 'Đã bị huỷ': return '#374151';
-            case 'Ngày lễ': return '#EF4444';
+            case 'Ngày lễ': return '#10B981';
             case 'Nghỉ lễ': return '#10B981';
             case 'Ngày thường': return '#10B981';
             default: return '#4B5563';
@@ -1506,6 +1506,7 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                 resultData = await moveScheduleDetail(
                     user.token,
                     {
+                        is_move: true,
                         code: `${item.entry.id}`,
                         type: 'Slot',
                         current_date: item.current_date,
@@ -1790,6 +1791,7 @@ export default function ViewSchedule() {
     const [holidayDate, setHolidayDate] = useState(null);
     const [makeupDate, setMakeupDate] = useState(null);
     const [isMarkingHoliday, setIsMarkingHoliday] = useState(false);
+    const [holidayOperationType, setHolidayOperationType] = useState('Thêm');
     const [attendanceModalData, setAttendanceModalData] = useState(null);
     const [isMoveScheduleDialogOpen, setIsMoveScheduleDialogOpen] = useState(false);
     const [moveScheduleType, setMoveScheduleType] = useState('All');
@@ -1812,6 +1814,7 @@ export default function ViewSchedule() {
     const [moveScheduleDetailSelectedClass, setMoveScheduleDetailSelectedClass] = useState('');
     const [moveScheduleDetailLessons, setMoveScheduleDetailLessons] = useState([]);
     const [moveScheduleDetailSelectedLessonId, setMoveScheduleDetailSelectedLessonId] = useState('');
+    const [moveScheduleDetailMoveType, setMoveScheduleDetailMoveType] = useState('Dời lịch');
 
     const token = user?.token;
 
@@ -2325,6 +2328,7 @@ export default function ViewSchedule() {
 
             if (moveScheduleDetailType === 'Slot') {
                 payload = {
+                    is_move: moveScheduleDetailMoveType === 'Dời lịch',
                     code: moveScheduleDetailSelectedLessonId, // Use selected lesson ID as code
                     type: 'Slot', // Type is 'Slot'
                     current_date: formatDate(moveScheduleDetailCurrentDate),
@@ -2333,6 +2337,7 @@ export default function ViewSchedule() {
                 };
             } else {
                 payload = {
+                    is_move: moveScheduleDetailMoveType === 'Dời lịch',
                     code: moveScheduleDetailCode || '',
                     type: moveScheduleDetailType,
                     current_date: formatDate(moveScheduleDetailCurrentDate),
@@ -2354,6 +2359,7 @@ export default function ViewSchedule() {
                 setMoveScheduleDetailSelectedClass('');
                 setMoveScheduleDetailLessons([]);
                 setMoveScheduleDetailSelectedLessonId('');
+                setMoveScheduleDetailMoveType('Dời lịch');
                 // Refresh the timetable data
                 await fetchTimetableData(viewMode, selectedCurrent);
             } else {
@@ -2553,15 +2559,15 @@ export default function ViewSchedule() {
                             {viewMode === 'Applied' && (
                                 <>
                                     <ButtonAdd onClick={() => setIsHolidayDialogOpen(true)} disabled={isLoading}>
-                                        + Thêm ngày nghỉ
+                                        Thêm/ xóa ngày nghỉ
+                                    </ButtonAdd>
+                                    <ButtonAdd onClick={() => setIsMoveScheduleDetailDialogOpen(true)} disabled={isLoading}>
+                                        Dời lịch/ Dạy bù
                                     </ButtonAdd>
                                     <ButtonAdd onClick={() => {
                                         setIsApplyDialogOpen(true);
                                     }} disabled={isLoading}>
                                         + Thêm mới
-                                    </ButtonAdd>
-                                    <ButtonAdd onClick={() => setIsMoveScheduleDetailDialogOpen(true)} disabled={isLoading}>
-                                        Dời lịch
                                     </ButtonAdd>
                                     <ButtonDelete onClick={() => setIsRemoveDialogOpen(true)} disabled={isLoading}>
                                         <FaTrash /> Xóa
@@ -2813,13 +2819,29 @@ export default function ViewSchedule() {
                             </>
                         )}
                         {isHolidayDialogOpen && (
-                            <DialogOverlay onClick={() => setIsHolidayDialogOpen(false)} />
+                            <DialogOverlay onClick={() => {
+                                setIsHolidayDialogOpen(false);
+                                setHolidayDate(null);
+                                setMakeupDate(null);
+                                setHolidayOperationType('Thêm');
+                            }} />
                         )}
                         {isHolidayDialogOpen && (
                             <Dialog>
                                 <SubHeading>
-                                    + Thêm ngày nghỉ
+                                    Thêm/ xóa ngày nghỉ
                                 </SubHeading>
+                                <FormGroup1>
+                                    <Label>Thao tác</Label>
+                                    <Select
+                                        value={holidayOperationType}
+                                        onChange={(e) => setHolidayOperationType(e.target.value)}
+                                        disabled={isMarkingHoliday}
+                                    >
+                                        <option value="Thêm">Thêm</option>
+                                        <option value="Xóa">Xóa</option>
+                                    </Select>
+                                </FormGroup1>
                                 <FormGroup1>
                                     <Label>Ngày nghỉ <span style={{ color: 'red' }}>*</span></Label>
                                     <DatePicker
@@ -2831,20 +2853,27 @@ export default function ViewSchedule() {
                                         minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
                                     />
                                 </FormGroup1>
-                                <FormGroup1>
-                                    <Label>Chọn ngày học bù</Label>
-                                    <DatePicker
-                                        selected={makeupDate}
-                                        onChange={date => setMakeupDate(date)}
-                                        dateFormat="dd/MM/yyyy"
-                                        placeholderText="Không bắt buộc"
-                                        customInput={<Input />}
-                                        minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
-                                        isClearable
-                                    />
-                                </FormGroup1>
+                                {holidayOperationType === 'Thêm' && (
+                                    <FormGroup1>
+                                        <Label>Chọn ngày học bù</Label>
+                                        <DatePicker
+                                            selected={makeupDate}
+                                            onChange={date => setMakeupDate(date)}
+                                            dateFormat="dd/MM/yyyy"
+                                            placeholderText="Không bắt buộc"
+                                            customInput={<Input />}
+                                            minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
+                                            isClearable
+                                        />
+                                    </FormGroup1>
+                                )}
                                 <DialogButtonGroup>
-                                    <CancelButton onClick={() => setIsHolidayDialogOpen(false)} disabled={isMarkingHoliday}>
+                                    <CancelButton onClick={() => {
+                                        setIsHolidayDialogOpen(false);
+                                        setHolidayDate(null);
+                                        setMakeupDate(null);
+                                        setHolidayOperationType('Thêm');
+                                    }} disabled={isMarkingHoliday}>
                                         Hủy
                                     </CancelButton>
                                     <ButtonAdd
@@ -2856,14 +2885,17 @@ export default function ViewSchedule() {
                                             setIsMarkingHoliday(true);
                                             try {
                                                 var resultData = await markAsHoliday(user.token, {
+                                                    is_add: holidayOperationType === 'Thêm',
                                                     current_date: formatDate(holidayDate),
                                                     new_date: makeupDate ? formatDate(makeupDate) : null,
                                                 });
                                                 if (resultData.success) {
-                                                    showToast('Đã thêm ngày nghỉ thành công', 'success');
+                                                    const operationText = holidayOperationType === 'Thêm' ? 'thêm' : 'xóa';
+                                                    showToast(`Đã ${operationText} ngày nghỉ thành công`, 'success');
                                                     setIsHolidayDialogOpen(false);
                                                     setHolidayDate(null);
                                                     setMakeupDate(null);
+                                                    setHolidayOperationType('Thêm');
                                                     fetchTimetableData('Applied', selectedCurrent);
                                                 } else {
                                                     showToast(resultData.description, 'error');
@@ -2899,7 +2931,7 @@ export default function ViewSchedule() {
                             Dời lịch
                         </SubHeading>
                         <FormGroup1>
-                            <Label>Di chuyển</Label>
+                            <Label>Phạm vi điều chỉnh lịch</Label>
                             <Select
                                 value={moveScheduleType}
                                 onChange={(e) => {
@@ -2999,16 +3031,30 @@ export default function ViewSchedule() {
                         setMoveScheduleDetailSelectedClass('');
                         setMoveScheduleDetailLessons([]);
                         setMoveScheduleDetailSelectedLessonId('');
+                        setMoveScheduleDetailMoveType('Dời lịch');
                     }} />
                     <Dialog>
                         <SubHeading>
-                            Dời lịch <br></br>
+                            Dời lịch/ Dạy bù
+                        </SubHeading>
+                        <SubHeading>
                             <p style={{ color: 'red', fontSize: '12px' }}>
-                                Lưu ý: Chỉ các tiết có trạng thái "Chưa diễn ra" và không rơi vào ngày lễ mới được dời.
+                                Lưu ý: Khi dời lịch, chỉ các tiết có trạng thái "Chưa diễn ra" và không rơi vào ngày lễ mới dời thành công.
                             </p>
                         </SubHeading>
                         <FormGroup1>
-                            <Label>Di chuyển</Label>
+                            <Label>Thao tác</Label>
+                            <Select
+                                value={moveScheduleDetailMoveType}
+                                onChange={(e) => setMoveScheduleDetailMoveType(e.target.value)}
+                                disabled={isMovingScheduleDetail}
+                            >
+                                <option value="Dời lịch">Dời lịch</option>
+                                <option value="Dạy bù">Dạy bù</option>
+                            </Select>
+                        </FormGroup1>
+                        <FormGroup1>
+                            <Label>Phạm vi điều chỉnh lịch</Label>
                             <Select
                                 value={moveScheduleDetailType}
                                 onChange={(e) => {
@@ -3165,6 +3211,7 @@ export default function ViewSchedule() {
                                 setMoveScheduleDetailSelectedClass('');
                                 setMoveScheduleDetailLessons([]);
                                 setMoveScheduleDetailSelectedLessonId('');
+                                setMoveScheduleDetailMoveType('Dời lịch');
                             }} disabled={isMovingScheduleDetail}>
                                 Hủy
                             </CancelButton>
