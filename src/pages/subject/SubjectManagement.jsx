@@ -306,6 +306,25 @@ const CheckboxItem = styled.label`
   }
 `;
 
+const RadioGroup = styled.div`
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+`;
+
+const RadioItem = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #2c3e50;
+  
+  input[type="radio"] {
+    margin: 0;
+  }
+`;
+
 const ModalActions = styled.div`
   padding: 20px 30px;
   border-top: 1px solid #eee;
@@ -491,8 +510,11 @@ function SubjectManagement() {
   const [slotSelectionMode, setSlotSelectionMode] = useState('fixed');
   const [timeSlots, setTimeSlots] = useState([]);
   const actionMenuRef = useRef(null);
+  const newSubjectCodeRef = useRef(null);
+  const newSubjectNameRef = useRef(null);
   const [formData, setFormData] = useState({
     subject_code: '',
+    subject_name: '',
     grade_level: [],
     is_online_course: false,
     weekly_slot: 1,
@@ -501,6 +523,9 @@ function SubjectManagement() {
     fixed_slot: [],
     avoid_slot: []
   });
+  const [subjectCodeType, setSubjectCodeType] = useState('existing'); // 'existing' or 'new'
+  const [newSubjectCode, setNewSubjectCode] = useState(''); // Separate state for new subject code input
+  const [newSubjectName, setNewSubjectName] = useState(''); // Separate state for new subject name input
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjectCodes, setSubjectCodes] = useState([]);
 
@@ -552,11 +577,32 @@ function SubjectManagement() {
     try {
       setModalLoading(true);
       const token = localStorage.getItem('authToken');
-      const response = await createSubject(token, formData);
-      if (!formData.subject_code || formData.grade_level.length === 0) {
+
+      // Prepare data based on subject code type
+      const submitData = { ...formData };
+
+      if (subjectCodeType === 'new') {
+        submitData.subject_code = newSubjectCode;
+        submitData.subject_name = newSubjectName;
+        submitData.is_new = true;
+      } else {
+
+        submitData.is_new = false;
+      }
+
+      // Validation
+      if (!submitData.subject_code || submitData.grade_level.length === 0) {
         toast.error('Vui lòng điền đầy đủ thông tin');
         return;
       }
+
+      // Additional validation for new subject code
+      if (subjectCodeType === 'new' && !submitData.subject_name) {
+        toast.error('Vui lòng nhập tên môn học');
+        return;
+      }
+
+      const response = await createSubject(token, submitData);
       if (response.success) {
         toast.success(response.description);
         fetchSubjects();
@@ -637,6 +683,7 @@ function SubjectManagement() {
     setSelectedSubject(subject);
     setFormData({
       subject_code: subject.subject_code,
+      subject_name: subject.subject_name || '',
       grade_level: subject.grade_level || [],
       is_online_course: subject.is_online_course || false,
       weekly_slot: subject.weekly_slot || 1,
@@ -652,6 +699,7 @@ function SubjectManagement() {
   const resetForm = () => {
     setFormData({
       subject_code: '',
+      subject_name: '',
       grade_level: [],
       is_online_course: false,
       weekly_slot: 1,
@@ -660,6 +708,9 @@ function SubjectManagement() {
       fixed_slot: [],
       avoid_slot: []
     });
+    setSubjectCodeType('existing');
+    setNewSubjectCode('');
+    setNewSubjectName('');
     setSelectedSubject(null);
     setSlotModalData({ fixed_slot: [], avoid_slot: [] });
   };
@@ -784,8 +835,39 @@ function SubjectManagement() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Keep focus on input when component re-renders
+  useEffect(() => {
+    if (subjectCodeType === 'new' && newSubjectCodeRef.current) {
+      const currentFocus = document.activeElement;
+      if (currentFocus === newSubjectCodeRef.current) {
+        // If the input was focused, keep it focused after re-render
+        setTimeout(() => {
+          if (newSubjectCodeRef.current) {
+            newSubjectCodeRef.current.focus();
+            // Restore cursor position if possible
+            const length = newSubjectCodeRef.current.value.length;
+            newSubjectCodeRef.current.setSelectionRange(length, length);
+          }
+        }, 0);
+      }
+    }
+  });
+
   const handleActionMenuToggle = (subject_code) => {
     setOpenActionMenu(openActionMenu === subject_code ? null : subject_code);
+  };
+
+  const handleSubjectCodeTypeChange = (value) => {
+    setSubjectCodeType(value);
+
+    // Auto focus to the appropriate input when switching to "new"
+    if (value === 'new') {
+      setTimeout(() => {
+        if (newSubjectCodeRef.current) {
+          newSubjectCodeRef.current.focus();
+        }
+      }, 100);
+    }
   };
 
   function SubjectSlotTable({ config, timeSlots, isEditing, onToggleSlot, slotSelectionMode }) {
@@ -859,6 +941,30 @@ function SubjectManagement() {
           <ModalTitle>{isEdit ? 'Chỉnh sửa môn học' : 'Thêm môn học mới'}</ModalTitle>
         </ModalHeader>
         <ModalBody>
+          {!isEdit && (
+            <RadioGroup>
+              <RadioItem>
+                <input
+                  type="radio"
+                  name="subjectCodeType"
+                  value="existing"
+                  checked={subjectCodeType === 'existing'}
+                  onChange={(e) => handleSubjectCodeTypeChange(e.target.value)}
+                />
+                Sử dụng môn có sẵn
+              </RadioItem>
+              <RadioItem>
+                <input
+                  type="radio"
+                  name="subjectCodeType"
+                  value="new"
+                  checked={subjectCodeType === 'new'}
+                  onChange={(e) => handleSubjectCodeTypeChange(e.target.value)}
+                />
+                Tạo mã môn mới
+              </RadioItem>
+            </RadioGroup>
+          )}
           <FormGrid>
             <FormGroup>
               <Label>Mã môn học *</Label>
@@ -868,7 +974,7 @@ function SubjectManagement() {
                   value={formData.subject_code}
                   disabled
                 />
-              ) : (
+              ) : subjectCodeType === 'existing' ? (
                 <Select
                   value={formData.subject_code}
                   onChange={(e) => handleInputChange('subject_code', e.target.value)}
@@ -881,8 +987,30 @@ function SubjectManagement() {
                     </option>
                   ))}
                 </Select>
+              ) : (
+                <Input
+                  ref={newSubjectCodeRef}
+                  type="text"
+                  value={newSubjectCode}
+                  onChange={(e) => setNewSubjectCode(e.target.value)}
+                  placeholder="Nhập mã môn học mới"
+                  required
+                />
               )}
             </FormGroup>
+            {!isEdit && subjectCodeType === 'new' && (
+              <FormGroup>
+                <Label>Tên môn học *</Label>
+                <Input
+                  ref={newSubjectNameRef}
+                  type="text"
+                  value={newSubjectName}
+                  onChange={(e) => setNewSubjectName(e.target.value)}
+                  placeholder="Nhập tên môn học"
+                  required
+                />
+              </FormGroup>
+            )}
             <FormGroup>
               <Label>Số tiết/tuần *</Label>
               <Input
