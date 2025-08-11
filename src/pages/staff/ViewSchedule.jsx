@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
 import '../../styles/date.css'
@@ -33,7 +33,8 @@ import {
     getAvailabelTeacherToChange2,
     getAvailabelRoomToChange,
     changeTeacher,
-    changeRoom
+    changeRoom,
+    addScheduleBySlot
 } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import DatePicker from 'react-datepicker';
@@ -920,7 +921,7 @@ const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData, showToa
                         <option value="">-- Chọn giáo viên --</option>
                         {availableTeachers.map((teacher) => (
                             <option key={teacher.user_name} value={teacher.user_name}>
-                                {teacher.full_name} ({teacher.user_name})
+                                {teacher.full_name} ({teacher.user_name}) {teacher.is_current_teacher ? "(GV bộ môn)" : ""}
                             </option>
                         ))}
                     </TeacherDropdown>
@@ -952,7 +953,7 @@ const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData, showToa
                         <option value="">-- Chọn phòng --</option>
                         {availableRooms.map((room) => (
                             <option key={room.room_code} value={room.room_code}>
-                                {room.room_name} ({room.room_code})
+                                {room.room_name} ({room.room_code}) {room.is_current_room ? "(Hiện tại)" : ""}
                             </option>
                         ))}
                     </RoomDropdown>
@@ -2105,7 +2106,24 @@ export default function ViewSchedule() {
     const [moveScheduleDetailSelectedLessonId, setMoveScheduleDetailSelectedLessonId] = useState('');
     const [moveScheduleDetailMoveType, setMoveScheduleDetailMoveType] = useState('Dời lịch');
 
+    // NEW: State variables for "Thêm mới" combined modal
+    const [addNewType, setAddNewType] = useState('Thời khóa biểu mới');
+    const [isAddNewDialogOpen, setIsAddNewDialogOpen] = useState(false);
+
+    const [selectedClassForSlot, setSelectedClassForSlot] = useState('');
+    const [selectedSubjectForSlot, setSelectedSubjectForSlot] = useState('');
+    const [selectedDateForSlot, setSelectedDateForSlot] = useState(null);
+    const [selectedTimeSlotForSlot, setSelectedTimeSlotForSlot] = useState('');
+    const [selectedTeacherForSlot, setSelectedTeacherForSlot] = useState('');
+    const [classSubjects, setClassSubjects] = useState([]);
+    const [availableTeachersForSlot, setAvailableTeachersForSlot] = useState([]);
+    const [isLoadingClassSubjects, setIsLoadingClassSubjects] = useState(false);
+    const [isLoadingTeachersForSlot, setIsLoadingTeachersForSlot] = useState(false);
+    const [isAddingBySlot, setIsAddingBySlot] = useState(false);
+
     const token = user?.token;
+
+
 
     useEffect(() => {
         if (!token || loading) return;
@@ -2661,6 +2679,128 @@ export default function ViewSchedule() {
         }
     };
 
+    // NEW: Functions for adding schedule by slot
+    const handleClassChangeForSlot = async (classCode) => {
+        setSelectedClassForSlot(classCode);
+        setSelectedSubjectForSlot('');
+        setSelectedDateForSlot(null);
+        setSelectedTimeSlotForSlot('');
+        setSelectedTeacherForSlot('');
+        setClassSubjects([]);
+        setAvailableTeachersForSlot([]);
+
+        if (classCode) {
+            try {
+                setIsLoadingClassSubjects(true);
+                const response = await fetchClassSubjects(token, classCode);
+                if (response.success) {
+                    setClassSubjects(response.data_set || []);
+                } else {
+                    showToast(response.description || 'Lỗi khi tải danh sách môn học', 'error');
+                }
+            } catch (err) {
+                showToast(`Lỗi: ${err.message}`, 'error');
+            } finally {
+                setIsLoadingClassSubjects(false);
+            }
+        }
+    };
+
+    const handleSubjectChangeForSlot = (subjectCode) => {
+        setSelectedSubjectForSlot(subjectCode);
+        setSelectedDateForSlot(null);
+        setSelectedTimeSlotForSlot('');
+        setSelectedTeacherForSlot('');
+        setAvailableTeachersForSlot([]);
+    };
+
+    const handleDateChangeForSlot = (date) => {
+        setSelectedDateForSlot(date);
+        setSelectedTimeSlotForSlot('');
+        setSelectedTeacherForSlot('');
+        setAvailableTeachersForSlot([]);
+    };
+
+    const handleTimeSlotChangeForSlot = async (timeSlotId) => {
+        setSelectedTimeSlotForSlot(timeSlotId);
+        setSelectedTeacherForSlot('');
+        setAvailableTeachersForSlot([]);
+
+        if (timeSlotId && selectedDateForSlot && selectedSubjectForSlot) {
+            try {
+                setIsLoadingTeachersForSlot(true);
+                const response = await getAvailabelTeacherToChange2(token, selectedClassForSlot, selectedSubjectForSlot, formatDate(selectedDateForSlot), parseInt(timeSlotId));
+                if (response.success) {
+                    setAvailableTeachersForSlot(response.data_set || []);
+                } else {
+                    showToast(response.description || 'Lỗi khi tải danh sách giáo viên', 'error');
+                }
+            } catch (err) {
+                showToast(`Lỗi: ${err.message}`, 'error');
+            } finally {
+                setIsLoadingTeachersForSlot(false);
+            }
+        }
+    };
+
+    const handleAddBySlot = async () => {
+        if (!selectedClassForSlot) {
+            showToast('Vui lòng chọn lớp', 'error');
+            return;
+        }
+        if (!selectedSubjectForSlot) {
+            showToast('Vui lòng chọn môn học', 'error');
+            return;
+        }
+        if (!selectedDateForSlot) {
+            showToast('Vui lòng chọn ngày', 'error');
+            return;
+        }
+        if (!selectedTimeSlotForSlot) {
+            showToast('Vui lòng chọn tiết học', 'error');
+            return;
+        }
+        if (!selectedTeacherForSlot) {
+            showToast('Vui lòng chọn giáo viên', 'error');
+            return;
+        }
+
+        try {
+            setIsAddingBySlot(true);
+            const payload = {
+                class_code: selectedClassForSlot,
+                subject_code: selectedSubjectForSlot,
+                date: formatDate(selectedDateForSlot),
+                time_slot_id: parseInt(selectedTimeSlotForSlot),
+                teacher_user_name: selectedTeacherForSlot
+            };
+
+            const response = await addScheduleBySlot(token, payload);
+            if (response.success) {
+                showToast(response.description || 'Thêm tiết học thành công', 'success');
+                setIsAddNewDialogOpen(false);
+                // Reset form
+                setSelectedClassForSlot('');
+                setSelectedSubjectForSlot('');
+                setSelectedDateForSlot(null);
+                setSelectedTimeSlotForSlot('');
+                setSelectedTeacherForSlot('');
+                setClassSubjects([]);
+                setAvailableTeachersForSlot([]);
+                // Refresh data
+                if (viewMode !== 'Base') {
+                    await fetchTimetableData(viewMode, selectedCurrent);
+                }
+            } else {
+                showToast(response.description || 'Thêm tiết học thất bại', 'error');
+            }
+        } catch (err) {
+            showToast(`Lỗi: ${err.message}`, 'error');
+        } finally {
+            setIsAddingBySlot(false);
+        }
+    };
+
     if (!token) {
         return <Container>Vui lòng đăng nhập để xem thời khóa biểu.</Container>;
     }
@@ -2854,7 +2994,8 @@ export default function ViewSchedule() {
                                         Dời lịch/ Dạy bù
                                     </ButtonAdd>
                                     <ButtonAdd onClick={() => {
-                                        setIsApplyDialogOpen(true);
+                                        setIsAddNewDialogOpen(true);
+                                        setAddNewType('Thời khóa biểu mới');
                                     }} disabled={isLoading}>
                                         + Thêm mới
                                     </ButtonAdd>
@@ -3062,7 +3203,7 @@ export default function ViewSchedule() {
                                 }} />
                                 <Dialog>
                                     <SubHeading>
-                                        <FaTrash /> Xóa thời khóa biểu
+                                        Xóa thời khóa biểu
                                     </SubHeading>
                                     <FormGroup1>
                                         <Label>Ngày bắt đầu</Label>
@@ -3510,8 +3651,274 @@ export default function ViewSchedule() {
                         </DialogButtonGroup>
                     </Dialog>
                 </>
-            )
-            }
+            )}
+
+            {/* NEW: Combined modal for "Thêm mới" */}
+            {isAddNewDialogOpen && (
+                <>
+                    <ModalOverlay onClick={() => {
+                        setIsAddNewDialogOpen(false);
+
+                        setAddNewType('Thời khóa biểu mới');
+                        // Reset slot form data
+                        setSelectedClassForSlot('');
+                        setSelectedSubjectForSlot('');
+                        setSelectedDateForSlot(null);
+                        setSelectedTimeSlotForSlot('');
+                        setSelectedTeacherForSlot('');
+                        setClassSubjects([]);
+                        setAvailableTeachersForSlot([]);
+                    }} />
+                    <Dialog>
+                        <SubHeading>
+                            Thêm mới
+                        </SubHeading>
+
+                        <FormGroup1>
+                            <Label>Phạm vi</Label>
+                            <Select
+                                value={addNewType}
+                                onChange={(e) => setAddNewType(e.target.value)}
+                            >
+                                <option value="Thời khóa biểu mới">Thời khóa biểu mới</option>
+                                <option value="Tiết">Tiết</option>
+                            </Select>
+                        </FormGroup1>
+
+                        {addNewType === 'Thời khóa biểu mới' ? (
+                            <>
+                                <FormGroup1>
+                                    <Label>Học kỳ</Label>
+                                    <Select
+                                        value={applySemesterId}
+                                        onChange={(e) => {
+                                            const newSemesterId = e.target.value;
+                                            setApplySemesterId(newSemesterId);
+                                            setApplyScheduleId('');
+                                            setApplyDateError('');
+                                            setDatesInUse([]);
+
+                                            if (newSemesterId) {
+                                                getDatesInUse(token, newSemesterId)
+                                                    .then(response => {
+                                                        setDatesInUse(response.data_set || []);
+                                                    })
+                                                    .catch(err => {
+                                                        showToast(`Lỗi khi lấy ngày đã sử dụng: ${err.message}`, 'error');
+                                                    });
+                                            }
+                                        }}
+                                    >
+                                        <option value="">-- Chọn học kỳ --</option>
+                                        {semesters.map((semester) => (
+                                            <option key={semester.id} value={semester.id}>
+                                                {semester.semester_name} ({new Date(semester.start_date).toLocaleDateString('vi-VN')} - {new Date(semester.end_date).toLocaleDateString('vi-VN')})
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </FormGroup1>
+                                <FormGroup1>
+                                    <Label>Mẫu thời khóa biểu</Label>
+                                    <Select
+                                        value={applyScheduleId}
+                                        onChange={(e) => {
+                                            setApplyScheduleId(e.target.value);
+                                            setApplyDateError('');
+                                        }}
+                                        disabled={!applySemesterId}
+                                    >
+                                        <option value="">-- Chọn mẫu --</option>
+                                        {(() => {
+                                            const filteredTemplates = templates.filter(template => {
+                                                const match = Number(template.semester_id) === Number(applySemesterId);
+                                                return match;
+                                            });
+
+                                            return filteredTemplates.length > 0 ? (
+                                                filteredTemplates.map((template) => (
+                                                    <option key={template.id} value={template.id}>
+                                                        {template.schedule_name}
+                                                    </option>
+                                                ))
+                                            ) : (
+                                                <option value="" disabled>Không có mẫu nào cho học kỳ này</option>
+                                            );
+                                        })()}
+                                    </Select>
+                                </FormGroup1>
+                                <FormGroup1>
+                                    <Label>Ngày bắt đầu</Label>
+                                    <DatePicker
+                                        selected={applyBeginDate}
+                                        onChange={(date) => {
+                                            setApplyBeginDate(date);
+                                            setApplyDateError('');
+                                        }}
+                                        minDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.start_date) : null}
+                                        maxDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.end_date) : null}
+                                        excludeDates={datesInUse.map(date => new Date(date))}
+                                        disabled={!applySemesterId}
+                                        dateFormat="dd/MM/yyyy"
+                                        placeholderText="Chọn ngày bắt đầu"
+                                        customInput={<Input />}
+                                        className={!applySemesterId ? 'disabled-date' : ''}
+                                    />
+                                </FormGroup1>
+                                <FormGroup1>
+                                    <Label>Ngày kết thúc</Label>
+                                    <DatePicker
+                                        selected={applyEndDate}
+                                        onChange={(date) => {
+                                            setApplyEndDate(date);
+                                            setApplyDateError('');
+                                        }}
+                                        minDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.start_date) : null}
+                                        maxDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.end_date) : null}
+                                        excludeDates={datesInUse.map(date => new Date(date))}
+                                        disabled={!applySemesterId}
+                                        dateFormat="dd/MM/yyyy"
+                                        placeholderText="Chọn ngày kết thúc"
+                                        customInput={<Input />}
+                                        className={!applySemesterId ? 'disabled-date' : ''}
+                                    />
+                                </FormGroup1>
+                                <FormGroup>
+                                    <CheckboxLabel>
+                                        <Checkbox
+                                            type="checkbox"
+                                            checked={forceAssign}
+                                            onChange={(e) => setForceAssign(e.target.checked)}
+                                        />
+                                        Ép gán thời khóa biểu
+                                    </CheckboxLabel>
+                                </FormGroup>
+                                {applyDateError && <DialogError>{applyDateError}</DialogError>}
+                                <DialogButtonGroup>
+                                    <CancelButton onClick={() => {
+                                        setIsAddNewDialogOpen(false);
+                                        setApplySemesterId('');
+                                        setApplyScheduleId('');
+                                        setApplyBeginDate(null);
+                                        setApplyEndDate(null);
+                                        setApplyDateError('');
+                                        setForceAssign(false);
+                                        setDatesInUse([]);
+                                    }}>
+                                        Hủy
+                                    </CancelButton>
+                                    <ButtonAdd onClick={handleApplySchedule} disabled={isLoading}>
+                                        Lưu
+                                    </ButtonAdd>
+                                </DialogButtonGroup>
+                            </>
+                        ) : (
+                            <>
+                                <FormGroup1>
+                                    <Label>Lớp</Label>
+                                    <Select
+                                        value={selectedClassForSlot}
+                                        onChange={(e) => handleClassChangeForSlot(e.target.value)}
+                                        disabled={isLoadingClassSubjects}
+                                    >
+                                        <option value="">-- Chọn lớp --</option>
+                                        {classes.map((cls) => (
+                                            <option key={cls.class_code} value={cls.class_code}>
+                                                {cls.class_code}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </FormGroup1>
+
+                                {selectedClassForSlot && (
+                                    <FormGroup1>
+                                        <Label>Môn học</Label>
+                                        <Select
+                                            value={selectedSubjectForSlot}
+                                            onChange={(e) => handleSubjectChangeForSlot(e.target.value)}
+                                            disabled={isLoadingClassSubjects}
+                                        >
+                                            <option value="">-- Chọn môn học --</option>
+                                            {classSubjects.map((subject) => (
+                                                <option key={subject.subject_code} value={subject.subject_code}>
+                                                    {subject.subject_code}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </FormGroup1>
+                                )}
+
+                                {selectedSubjectForSlot && (
+                                    <FormGroup1>
+                                        <Label>Ngày</Label>
+                                        <DatePicker
+                                            selected={selectedDateForSlot}
+                                            onChange={handleDateChangeForSlot}
+                                            dateFormat="dd/MM/yyyy"
+                                            placeholderText="Chọn ngày"
+                                            className="date-picker"
+                                            customInput={<Input />}
+                                            minDate={new Date()}
+                                        />
+                                    </FormGroup1>
+                                )}
+
+                                {selectedDateForSlot && (
+                                    <FormGroup1>
+                                        <Label>Tiết học</Label>
+                                        <Select
+                                            value={selectedTimeSlotForSlot}
+                                            onChange={(e) => handleTimeSlotChangeForSlot(e.target.value)}
+                                        >
+                                            <option value="">-- Chọn tiết --</option>
+                                            {timeSlots.map((slot) => (
+                                                <option key={slot.id} value={slot.id}>
+                                                    Tiết {slot.id}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </FormGroup1>
+                                )}
+
+                                {selectedTimeSlotForSlot && (
+                                    <FormGroup1>
+                                        <Label>Giáo viên</Label>
+                                        <Select
+                                            value={selectedTeacherForSlot}
+                                            onChange={(e) => setSelectedTeacherForSlot(e.target.value)}
+                                            disabled={isLoadingTeachersForSlot}
+                                        >
+                                            <option value="">-- Chọn giáo viên --</option>
+                                            {availableTeachersForSlot.map((teacher) => (
+                                                <option key={teacher.user_name} value={teacher.user_name}>
+                                                    {teacher.full_name} ({teacher.user_name}) {teacher.is_current_teacher ? "(GV bộ môn)" : ""}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </FormGroup1>
+                                )}
+
+                                <DialogButtonGroup>
+                                    <CancelButton onClick={() => {
+                                        setIsAddNewDialogOpen(false);
+                                        setSelectedClassForSlot('');
+                                        setSelectedSubjectForSlot('');
+                                        setSelectedDateForSlot(null);
+                                        setSelectedTimeSlotForSlot('');
+                                        setSelectedTeacherForSlot('');
+                                        setClassSubjects([]);
+                                        setAvailableTeachersForSlot([]);
+                                    }}>
+                                        Hủy
+                                    </CancelButton>
+                                    <ButtonAdd onClick={handleAddBySlot} disabled={isAddingBySlot}>
+                                        {isAddingBySlot ? 'Đang xử lý...' : 'Thêm tiết học'}
+                                    </ButtonAdd>
+                                </DialogButtonGroup>
+                            </>
+                        )}
+                    </Dialog>
+                </>
+            )}
         </Container >
     );
 }
