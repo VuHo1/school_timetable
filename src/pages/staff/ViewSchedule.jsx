@@ -12,6 +12,7 @@ import {
     fetchAvailableTeachers2,
     fetchTimeTable,
     fetchMyTimeTable,
+    fetchClassSubjects,
     deleteBaseSchedule,
     updateBaseSchedule,
     addSchedule,
@@ -27,7 +28,12 @@ import {
     markAsAbsent,
     markAsAttendance,
     markAsLate,
-    markAsHoliday
+    markAsHoliday,
+    getAvailabelTeacherToChange,
+    getAvailabelTeacherToChange2,
+    getAvailabelRoomToChange,
+    changeTeacher,
+    changeRoom
 } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import DatePicker from 'react-datepicker';
@@ -407,6 +413,92 @@ const ModalEntry = styled.div`
   }
 `;
 
+const TeacherEditIcon = styled.span`
+  cursor: pointer;
+  margin-left: 8px;
+  color: #3b82f6;
+  font-size: 16px;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #1d4ed8;
+  }
+`;
+
+const TeacherDropdownContainer = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const TeacherDropdown = styled.select`
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1f2937;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+`;
+
+const TeacherDisplay = styled.span`
+  cursor: pointer;
+  color: #3b82f6;
+  text-decoration: underline;
+  
+  &:hover {
+    color: #1d4ed8;
+  }
+`;
+
+const RoomEditIcon = styled.span`
+  cursor: pointer;
+  margin-left: 8px;
+  color: #3b82f6;
+  font-size: 16px;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #1d4ed8;
+  }
+`;
+
+const RoomDropdownContainer = styled.div`
+  position: relative;
+  display: inline-block;
+`;
+
+const RoomDropdown = styled.select`
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1f2937;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+`;
+
+const RoomDisplay = styled.span`
+  cursor: pointer;
+  color: #3b82f6;
+  text-decoration: underline;
+  
+  &:hover {
+    color: #1d4ed8;
+  }
+`;
+
 const CloseButton = styled(Button)`
   background: #ef4444;
   &:hover {
@@ -689,51 +781,243 @@ const formatDate = (date) => {
     return `${year}-${month}-${day}`;
 };
 
-const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData }) => (
-    <>
-        <ModalOverlay onClick={onClose} />
-        <Modal>
-            <SubHeading>
-                Thông tin chi tiết
-            </SubHeading>
-            <ModalContent>
-                {entries.map((entry) => (
-                    <ModalEntry key={entry.id}>
-                        <p><b>Lớp:</b> {entry.class_code}</p>
-                        <p><b>Mã môn:</b> {entry.subject_code}</p>
-                        <p><b>Môn:</b> {entry.subject_name}</p>
-                        <p><b>Giáo viên:</b> {entry.teacher_name} ({entry.teacher_user_name})</p>
-                        <p><b>Phòng:</b> {entry.room_code}</p>
-                        <p><b>Tiết:</b> {entry.time_slot_id}</p>
-                        {viewMode !== 'Base' && (
-                            <>
-                                <p><b>Từ:</b> {formatTime(entry.start_time)} <b>đến</b> {formatTime(entry.end_time)}</p>
-                                <p><b>Đánh giá:</b>
-                                    {' '}
-                                    {entry.feedback && entry.feedback.trim() !== ''
-                                        ? entry.feedback
-                                        : 'N/A'}
-                                </p>
-                                <p><b>Trạng thái:</b>
-                                    <StatusBadge status={entry.status}>
-                                        {entry.status || 'N/A'}
-                                    </StatusBadge>
-                                    <EyeIcon onClick={() => setAttendanceModalData(entry)}>
-                                        <FaEye />
-                                    </EyeIcon>
-                                </p>
-                                <p><b>Thời lượng giảng dạy:</b> {entry.duration} phút</p>
-                                <p><StatusBadge status={entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}>
-                                    {entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}
-                                </StatusBadge></p>
-                            </>
-                        )}
-                    </ModalEntry>
-                ))}
-            </ModalContent>
-        </Modal>
-    </>
-);
+const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData, showToast, refreshData, token, setModalEntries }) => {
+    const [editingTeacher, setEditingTeacher] = useState(null);
+    const [availableTeachers, setAvailableTeachers] = useState([]);
+    const [isLoadingTeachers, setIsLoadingTeachers] = useState(false);
+    const [isChangingTeacher, setIsChangingTeacher] = useState(false);
+    const [editingRoom, setEditingRoom] = useState(null);
+    const [availableRooms, setAvailableRooms] = useState([]);
+    const [isLoadingRooms, setIsLoadingRooms] = useState(false);
+    const [isChangingRoom, setIsChangingRoom] = useState(false);
+    const handleTeacherEdit = async (entry) => {
+        if (entry.status !== 'Chưa diễn ra') {
+            return;
+        }
+
+        setEditingTeacher(entry.id);
+        setIsLoadingTeachers(true);
+
+        try {
+            const response = await getAvailabelTeacherToChange(token, entry.id);
+            setAvailableTeachers(response.data_set || []);
+        } catch (err) {
+            showToast(`Lỗi khi tải danh sách giáo viên: ${err.message}`, 'error');
+            setEditingTeacher(null);
+        } finally {
+            setIsLoadingTeachers(false);
+        }
+    };
+
+    const handleTeacherChange = async (entry, newTeacherUserName) => {
+        if (!newTeacherUserName || newTeacherUserName === entry.teacher_user_name) {
+            setEditingTeacher(null);
+            return;
+        }
+
+        setIsChangingTeacher(true);
+        try {
+            const response = await changeTeacher(token, entry.id, newTeacherUserName);
+            if (response.success) {
+                showToast('Đã thay đổi giáo viên thành công', 'success');
+                setEditingTeacher(null);
+
+                // Update the modal entries to reflect the new teacher
+                if (setModalEntries && entries) {
+                    const selectedTeacher = availableTeachers.find(t => t.user_name === newTeacherUserName);
+                    setModalEntries(entries.map(modalEntry =>
+                        modalEntry.id === entry.id
+                            ? {
+                                ...modalEntry,
+                                teacher_user_name: newTeacherUserName,
+                                teacher_name: selectedTeacher ? selectedTeacher.full_name : modalEntry.teacher_name
+                            }
+                            : modalEntry
+                    ));
+                }
+
+                if (refreshData) {
+                    refreshData();
+                }
+            } else {
+                showToast(response.description || 'Thay đổi giáo viên thất bại', 'error');
+            }
+        } catch (err) {
+            showToast(`Lỗi khi thay đổi giáo viên: ${err.message}`, 'error');
+        } finally {
+            setIsChangingTeacher(false);
+        }
+    };
+
+    const handleRoomEdit = async (entry) => {
+        if (entry.status !== 'Chưa diễn ra') {
+            return;
+        }
+
+        setEditingRoom(entry.id);
+        setIsLoadingRooms(true);
+
+        try {
+            const response = await getAvailabelRoomToChange(token, entry.id);
+            setAvailableRooms(response.data_set || []);
+        } catch (err) {
+            showToast(`Lỗi khi tải danh sách phòng: ${err.message}`, 'error');
+            setEditingRoom(null);
+        } finally {
+            setIsLoadingRooms(false);
+        }
+    };
+
+    const handleRoomChange = async (entry, newRoomCode) => {
+        if (!newRoomCode || newRoomCode === entry.room_code) {
+            setEditingRoom(null);
+            return;
+        }
+
+        setIsChangingRoom(true);
+        try {
+            const response = await changeRoom(token, entry.id, newRoomCode);
+            if (response.success) {
+                showToast('Đã thay đổi phòng thành công', 'success');
+                setEditingRoom(null);
+
+                // Update the modal entries to reflect the new room
+                if (setModalEntries && entries) {
+                    const selectedRoom = availableRooms.find(r => r.room_code === newRoomCode);
+                    setModalEntries(entries.map(modalEntry =>
+                        modalEntry.id === entry.id
+                            ? {
+                                ...modalEntry,
+                                room_code: newRoomCode,
+                                room_name: selectedRoom ? selectedRoom.room_name : modalEntry.room_name
+                            }
+                            : modalEntry
+                    ));
+                }
+
+                if (refreshData) {
+                    refreshData();
+                }
+            } else {
+                showToast(response.description || 'Thay đổi phòng thất bại', 'error');
+            }
+        } catch (err) {
+            showToast(`Lỗi khi thay đổi phòng: ${err.message}`, 'error');
+        } finally {
+            setIsChangingRoom(false);
+        }
+    };
+
+    const renderTeacherField = (entry) => {
+        if (editingTeacher === entry.id) {
+            return (
+                <TeacherDropdownContainer>
+                    <TeacherDropdown
+                        value=""
+                        onChange={(e) => handleTeacherChange(entry, e.target.value)}
+                        disabled={isChangingTeacher}
+                    >
+                        <option value="">-- Chọn giáo viên --</option>
+                        {availableTeachers.map((teacher) => (
+                            <option key={teacher.user_name} value={teacher.user_name}>
+                                {teacher.full_name} ({teacher.user_name})
+                            </option>
+                        ))}
+                    </TeacherDropdown>
+                </TeacherDropdownContainer>
+            );
+        }
+
+        return (
+            <>
+                {entry.teacher_name} ({entry.teacher_user_name})
+                {entry.status === 'Chưa diễn ra' && (
+                    <TeacherEditIcon onClick={() => handleTeacherEdit(entry)}>
+                        ✏️
+                    </TeacherEditIcon>
+                )}
+            </>
+        );
+    };
+
+    const renderRoomField = (entry) => {
+        if (editingRoom === entry.id) {
+            return (
+                <RoomDropdownContainer>
+                    <RoomDropdown
+                        value=""
+                        onChange={(e) => handleRoomChange(entry, e.target.value)}
+                        disabled={isChangingRoom}
+                    >
+                        <option value="">-- Chọn phòng --</option>
+                        {availableRooms.map((room) => (
+                            <option key={room.room_code} value={room.room_code}>
+                                {room.room_name} ({room.room_code})
+                            </option>
+                        ))}
+                    </RoomDropdown>
+                </RoomDropdownContainer>
+            );
+        }
+
+        return (
+            <>
+                {entry.room_code}
+                {entry.status === 'Chưa diễn ra' && (
+                    <RoomEditIcon onClick={() => handleRoomEdit(entry)}>
+                        ✏️
+                    </RoomEditIcon>
+                )}
+            </>
+        );
+    };
+
+    return (
+        <>
+            <ModalOverlay onClick={onClose} />
+            <Modal>
+                <SubHeading>
+                    Thông tin chi tiết
+                </SubHeading>
+                <ModalContent>
+                    {entries.map((entry) => (
+                        <ModalEntry key={entry.id}>
+                            <p><b>Lớp:</b> {entry.class_code}</p>
+                            <p><b>Mã môn:</b> {entry.subject_code}</p>
+                            <p><b>Môn:</b> {entry.subject_name}</p>
+                            <p><b>Giáo viên:</b> {renderTeacherField(entry)}</p>
+                            <p><b>Phòng:</b> {renderRoomField(entry)}</p>
+                            <p><b>Tiết:</b> {entry.time_slot_id}</p>
+                            {viewMode !== 'Base' && (
+                                <>
+                                    <p><b>Từ:</b> {formatTime(entry.start_time)} <b>đến</b> {formatTime(entry.end_time)}</p>
+                                    <p><b>Đánh giá:</b>
+                                        {' '}
+                                        {entry.feedback && entry.feedback.trim() !== ''
+                                            ? entry.feedback
+                                            : 'N/A'}
+                                    </p>
+                                    <p><b>Trạng thái:</b>
+                                        <StatusBadge status={entry.status}>
+                                            {entry.status || 'N/A'}
+                                        </StatusBadge>
+                                        <EyeIcon onClick={() => setAttendanceModalData(entry)}>
+                                            <FaEye />
+                                        </EyeIcon>
+                                    </p>
+                                    <p><b>Thời lượng giảng dạy:</b> {entry.duration} phút</p>
+                                    <p><StatusBadge status={entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}>
+                                        {entry.is_holiday ? 'Ngày lễ' : 'Ngày thường'}
+                                    </StatusBadge></p>
+                                </>
+                            )}
+                        </ModalEntry>
+                    ))}
+                </ModalContent>
+            </Modal>
+        </>
+    );
+};
 
 const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isAddSemesterDialogOpen, setIsAddSemesterDialogOpen, isGenerating, setIsGenerating }) => {
     const [newSemesterName, setNewSemesterName] = useState('');
@@ -1381,6 +1665,7 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
         6: 'Thứ 7',
         0: 'Chủ nhật'
     };
+    const token = user?.token;
     const dayOfWeekEnglish = {
         1: 'Monday',
         2: 'Tuesday',
@@ -1617,6 +1902,10 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                         onClose={() => setModalEntries(null)}
                         viewMode={viewMode}
                         setAttendanceModalData={setAttendanceModalData}
+                        showToast={showToast}
+                        refreshData={refreshData}
+                        token={token}
+                        setModalEntries={setModalEntries}
                     />
                 )}
                 {attendanceModalData && (

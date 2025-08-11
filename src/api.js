@@ -1833,3 +1833,95 @@ export const creatorRejectRequest = async (token, requestId, rejectReason) => {
     const data = await response.json();
     return data;
 };
+export const getAvailabelTeacherToChange = async (token, scheduleId) => {
+    const response = await fetch(`${API_BASE_URL}/api/request/substitute-approver?id=${scheduleId}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
+    const data = await response.json();
+    return data;
+};
+export const getAvailabelTeacherToChange2 = async (token, classCode, subjectCode, date, timeSlotId) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/teacher/available?classCode=${classCode}&subjectCode=${subjectCode}&date=${date}&timeSlotId=${timeSlotId}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
+    const data = await response.json();
+    return data;
+};
+export const getAvailabelRoomToChange = async (token, id) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/room/available?id=${id}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
+    const data = await response.json();
+    return data;
+};
+export const changeTeacher = async (token, id, teacher) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/change-teacher/${id}?teacher=${teacher}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
+    const data = await response.json();
+    return data;
+};
+export const changeRoom = async (token, id, room) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/change-room/${id}?room=${room}`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description);
+    }
+    const data = await response.json();
+    return data;
+};
+export const addScheduleBySlot = async (token, slotData) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/add-slot`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(slotData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to create');
+    }
+    const data = await response.json();
+    return data;
+};
