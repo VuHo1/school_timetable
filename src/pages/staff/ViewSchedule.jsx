@@ -34,7 +34,8 @@ import {
     getAvailabelRoomToChange,
     changeTeacher,
     changeRoom,
-    addScheduleBySlot
+    addScheduleBySlot,
+    removeScheduleBySlot
 } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import DatePicker from 'react-datepicker';
@@ -791,6 +792,7 @@ const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData, showToa
     const [availableRooms, setAvailableRooms] = useState([]);
     const [isLoadingRooms, setIsLoadingRooms] = useState(false);
     const [isChangingRoom, setIsChangingRoom] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const handleTeacherEdit = async (entry) => {
         if (entry.status !== 'Chưa diễn ra') {
             return;
@@ -909,6 +911,31 @@ const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData, showToa
         }
     };
 
+    const handleDeleteSlot = async (entry) => {
+        if (entry.status !== 'Chưa diễn ra') {
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            const response = await removeScheduleBySlot(token, entry.id);
+            if (response.success) {
+                showToast('Đã xóa tiết học thành công', 'success');
+                onClose();
+
+                if (refreshData) {
+                    refreshData();
+                }
+            } else {
+                showToast(response.description || 'Xóa tiết học thất bại', 'error');
+            }
+        } catch (err) {
+            showToast(`Lỗi khi xóa tiết học: ${err.message}`, 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const renderTeacherField = (entry) => {
         if (editingTeacher === entry.id) {
             return (
@@ -1015,6 +1042,28 @@ const SlotModal = ({ entries, onClose, viewMode, setAttendanceModalData, showToa
                         </ModalEntry>
                     ))}
                 </ModalContent>
+
+                {entries.some(entry => {
+                    if (entry.status !== 'Chưa diễn ra') return false;
+
+                    const entryDate = new Date(entry.date);
+                    entryDate.setHours(0, 0, 0, 0);
+
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    return entryDate > today;
+                }) && (
+                        <DialogButtonGroup>
+                            <ButtonDelete
+                                onClick={() => handleDeleteSlot(entries[0])}
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? 'Đang xóa...' : 'Xóa'}
+                            </ButtonDelete>
+                        </DialogButtonGroup>
+                    )}
+
             </Modal>
         </>
     );
@@ -2618,14 +2667,6 @@ export default function ViewSchedule() {
         }
         if (!moveScheduleDetailNewDate) {
             showToast('Vui lòng chọn ngày mới', 'error');
-            return;
-        }
-        if (moveScheduleDetailCurrentDate.getTime() === moveScheduleDetailNewDate.getTime()) {
-            showToast('Vui lòng chọn ngày khác', 'error');
-            return;
-        }
-        if (!moveScheduleDetailNewTimeSlot) {
-            showToast('Vui lòng chọn tiết học mới', 'error');
             return;
         }
 

@@ -1925,3 +1925,18 @@ export const addScheduleBySlot = async (token, slotData) => {
     const data = await response.json();
     return data;
 };
+export const removeScheduleBySlot = async (token, id) => {
+    const response = await fetch(`${API_BASE_URL}/api/schedule/time-table/remove/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to remove slot');
+    }
+    const data = await response.json();
+    return data;
+};
