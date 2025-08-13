@@ -13,7 +13,7 @@ const PAGE_MAPPINGS = {
   'Quản lí chức năng': '/admin/user_command',
   'Quản lí tài khoản': '/admin/user_account',
   'Quản lí vai trò': '/role',
-  'Ủy quyền chức năng': '/permission',
+  'Ủy quyền chức năng': '/user_right',
   'Điểm danh': '/attendance',
   'Quản lí giáo viên': '/teacher',
   'Quản lí lớp học': '/staff/class',
