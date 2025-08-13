@@ -480,9 +480,9 @@ const UserRight = () => {
   return (
     <Container>
       <Header>
-        <Title>🔐 Quản lí phân quyền</Title>
+        <Title>🔐 Ủy quyền chức năng</Title>
         <AddButton onClick={handleOpenModal}>
-          + Phân quyền
+          Phân quyền
         </AddButton>
       </Header>
 
@@ -567,7 +567,6 @@ const UserRight = () => {
           <ModalContent onClick={e => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>Phân quyền</ModalTitle>
-              <CloseButton onClick={() => setShowModal(false)}>×</CloseButton>
             </ModalHeader>
             <ModalBody>
               <FormGroup>
@@ -630,7 +629,7 @@ const UserRight = () => {
                 onClick={handleSubmit}
                 disabled={modalLoading || !formData.role_id}
               >
-                {modalLoading ? '⏳ Đang lưu...' : 'Gửi'}
+                {modalLoading ? '⏳ Đang lưu...' : 'Xác nhận'}
               </ActionButton>
             </ModalActions>
           </ModalContent>

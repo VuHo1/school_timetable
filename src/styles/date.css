@@ -7,8 +7,7 @@
 
 /* Ngày đã có lịch (dựa trên excludeDates) màu xanh lá */
 .react-datepicker__day--excluded {
-    color: #28a745 !important;
-    /* Xanh lá */
+    color: red !important;
     font-weight: bold;
 }
 
