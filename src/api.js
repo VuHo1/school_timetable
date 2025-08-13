@@ -538,20 +538,33 @@ export const deleteUser = async (token, username) => {
     return data;
 };
 export const fetchRoles = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/user-role`, {
-        method: 'GET',
-        headers: {
-            'Accept': 'text/plain',
-            'Authorization': `Bearer ${token}`,
-        },
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.description || 'Failed to fetch roles');
+    const url = `${API_BASE_URL}/api/user-role`;
+    console.log('[fetchRoles] Request URL:', url, 'Token:', token);
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json', // nên đổi text/plain -> application/json
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        const data = await response.json();
+        console.log('[fetchRoles] Response:', data);
+
+        if (!response.ok || !data.success) {
+            const errorMessage = data.description || `Failed to fetch roles: ${response.status}`;
+            console.error('[fetchRoles] Error:', errorMessage, data);
+            throw new Error(errorMessage);
+        }
+
+        // Trả trực tiếp array để component dùng dễ hơn
+        return Array.isArray(data.data_set) ? data.data_set : [];
+    } catch (error) {
+        console.error('[fetchRoles] Exception:', error);
+        throw error;
     }
-    const data = await response.json();
-    return data.data_set || [];
 };
+
 
 //setting
 export const fetchAppSetting = async (token) => {
@@ -884,7 +897,7 @@ export const fetchUserCommands = async (token, params = {}) => {
         throw new Error(errorData.description || 'Failed to fetch user commands');
     }
     const data = await response.json();
-    return data.data_set || [];
+    return data.data_set;
 };
 
 export const fetchApplications = async (token) => {
@@ -1751,6 +1764,64 @@ export const rejectRequest = async (token, requestId, rejectReason) => {
         throw new Error(errorData.description || 'Failed to reject request');
     }
     const data = await response.json();
+    return data;
+};
+export const fetchUserRights = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-right`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    console.log('[fetchUserRights] Request URL:', `${API_BASE_URL}/api/user-right`, 'Token:', token); // Log request
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[fetchUserRights] Error response:', errorData); // Log error
+        throw new Error(errorData.description || 'Failed to fetch user rights');
+    }
+    const data = await response.json();
+    console.log('[fetchUserRights] Response:', data); // Log response
+    return data.data_set || [];
+};
+
+export const fetchUserRightsByRoleId = async (token, roleId) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-right/role-id/${roleId}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    console.log('[fetchUserRightsByRoleId] Request URL:', `${API_BASE_URL}/api/user-right/role-id/${roleId}`, 'Token:', token); // Log request
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[fetchUserRightsByRoleId] Error response:', errorData); // Log error
+        throw new Error(errorData.description || 'Failed to fetch user rights by role ID');
+    }
+    const data = await response.json();
+    console.log('[fetchUserRightsByRoleId] Response:', data); // Log response
+    return data.data_set || [];
+};
+
+export const addUserRight = async (token, userRightData) => {
+    const response = await fetch(`${API_BASE_URL}/api/user-right/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userRightData),
+    });
+    console.log('[addUserRight] Request payload:', userRightData, 'Token:', token); // Log request
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[addUserRight] Error response:', errorData); // Log error
+        throw new Error(errorData.description || 'Failed to add user right');
+    }
+    const data = await response.json();
+    console.log('[addUserRight] Response:', data); // Log response
     return data;
 };
 

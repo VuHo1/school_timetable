@@ -41,7 +41,7 @@ const PAGE_MAPPINGS = {
   'Thời khóa biểu': '/staff/schedule',
    'Quản lí học kỳ': '/staff/semesters',
   'Thông báo': '/notification',
-  'Ủy quyền chức năng': '/permission',
+  'Ủy quyền chức năng': '/user_right',
   'Quản lí vai trò': '/role',
   'Quản lí tài khoản': '/admin/user_account',
   'Quản lí chức năng': '/admin/user_command',

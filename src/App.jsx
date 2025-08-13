@@ -32,7 +32,7 @@ import ClassScheduleConfig from './pages/staff/ClassScheduleConfig';
 import ReportPage from './pages/staff/ReportPage';
 import Request from './pages/admin/Request.jsx'
 import RequestDetail from './pages/admin/RequestDetail.jsx'
-
+import UserRight from './pages/admin/UserRight.jsx';
 import { listenToForegroundMessage } from './firebase/init.jsx';
 
 function AppRoutes() {
@@ -163,9 +163,9 @@ function AppRoutes() {
               <Notification title="Thông báo" icon="📢" />
             </ProtectedRoute>
           } />
-          <Route path="/permission" element={
+          <Route path="/user_right" element={
             <ProtectedRoute requiredAbility="Ủy quyền chức năng">
-              <PlaceholderPage title="Ủy quyền chức năng" icon="🔐" />
+              <UserRight title="Ủy quyền chức năng" icon="🔐" />
             </ProtectedRoute>
           } />
           <Route path="/role" element={

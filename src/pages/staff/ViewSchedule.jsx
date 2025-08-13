@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
+import ReactSelect from 'react-select';
 import '../../styles/date.css'
 import { FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft, FaArrowRight, FaTimes, FaCheck, FaEllipsisH, FaEye } from 'react-icons/fa';
 import {
@@ -2584,8 +2585,8 @@ export default function ViewSchedule() {
         try {
             setIsLoading(true);
             const response = await removeTimeTable(token, {
-                begin_date: new Date(removeBeginDate).toISOString(),
-                end_date: new Date(removeEndDate).toISOString(),
+                begin_date: formatDate(removeBeginDate),
+                end_date: formatDate(removeEndDate),
             });
             showToast(response.description, 'success');
             setIsRemoveDialogOpen(false);
@@ -2922,7 +2923,7 @@ export default function ViewSchedule() {
                                     {baseType === 'Teacher' &&
                                         teachers.map((teacher) => (
                                             <option key={teacher.user_name} value={teacher.user_name}>
-                                                {teacher.user_name}
+                                                {teacher.full_name}
                                             </option>
                                         ))}
                                 </Select>
@@ -3048,32 +3049,145 @@ export default function ViewSchedule() {
                             {viewMode === 'Applied' && (
                                 <>
                                     <div>
-                                        <Select value={appliedType} onChange={(e) => handleAppliedTypeChange(e.target.value)}>
-                                            <option value="All">Tất Cả</option>
-                                            <option value="Class">Lớp</option>
-                                            <option value="Teacher">Giáo Viên</option>
-                                        </Select>
+                                        <ReactSelect
+                                            value={
+                                                appliedType
+                                                    ? {
+                                                        value: appliedType,
+                                                        label: appliedType === 'All' ? 'Tất Cả' : appliedType === 'Class' ? 'Lớp' : 'Giáo Viên',
+                                                    }
+                                                    : null
+                                            }
+                                            onChange={(selectedOption) =>
+                                                handleAppliedTypeChange(selectedOption ? selectedOption.value : '')
+                                            }
+                                            options={[
+                                                { value: 'All', label: 'Tất Cả' },
+                                                { value: 'Class', label: 'Lớp' },
+                                                { value: 'Teacher', label: 'Giáo Viên' },
+                                            ]}
+                                            placeholder="-- Chọn loại --"
+                                            isSearchable={false}
+                                            styles={{
+                                                control: (provided) => ({
+                                                    ...provided,
+                                                    padding: '8px',
+                                                    border: '1px solid #d1d5db',
+                                                    borderRadius: '8px',
+                                                    fontSize: '14px',
+                                                    color: '#1f2937',
+                                                    backgroundColor: 'white',
+                                                    transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                                                    '&:hover': {
+                                                        borderColor: '#3b82f6',
+                                                    },
+                                                    '&:focus-within': {
+                                                        borderColor: '#3b82f6',
+                                                        boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
+                                                    },
+                                                }),
+                                                option: (provided, state) => ({
+                                                    ...provided,
+                                                    fontSize: '14px',
+                                                    color: '#1f2937',
+                                                    backgroundColor: state.isSelected
+                                                        ? '#3b82f6'
+                                                        : state.isFocused
+                                                            ? '#f1f5f9'
+                                                            : 'white',
+                                                    '&:active': {
+                                                        backgroundColor: '#e0e7ff',
+                                                    },
+                                                }),
+                                                placeholder: (provided) => ({
+                                                    ...provided,
+                                                    color: '#9ca3af',
+                                                }),
+                                                singleValue: (provided) => ({
+                                                    ...provided,
+                                                    color: '#1f2937',
+                                                }),
+                                                menu: (provided) => ({
+                                                    ...provided,
+                                                    zIndex: 9999,
+                                                }),
+                                            }}
+                                        />
                                     </div>
                                     {appliedType !== 'All' && (
                                         <div>
-                                            <Select
-                                                value={appliedCode}
-                                                onChange={(e) => handleAppliedCodeChange(e.target.value)}
-                                            >
-                                                <option value="">-- Chọn --</option>
-                                                {appliedType === 'Class' &&
-                                                    classes.map((cls) => (
-                                                        <option key={cls.class_code} value={cls.class_code}>
-                                                            {cls.class_code}
-                                                        </option>
-                                                    ))}
-                                                {appliedType === 'Teacher' &&
-                                                    teachers.map((teacher) => (
-                                                        <option key={teacher.user_name} value={teacher.user_name}>
-                                                            {teacher.user_name}
-                                                        </option>
-                                                    ))}
-                                            </Select>
+                                            <ReactSelect
+                                                value={
+                                                    appliedCode
+                                                        ? {
+                                                            value: appliedCode,
+                                                            label: appliedType === 'Class'
+                                                                ? classes.find((cls) => cls.class_code === appliedCode)?.class_code
+                                                                : teachers.find((teacher) => teacher.full_name === appliedCode)?.full_name,
+                                                        }
+                                                        : null
+                                                }
+                                                onChange={(selectedOption) =>
+                                                    handleAppliedCodeChange(selectedOption ? selectedOption.value : '')
+                                                }
+                                                options={
+                                                    appliedType === 'Class'
+                                                        ? classes.map((cls) => ({
+                                                            value: cls.class_code,
+                                                            label: cls.class_code,
+                                                        }))
+                                                        : teachers.map((teacher) => ({
+                                                            value: teacher.user_name,
+                                                            label: teacher.full_name,
+                                                        }))
+                                                }
+                                                placeholder="-- Chọn --"
+                                                isSearchable={true}
+                                                styles={{
+                                                    control: (provided) => ({
+                                                        ...provided,
+                                                        padding: '8px',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '8px',
+                                                        fontSize: '14px',
+                                                        color: '#1f2937',
+                                                        backgroundColor: 'white',
+                                                        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                                                        '&:hover': {
+                                                            borderColor: '#3b82f6',
+                                                        },
+                                                        '&:focus-within': {
+                                                            borderColor: '#3b82f6',
+                                                            boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
+                                                        },
+                                                    }),
+                                                    option: (provided, state) => ({
+                                                        ...provided,
+                                                        fontSize: '14px',
+                                                        color: '#1f2937',
+                                                        backgroundColor: state.isSelected
+                                                            ? '#3b82f6'
+                                                            : state.isFocused
+                                                                ? '#f1f5f9'
+                                                                : 'white',
+                                                        '&:active': {
+                                                            backgroundColor: '#e0e7ff',
+                                                        },
+                                                    }),
+                                                    placeholder: (provided) => ({
+                                                        ...provided,
+                                                        color: '#9ca3af',
+                                                    }),
+                                                    singleValue: (provided) => ({
+                                                        ...provided,
+                                                        color: '#1f2937',
+                                                    }),
+                                                    menu: (provided) => ({
+                                                        ...provided,
+                                                        zIndex: 9999,
+                                                    }),
+                                                }}
+                                            />
                                         </div>
                                     )}
                                 </>
@@ -3434,7 +3548,7 @@ export default function ViewSchedule() {
                                     {moveScheduleType === 'Teacher' &&
                                         teachers.map((teacher) => (
                                             <option key={teacher.user_name} value={teacher.user_name}>
-                                                {teacher.user_name}
+                                                {teacher.full_name}
                                             </option>
                                         ))}
                                 </Select>
@@ -3572,7 +3686,7 @@ export default function ViewSchedule() {
                                     <option value="">-- Chọn --</option>
                                     {teachers.map((teacher) => (
                                         <option key={teacher.user_name} value={teacher.user_name}>
-                                            {teacher.user_name}
+                                            {teacher.full_name}
                                         </option>
                                     ))}
                                 </Select>
@@ -3923,10 +4037,12 @@ export default function ViewSchedule() {
                                 {selectedTimeSlotForSlot && (
                                     <FormGroup1>
                                         <Label>Giáo viên</Label>
+
                                         <Select
                                             value={selectedTeacherForSlot}
                                             onChange={(e) => setSelectedTeacherForSlot(e.target.value)}
                                             disabled={isLoadingTeachersForSlot}
+                                            isSearchable={true}
                                         >
                                             <option value="">-- Chọn giáo viên --</option>
                                             {availableTeachersForSlot.map((teacher) => (
