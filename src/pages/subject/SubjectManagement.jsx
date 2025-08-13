@@ -516,7 +516,6 @@ function SubjectManagement() {
     subject_code: '',
     subject_name: '',
     grade_level: [],
-    is_online_course: false,
     weekly_slot: 1,
     continuous_slot: 1,
     limit: 0,
@@ -627,7 +626,6 @@ function SubjectManagement() {
       const token = localStorage.getItem('authToken');
       const updateData = {
         subject_code: selectedSubject.subject_code,
-        is_online_course: formData.is_online_course,
         weekly_slot: formData.weekly_slot,
         continuous_slot: formData.continuous_slot,
         limit: formData.limit,
@@ -685,7 +683,6 @@ function SubjectManagement() {
       subject_code: subject.subject_code,
       subject_name: subject.subject_name || '',
       grade_level: subject.grade_level || [],
-      is_online_course: subject.is_online_course || false,
       weekly_slot: subject.weekly_slot || 1,
       continuous_slot: subject.continuous_slot || 1,
       limit: subject.limit || 0,
@@ -701,7 +698,6 @@ function SubjectManagement() {
       subject_code: '',
       subject_name: '',
       grade_level: [],
-      is_online_course: false,
       weekly_slot: 1,
       continuous_slot: 1,
       limit: 0,

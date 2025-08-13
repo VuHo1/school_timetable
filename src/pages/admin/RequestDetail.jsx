@@ -407,12 +407,6 @@ const RequestDetail = () => {
                   <StatusBadge status={request.primary_status}>{request.primary_status}</StatusBadge>
                 </span>
               </DetailItem>
-              {request.sub_status && (
-                <DetailItem>
-                  <span className="label">Trạng thái phụ:</span>
-                  <span className="value">{request.sub_status}</span>
-                </DetailItem>
-              )}
               {request.reject_reason && (
                 <DetailItem>
                   <span className="label">Lý do từ chối:</span>

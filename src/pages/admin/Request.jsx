@@ -344,7 +344,6 @@ const Request = () => {
     const [rejectType, setRejectType] = useState('');
     const [filters, setFilters] = useState({
         primary_status: '',
-        sub_status: '',
         type_name: '',
         sortBy: 'created_date',
         sortOrder: 'desc'
@@ -358,9 +357,8 @@ const Request = () => {
     // Extract unique filter options
     const filterOptions = useMemo(() => {
         const primaryStatuses = [...new Set(requests.map(r => r.primary_status))].filter(Boolean);
-        const subStatuses = [...new Set(requests.map(r => r.sub_status))].filter(Boolean);
         const typeNames = [...new Set(requests.map(r => r.type_name))].filter(Boolean);
-        return { primaryStatuses, subStatuses, typeNames };
+        return { primaryStatuses, typeNames };
     }, [requests]);
 
     // Filter and sort requests
@@ -368,9 +366,6 @@ const Request = () => {
         let result = [...requests];
         if (filters.primary_status) {
             result = result.filter(r => r.primary_status === filters.primary_status);
-        }
-        if (filters.sub_status) {
-            result = result.filter(r => r.sub_status === filters.sub_status);
         }
         if (filters.type_name) {
             result = result.filter(r => r.type_name === filters.type_name);
@@ -583,15 +578,6 @@ const Request = () => {
                     ))}
                 </Select>
                 <Select
-                    value={filters.sub_status}
-                    onChange={(e) => handleFilterChange('sub_status', e.target.value)}
-                >
-                    <option value="">Tất cả trạng thái phụ</option>
-                    {filterOptions.subStatuses.map(status => (
-                        <option key={status} value={status}>{status}</option>
-                    ))}
-                </Select>
-                <Select
                     value={filters.sortOrder}
                     onChange={(e) => handleFilterChange('sortOrder', e.target.value)}
                 >
@@ -638,7 +624,6 @@ const Request = () => {
                                         <TableCell>{request.description || '-'}</TableCell>
                                         <TableCell>{request.type_name}</TableCell>
                                         <TableCell>{request.primary_status}</TableCell>
-                                        <TableCell>{request.sub_status || '-'}</TableCell>
                                         <TableCell>{new Date(request.created_date).toLocaleString('vi-VN')}</TableCell>
                                         <TableCell>{request.creator}</TableCell>
                                         <TableCell>
