@@ -282,6 +282,9 @@ const Button = styled.button`
 const ButtonAdd = styled(Button)`
   background: #10B981;
   color: white;
+  &:hover{
+     background: #0ea170;
+  }
 `;
 
 const ButtonSave = styled(Button)`
@@ -687,10 +690,17 @@ const AttendanceModalOverlay = styled.div`
 
 const AttendanceInfo = styled.div`
   margin-bottom: 24px;
+  display: flex;
+  gap: 8px;
+  >div{
+    flex: 1;
+    max-width: 50%;
+  }
 `;
 
 const AttendanceImage = styled.img`
   max-width: 100%;
+  justify-content: center;
   height: auto;
   border-radius: 8px;
   margin: 8px 0;
@@ -1973,19 +1983,43 @@ const Timetable = ({ data, timeSlots, viewMode, scheduleDescription, selectedOpt
                                 </CloseButton>
                             </SubHeading>
                             <AttendanceInfo>
-                                <p><b>Check-in time:</b> {attendanceModalData.check_in_time || 'N/A'}</p>
-                                {attendanceModalData.check_in_path ? (
-                                    <AttendanceImage src={attendanceModalData.check_in_path} alt="Check-in" />
-                                ) : (
-                                    <PlaceholderText>Không có thông tin vào lớp</PlaceholderText>
-                                )}
+                                <div>
+                                    <p><b>Giờ vào lớp:</b> {attendanceModalData.check_in_time || 'N/A'}</p>
+                                    {attendanceModalData.check_in_path ? (
+                                        <a
+                                            href={attendanceModalData.check_in_path}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <AttendanceImage
+                                                src={attendanceModalData.check_in_path}
+                                                alt="Check-in"
+                                            />
+                                        </a>
+                                    ) : (
+                                        <PlaceholderText>Không có thông tin vào lớp</PlaceholderText>
+                                    )}
 
-                                <p><b>Check-out time:</b> {attendanceModalData.check_out_time || 'N/A'}</p>
-                                {attendanceModalData.check_out_path ? (
-                                    <AttendanceImage src={attendanceModalData.check_out_path} alt="Check-out" />
-                                ) : (
-                                    <PlaceholderText>Không có thông tin ra về</PlaceholderText>
-                                )}
+                                </div>
+                                <div>
+                                    <p><b>Giờ ra về:</b> {attendanceModalData.check_out_time || 'N/A'}</p>
+                                    {attendanceModalData.check_out_path ? (
+                                        <a
+                                            href={attendanceModalData.check_out_path}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <AttendanceImage
+                                                src={attendanceModalData.check_out_path}
+                                                alt="Check-out"
+                                            />
+                                        </a>
+                                    ) : (
+                                        <PlaceholderText>Không có thông tin ra về</PlaceholderText>
+                                    )}
+                                </div>
+
+
                             </AttendanceInfo>
 
                             <AttendanceButtons>
@@ -2890,17 +2924,29 @@ export default function ViewSchedule() {
                         </div>
                         {baseType !== 'All' && (
                             <div>
-                                <Select
-                                    value={baseCode}
-                                    onChange={async (e) => {
-                                        const newCode = e.target.value;
-
+                                <ReactSelect
+                                    value={
+                                        baseCode
+                                            ? {
+                                                value: baseCode,
+                                                label:
+                                                    baseType === 'Class'
+                                                        ? classes.find((cls) => cls.class_code === baseCode)?.class_code
+                                                        : teachers.find((teacher) => teacher.user_name === baseCode)
+                                                            ?.full_name
+                                                            ? `${teachers.find((teacher) => teacher.user_name === baseCode).full_name} (${teachers.find((teacher) => teacher.user_name === baseCode).user_name
+                                                            })`
+                                                            : '',
+                                            }
+                                            : null
+                                    }
+                                    onChange={async (selectedOption) => {
+                                        const newCode = selectedOption ? selectedOption.value : '';
                                         setBaseCode(newCode);
                                         if (selectedScheduleId && newCode) {
                                             try {
                                                 setIsLoading(true);
                                                 const params = { code: newCode, type: baseType };
-
                                                 const details = await fetchScheduleDetails(token, selectedScheduleId, newCode, baseType);
                                                 setScheduleDetails(details || []);
                                                 setScheduleDescription('');
@@ -2912,21 +2958,65 @@ export default function ViewSchedule() {
                                             }
                                         }
                                     }}
-                                >
-                                    <option value="">-- Chọn --</option>
-                                    {baseType === 'Class' &&
-                                        classes.map((cls) => (
-                                            <option key={cls.class_code} value={cls.class_code}>
-                                                {cls.class_code}
-                                            </option>
-                                        ))}
-                                    {baseType === 'Teacher' &&
-                                        teachers.map((teacher) => (
-                                            <option key={teacher.user_name} value={teacher.user_name}>
-                                                {teacher.full_name}
-                                            </option>
-                                        ))}
-                                </Select>
+                                    options={
+                                        baseType === 'Class'
+                                            ? classes.map((cls) => ({
+                                                value: cls.class_code,
+                                                label: cls.class_code,
+                                            }))
+                                            : teachers.map((teacher) => ({
+                                                value: teacher.user_name,
+                                                label: `${teacher.full_name} (${teacher.user_name})`,
+                                            }))
+                                    }
+                                    placeholder="-- Chọn --"
+                                    isSearchable={true}
+                                    styles={{
+                                        control: (provided) => ({
+                                            ...provided,
+                                            padding: '3px',
+                                            border: '1px solid #d1d5db',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            minWidth: '200px',
+                                            color: '#1f2937',
+                                            backgroundColor: 'white',
+                                            transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                                            '&:hover': {
+                                                borderColor: '#3b82f6',
+                                            },
+                                            '&:focus-within': {
+                                                borderColor: '#3b82f6',
+                                                boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.1)',
+                                            },
+                                        }),
+                                        option: (provided, state) => ({
+                                            ...provided,
+                                            fontSize: '14px',
+                                            color: '#1f2937',
+                                            backgroundColor: state.isSelected
+                                                ? '#3b82f6'
+                                                : state.isFocused
+                                                    ? '#f1f5f9'
+                                                    : 'white',
+                                            '&:active': {
+                                                backgroundColor: '#e0e7ff',
+                                            },
+                                        }),
+                                        placeholder: (provided) => ({
+                                            ...provided,
+                                            color: '#9ca3af',
+                                        }),
+                                        singleValue: (provided) => ({
+                                            ...provided,
+                                            color: '#1f2937',
+                                        }),
+                                        menu: (provided) => ({
+                                            ...provided,
+                                            zIndex: 9999,
+                                        }),
+                                    }}
+                                />
                             </div>
                         )}
                     </FormGroup>
@@ -3071,7 +3161,7 @@ export default function ViewSchedule() {
                                             styles={{
                                                 control: (provided) => ({
                                                     ...provided,
-                                                    padding: '8px',
+                                                    padding: '3px',
                                                     border: '1px solid #d1d5db',
                                                     borderRadius: '8px',
                                                     fontSize: '14px',
@@ -3123,7 +3213,12 @@ export default function ViewSchedule() {
                                                             value: appliedCode,
                                                             label: appliedType === 'Class'
                                                                 ? classes.find((cls) => cls.class_code === appliedCode)?.class_code
-                                                                : teachers.find((teacher) => teacher.full_name === appliedCode)?.full_name,
+                                                                : (() => {
+                                                                    const t = teachers.find(
+                                                                        (teacher) => teacher.user_name === appliedCode
+                                                                    );
+                                                                    return t ? `${t.full_name} (${t.user_name})` : '';
+                                                                })(),
                                                         }
                                                         : null
                                                 }
@@ -3138,7 +3233,7 @@ export default function ViewSchedule() {
                                                         }))
                                                         : teachers.map((teacher) => ({
                                                             value: teacher.user_name,
-                                                            label: teacher.full_name,
+                                                            label: `${teacher.full_name} (${teacher.user_name})`,
                                                         }))
                                                 }
                                                 placeholder="-- Chọn --"
@@ -3146,10 +3241,12 @@ export default function ViewSchedule() {
                                                 styles={{
                                                     control: (provided) => ({
                                                         ...provided,
-                                                        padding: '8px',
+                                                        padding: '3px',
                                                         border: '1px solid #d1d5db',
                                                         borderRadius: '8px',
                                                         fontSize: '14px',
+                                                        minWidth: '200px',
+
                                                         color: '#1f2937',
                                                         backgroundColor: 'white',
                                                         transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
@@ -3174,18 +3271,7 @@ export default function ViewSchedule() {
                                                             backgroundColor: '#e0e7ff',
                                                         },
                                                     }),
-                                                    placeholder: (provided) => ({
-                                                        ...provided,
-                                                        color: '#9ca3af',
-                                                    }),
-                                                    singleValue: (provided) => ({
-                                                        ...provided,
-                                                        color: '#1f2937',
-                                                    }),
-                                                    menu: (provided) => ({
-                                                        ...provided,
-                                                        zIndex: 9999,
-                                                    }),
+
                                                 }}
                                             />
                                         </div>
