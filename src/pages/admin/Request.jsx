@@ -109,7 +109,7 @@ const StatusBadge = styled.span`
 `;
 
 const ActionButton = styled.button`
-  background: ${props => props.type === 'approve' ? '#3b82f6' : props.type === 'reject' ? '#e74c3c' : '#6B7280'};
+  background: ${props => props.type === 'approve' ? '#3b82f6' : props.type === 'reject' ? '#e74c3c' : '#6c1354'};
   color: white;
   border: none;
   padding: 6px 12px;
@@ -600,9 +600,9 @@ const Request = () => {
                         <TableHeader>
                             <TableRow>
                                 <TableHeaderCell style={{ width: '5%' }}>ID</TableHeaderCell>
-                                <TableHeaderCell style={{ width: '20%' }}>Mô tả</TableHeaderCell>
-                                <TableHeaderCell style={{ width: '20%' }}>Loại đơn</TableHeaderCell>
-                                <TableHeaderCell style={{ width: '10%' }}>Trạng thái chính</TableHeaderCell>
+                                <TableHeaderCell style={{ width: '15%' }}>Mô tả</TableHeaderCell>
+                                <TableHeaderCell style={{ width: '15%' }}>Loại đơn</TableHeaderCell>
+                                <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '15%' }}>Ngày tạo</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '10%' }}>Người tạo</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '20%' }}>Thao tác</TableHeaderCell>

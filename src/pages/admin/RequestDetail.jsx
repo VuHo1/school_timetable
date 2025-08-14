@@ -6,7 +6,6 @@ import { fetchRequestById, addRequestComment } from '../../api';
 import { toast } from 'react-hot-toast';
 import { FaCommentAlt, FaSpinner, FaArrowLeft } from 'react-icons/fa';
 
-// Styled Components (unchanged except for new styles for content_detail list)
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -118,8 +117,8 @@ const StatusBadge = styled.span`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: ${props => props.status === 'Chờ xử lý' ? '#fefcbf' : props.status === 'Đã từ chối' ? '#f8d7da' : props.status === 'Đã chấp nhận' ? '#d4edda' : '#ffffff'};
-  color: ${props => props.status === 'Chờ xử lý' ? '#744210' : props.status === 'Đã từ chối' ? '#721c24' : props.status === 'Đã chấp nhận' ? '#155724' : '#040404'};
+  background: ${props => props.status === 'Chờ xử lý' ? '#fefcbf' : props.status === 'Đã từ chối' ? '#f8d7da' : props.status === 'Đã chấp nhận' ? '#d4edda' : '#161616'};
+  color: ${props => props.status === 'Chờ xử lý' ? '#744210' : props.status === 'Đã từ chối' ? '#721c24' : props.status === 'Đã chấp nhận' ? '#155724' : '#f0f0f0'};
 `;
 
 const CommentSection = styled.div`
@@ -132,14 +131,14 @@ const CommentSection = styled.div`
 const CommentList = styled.div`
   max-height: 400px;
   overflow-y: auto;
-    overflow-x: hidden;
+  overflow-x: hidden;
   margin-bottom: 15px;
   padding: 16px;
   border: 2px solid rgba(0, 0, 0, 0.06);
   border-radius: 12px;
   background: #fafafa;
   
-  /* Custom scrollbar */
+ 
   &::-webkit-scrollbar {
     width: 6px;
   }
@@ -167,7 +166,7 @@ const Comment = styled.div`
 `;
 
 const CommentBubble = styled.div`
-  max-width: 80%;
+  max-width: 100%;
   padding: 12px 16px;
   border-radius: 18px;
   position: relative;
@@ -268,7 +267,6 @@ const ErrorMessage = styled.div`
   font-size: 16px;
 `;
 
-// Request Detail Component
 const RequestDetail = () => {
   const { user } = useAuth();
   const { id } = useParams();
@@ -277,16 +275,35 @@ const RequestDetail = () => {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+
   const dayOfWeekMap = {
+    0: 'Chủ nhật',
     1: 'Thứ 2',
     2: 'Thứ 3',
     3: 'Thứ 4',
     4: 'Thứ 5',
     5: 'Thứ 6',
     6: 'Thứ 7',
-    0: 'Chủ nhật'
   };
-  // Fetch request details
+
+  const getDayOfWeek = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      const dayIndex = date.getDay();
+      return dayOfWeekMap[dayIndex] || 'Không xác định';
+    } catch {
+      return 'Không xác định';
+    }
+  };
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString('vi-VN');
+    } catch {
+      return 'Không xác định';
+    }
+  };
+
+
   useEffect(() => {
     const loadRequest = async () => {
       if (!user?.token || !id) return;
@@ -303,7 +320,7 @@ const RequestDetail = () => {
     loadRequest();
   }, [user?.token, id]);
 
-  // Handle add comment
+
   const handleAddComment = async () => {
     if (!comment.trim() || !request?.id) return;
     try {
@@ -317,7 +334,6 @@ const RequestDetail = () => {
       } else {
         toast.error(response.description);
       }
-
     } catch (error) {
       toast.error(error.message || 'Không thể thêm bình luận');
     } finally {
@@ -325,6 +341,87 @@ const RequestDetail = () => {
     }
   };
 
+  const renderContentDetail = (contentDetail) => {
+    if (!contentDetail) {
+      return (
+        <DetailItem>
+          <span className="label1">Nội dung:</span>
+          <span className="value">Không có chi tiết nội dung</span>
+        </DetailItem>
+      );
+    }
+
+    const fields = [
+      { key: 'class_code', label: 'Lớp' },
+      { key: 'room_code', label: 'Phòng' },
+      { key: 'subject_code', label: 'Môn' },
+      { key: 'date', label: 'Ngày dạy', format: (value, item) => `${item.day_of_week_str || getDayOfWeek(value)}, ${formatDate(value)}` },
+      { key: 'time_slot_id', label: 'Tiết' },
+      { key: 'old_room_type', label: 'Loại phòng hiện tại' },
+      { key: 'new_room_type', label: 'Loại phòng mong muốn' },
+
+      { key: 'old_date.class_code', label: 'Lớp', source: 'old_date' },
+      { key: 'old_date.room_code', label: 'Phòng', source: 'old_date' },
+      { key: 'old_date.subject_code', label: 'Môn', source: 'old_date' },
+      { key: 'old_date.date', label: 'Ngày', source: 'old_date', format: (value, item) => `${item.day_of_week_str || getDayOfWeek(value)}, ${formatDate(value)}` },
+      { key: 'old_date.time_slot_id', label: 'Tiết', source: 'old_date' },
+
+      { key: 'new_date.date', label: 'Dời đến ngày', source: 'new_date', format: (value) => `${getDayOfWeek(value)}, ${formatDate(value)}` },
+      { key: 'new_date.time_slot_id', label: 'Dời đến tiết', source: 'new_date' },
+    ];
+
+
+    const getFieldValue = (item, field) => {
+      if (field.source === 'old_date' && item.old_date) {
+        return item.old_date[field.key.split('.')[1]];
+      } else if (field.source === 'new_date' && item.new_date) {
+        return item.new_date[field.key.split('.')[1]];
+      } else {
+        return item[field.key];
+      }
+    };
+
+
+    const renderItem = (item, index) => {
+      const validFields = fields.filter((field) => {
+        const value = getFieldValue(item, field);
+        return value !== undefined && value !== null && value !== '';
+      });
+
+      if (validFields.length === 0) {
+        return (
+          <DetailItem key={index}>
+            <span className="label1">Nội dung {index + 1}:</span>
+            <span className="value">Không có chi tiết nội dung</span>
+          </DetailItem>
+        );
+      }
+
+      return (
+        <ContentDetailList key={index}>
+          <span className="label1">Nội dung {Array.isArray(contentDetail) && index > 0 ? index + 1 : ''}</span>
+          <ContentDetailItem>
+            {validFields.map((field, fieldIndex) => {
+              const value = getFieldValue(item, field);
+              return (
+                <DetailItem key={fieldIndex}>
+                  <span className="label">{field.label}:</span>
+                  <span className="value">{field.format ? field.format(value, item) : value}</span>
+                </DetailItem>
+              );
+            })}
+          </ContentDetailItem>
+        </ContentDetailList>
+      );
+    };
+
+
+    if (Array.isArray(contentDetail)) {
+      return contentDetail.map((item, index) => renderItem(item, index));
+    } else {
+      return renderItem(contentDetail, 0);
+    }
+  };
   return (
     <Container>
       <BackButton onClick={() => navigate('/request')}>
@@ -353,40 +450,8 @@ const RequestDetail = () => {
                 <span className="label">Mô tả:</span>
                 <span className="value">{request.description || 'Không có mô tả'}</span>
               </DetailItem>
-              {request.content_detail && request.content_detail.length > 0 ? (
-                <ContentDetailList>
-                  <span className="label1">Nội dung</span>
-                  {request.content_detail.map((detail, index) => (
-                    <ContentDetailItem key={detail.id || index}>
-                      <DetailItem>
-                        <span className="label">Ngày dạy:</span>
-                        <span className="value">{dayOfWeekMap[detail.day_of_week] || detail.day_of_week_str}, {new Date(detail.date).toLocaleDateString('vi-VN')}</span>
-                      </DetailItem>
-                      <DetailItem>
-                        <span className="label">Tiết:</span>
-                        <span className="value">{detail.time_slot_id}</span>
-                      </DetailItem>
-                      <DetailItem>
-                        <span className="label">Lớp:</span>
-                        <span className="value">{detail.class_code}</span>
-                      </DetailItem>
-                      <DetailItem>
-                        <span className="label">Môn:</span>
-                        <span className="value">{detail.subject_code}</span>
-                      </DetailItem>
-                      <DetailItem>
-                        <span className="label">Phòng:</span>
-                        <span className="value">{detail.room_code}</span>
-                      </DetailItem>
-                    </ContentDetailItem>
-                  ))}
-                </ContentDetailList>
-              ) : (
-                <DetailItem>
-                  <span className="label1">Nội dung:</span>
-                  <span className="value">Không có chi tiết nội dung</span>
-                </DetailItem>
-              )}
+              {/*Gọi hàm renderContentDetail */}
+              {renderContentDetail(request.content_detail)}
               <DetailItem>
                 <span className="label">Người tạo:</span>
                 <span className="value">{request.creator || '-'}</span>
@@ -402,7 +467,7 @@ const RequestDetail = () => {
                 </DetailItem>
               )}
               <DetailItem>
-                <span className="label">Trạng thái chính:</span>
+                <span className="label">Trạng thái:</span>
                 <span className="value">
                   <StatusBadge status={request.primary_status}>{request.primary_status}</StatusBadge>
                 </span>
@@ -429,7 +494,7 @@ const RequestDetail = () => {
               )}
             </RequestInfo>
             <CommentSection>
-              <Title1 >Trao đổi</Title1>
+              <Title1>Trao đổi</Title1>
               <CommentList>
                 {request.request_comment?.length > 0 ? (
                   request.request_comment.map((comment, index) => {
