@@ -600,10 +600,9 @@ const Request = () => {
                         <TableHeader>
                             <TableRow>
                                 <TableHeaderCell style={{ width: '5%' }}>ID</TableHeaderCell>
-                                <TableHeaderCell style={{ width: '15%' }}>Mô tả</TableHeaderCell>
-                                <TableHeaderCell style={{ width: '15%' }}>Loại đơn</TableHeaderCell>
+                                <TableHeaderCell style={{ width: '20%' }}>Mô tả</TableHeaderCell>
+                                <TableHeaderCell style={{ width: '20%' }}>Loại đơn</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '10%' }}>Trạng thái chính</TableHeaderCell>
-                                <TableHeaderCell style={{ width: '10%' }}>Trạng thái phụ</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '15%' }}>Ngày tạo</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '10%' }}>Người tạo</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '20%' }}>Thao tác</TableHeaderCell>
