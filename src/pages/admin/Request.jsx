@@ -104,12 +104,12 @@ const StatusBadge = styled.span`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: ${props => props.status === 'Chờ xử lý' ? '#fefcbf' : props.status === 'Đã từ chối' ? '#f8d7da' : props.status === 'Đã chấp nhận' ? '#d4edda' : '#ffffff'};
-  color: ${props => props.status === 'Chờ xử lý' ? '#744210' : props.status === 'Đã từ chối' ? '#721c24' : props.status === 'Đã chấp nhận' ? '#155724' : '#040404'};
+  background: ${props => props.status === 'Chờ xử lý' ? '#fefcbf' : props.status === 'Đã từ chối' ? '#f8d7da' : props.status === 'Đã chấp nhận' ? '#d4edda' : '#a6a6a6'};
+  color: ${props => props.status === 'Chờ xử lý' ? '#744210' : props.status === 'Đã từ chối' ? '#721c24' : props.status === 'Đã chấp nhận' ? '#155724' : '#3d3c3c'};
 `;
 
 const ActionButton = styled.button`
-  background: ${props => props.type === 'approve' ? '#3b82f6' : props.type === 'reject' ? '#e74c3c' : '#6c1354'};
+  background: ${props => props.type === 'approve' ? '#3b82f6' : props.type === 'reject' ? '#e74c3c' : '#6B7280'};
   color: white;
   border: none;
   padding: 6px 12px;
@@ -445,6 +445,18 @@ const Request = () => {
             setActionLoading(false);
         }
     };
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    };
     // Handle approve
     const handleCreatorApprove = async (requestId) => {
         try {
@@ -602,9 +614,9 @@ const Request = () => {
                                 <TableHeaderCell style={{ width: '5%' }}>ID</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '15%' }}>Mô tả</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '15%' }}>Loại đơn</TableHeaderCell>
-                                <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
+                                <TableHeaderCell style={{ width: '15%' }}>Trạng thái</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '15%' }}>Ngày tạo</TableHeaderCell>
-                                <TableHeaderCell style={{ width: '10%' }}>Người tạo</TableHeaderCell>
+                                <TableHeaderCell style={{ width: '15%' }}>Người tạo</TableHeaderCell>
                                 <TableHeaderCell style={{ width: '20%' }}>Thao tác</TableHeaderCell>
                             </TableRow>
                         </TableHeader>
@@ -622,8 +634,8 @@ const Request = () => {
                                         <TableCell>{request.id}</TableCell>
                                         <TableCell>{request.description || '-'}</TableCell>
                                         <TableCell>{request.type_name}</TableCell>
-                                        <TableCell>{request.primary_status}</TableCell>
-                                        <TableCell>{new Date(request.created_date).toLocaleString('vi-VN')}</TableCell>
+                                        <TableCell><StatusBadge status={request.primary_status}>{request.primary_status}</StatusBadge></TableCell>
+                                        <TableCell>{formatDateTime(request.created_date)}</TableCell>
                                         <TableCell>{request.creator}</TableCell>
                                         <TableCell>
                                             <ActionButton

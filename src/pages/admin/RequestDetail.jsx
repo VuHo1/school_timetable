@@ -71,7 +71,7 @@ const RequestInfo = styled.div`
 const DetailItem = styled.div`
   display: flex;
   margin-bottom: 15px;
-  
+  gap: 15px;
   .label {
     font-weight: 600;
     color: #2c3e50;
@@ -117,8 +117,8 @@ const StatusBadge = styled.span`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: ${props => props.status === 'Chờ xử lý' ? '#fefcbf' : props.status === 'Đã từ chối' ? '#f8d7da' : props.status === 'Đã chấp nhận' ? '#d4edda' : '#161616'};
-  color: ${props => props.status === 'Chờ xử lý' ? '#744210' : props.status === 'Đã từ chối' ? '#721c24' : props.status === 'Đã chấp nhận' ? '#155724' : '#f0f0f0'};
+  background: ${props => props.status === 'Chờ xử lý' ? '#fefcbf' : props.status === 'Đã từ chối' ? '#f8d7da' : props.status === 'Đã chấp nhận' ? '#d4edda' : '#a6a6a6'};
+  color: ${props => props.status === 'Chờ xử lý' ? '#744210' : props.status === 'Đã từ chối' ? '#721c24' : props.status === 'Đã chấp nhận' ? '#155724' : '#3d3c3c'};
 `;
 
 const CommentSection = styled.div`
@@ -284,10 +284,21 @@ const RequestDetail = () => {
     4: 'Thứ 5',
     5: 'Thứ 6',
     6: 'Thứ 7',
+    'Monday': 'Thứ 2',
+    'tuesday': 'Thứ 3',
+    'wednesday': 'Thứ 4',
+    'thursday': 'Thứ 5',
+    'friday': 'Thứ 6',
+    'saturday': 'Thứ 7',
+    'sunday': 'Chủ nhật',
   };
 
   const getDayOfWeek = (dateString) => {
     try {
+      const normalizedDay = dateString.toLowerCase();
+      if (dayOfWeekMap[normalizedDay]) {
+        return dayOfWeekMap[normalizedDay];
+      }
       const date = new Date(dateString);
       const dayIndex = date.getDay();
       return dayOfWeekMap[dayIndex] || 'Không xác định';
@@ -320,7 +331,18 @@ const RequestDetail = () => {
     loadRequest();
   }, [user?.token, id]);
 
-
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  };
   const handleAddComment = async () => {
     if (!comment.trim() || !request?.id) return;
     try {
@@ -355,10 +377,10 @@ const RequestDetail = () => {
       { key: 'class_code', label: 'Lớp' },
       { key: 'room_code', label: 'Phòng' },
       { key: 'subject_code', label: 'Môn' },
-      { key: 'date', label: 'Ngày dạy', format: (value, item) => `${item.day_of_week_str || getDayOfWeek(value)}, ${formatDate(value)}` },
+      { key: 'date', label: 'Ngày dạy', format: (value, item) => `${getDayOfWeek(value)}, ${formatDate(value)}` },
       { key: 'time_slot_id', label: 'Tiết' },
       { key: 'old_room_type', label: 'Loại phòng hiện tại' },
-      { key: 'new_room_type', label: 'Loại phòng mong muốn' },
+      { key: 'new_room_type', label: 'Loại phòng muốn đổi' },
 
       { key: 'old_date.class_code', label: 'Lớp', source: 'old_date' },
       { key: 'old_date.room_code', label: 'Phòng', source: 'old_date' },
@@ -480,11 +502,11 @@ const RequestDetail = () => {
               )}
               <DetailItem>
                 <span className="label">Ngày tạo:</span>
-                <span className="value">{new Date(request.created_date).toLocaleString('vi-VN')}</span>
+                <span className="value">{formatDateTime(request.created_date)}</span>
               </DetailItem>
               <DetailItem>
                 <span className="label">Ngày cập nhật:</span>
-                <span className="value">{new Date(request.updated_date).toLocaleString('vi-VN')}</span>
+                <span className="value">{formatDateTime(request.updated_date)}</span>
               </DetailItem>
               {request.content && (
                 <DetailItem>
