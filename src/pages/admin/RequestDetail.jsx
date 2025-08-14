@@ -117,8 +117,8 @@ const StatusBadge = styled.span`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
-  background: ${props => props.status === 'Chờ xử lý' ? '#fefcbf' : props.status === 'Đã từ chối' ? '#f8d7da' : props.status === 'Đã chấp nhận' ? '#d4edda' : '#ffffff'};
-  color: ${props => props.status === 'Chờ xử lý' ? '#744210' : props.status === 'Đã từ chối' ? '#721c24' : props.status === 'Đã chấp nhận' ? '#155724' : '#040404'};
+  background: ${props => props.status === 'Chờ xử lý' ? '#fefcbf' : props.status === 'Đã từ chối' ? '#f8d7da' : props.status === 'Đã chấp nhận' ? '#d4edda' : '#161616'};
+  color: ${props => props.status === 'Chờ xử lý' ? '#744210' : props.status === 'Đã từ chối' ? '#721c24' : props.status === 'Đã chấp nhận' ? '#155724' : '#f0f0f0'};
 `;
 
 const CommentSection = styled.div`
@@ -467,7 +467,7 @@ const RequestDetail = () => {
                 </DetailItem>
               )}
               <DetailItem>
-                <span className="label">Trạng thái chính:</span>
+                <span className="label">Trạng thái:</span>
                 <span className="value">
                   <StatusBadge status={request.primary_status}>{request.primary_status}</StatusBadge>
                 </span>
