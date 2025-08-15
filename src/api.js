@@ -120,7 +120,17 @@ export const fetchClassSubjects = async (token, classCode) => {
     });
     if (!response.ok) throw new Error('Failed to fetch class subjects');
     const data = await response.json();
-    return data;
+    
+    // Ensure we return an array
+    if (data && data.data_set) {
+        return data.data_set;
+    } else if (data && data.data) {
+        return data.data;
+    } else if (Array.isArray(data)) {
+        return data;
+    } else {
+        return [];
+    }
 };
 
 export const createClass = async (token, classData) => {
