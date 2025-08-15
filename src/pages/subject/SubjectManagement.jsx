@@ -490,6 +490,293 @@ const EditableTableCell = styled.td.withConfig({
   }
 `;
 
+// SubjectModal component moved outside to prevent re-creation on every render
+const SubjectModal = React.memo(({
+  isEdit = false,
+  subjectCodeType,
+  formData,
+  newSubjectCode,
+  newSubjectName,
+  subjectCodes,
+  gradeLevels,
+  slotModalData,
+  slotSelectionMode,
+  timeSlots,
+  modalLoading,
+  showSlotModal,
+  newSubjectCodeRef,
+  newSubjectNameRef,
+  handleSubjectCodeTypeChange,
+  handleInputChange,
+  setNewSubjectCode,
+  setNewSubjectName,
+  handleGradeLevelChange,
+  handleChange,
+  openSlotModal,
+  handleUpdate,
+  handleCreate,
+  setShowEditModal,
+  setShowCreateModal,
+  setShowSlotModal,
+  setSlotSelectionMode,
+  handleSlotToggle,
+  handleSlotModalSave,
+  SubjectSlotTable
+}) => (
+  <ModalOverlay onClick={(e) => e.target === e.currentTarget && (isEdit ? setShowEditModal(false) : setShowCreateModal(false))}>
+    <ModalContent>
+      <ModalHeader>
+        <ModalTitle>{isEdit ? 'Chỉnh sửa môn học' : 'Thêm môn học mới'}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        {!isEdit && (
+          <RadioGroup>
+            <RadioItem>
+              <input
+                type="radio"
+                name="subjectCodeType"
+                value="existing"
+                checked={subjectCodeType === 'existing'}
+                onChange={(e) => handleSubjectCodeTypeChange(e.target.value)}
+              />
+              Sử dụng môn có sẵn
+            </RadioItem>
+            <RadioItem>
+              <input
+                type="radio"
+                name="subjectCodeType"
+                value="new"
+                checked={subjectCodeType === 'new'}
+                onChange={(e) => handleSubjectCodeTypeChange(e.target.value)}
+              />
+              Tạo mã môn mới
+            </RadioItem>
+          </RadioGroup>
+        )}
+        <FormGrid>
+          <FormGroup>
+            <Label>Mã môn học *</Label>
+            {isEdit ? (
+              <Input
+                type="text"
+                value={formData.subject_code}
+                disabled
+              />
+            ) : subjectCodeType === 'existing' ? (
+              <Select
+                value={formData.subject_code}
+                onChange={(e) => handleInputChange('subject_code', e.target.value)}
+                required
+              >
+                <option value="">Chọn mã môn</option>
+                {subjectCodes.map(code => (
+                  <option key={code.code_id} value={code.code_id}>
+                    {code.code_id} - {code.caption}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <Input
+                ref={newSubjectCodeRef}
+                type="text"
+                value={newSubjectCode}
+                onChange={(e) => setNewSubjectCode(e.target.value)}
+                placeholder="Nhập mã môn học mới"
+                required
+              />
+            )}
+          </FormGroup>
+          {!isEdit && subjectCodeType === 'new' && (
+            <FormGroup>
+              <Label>Tên môn học *</Label>
+              <Input
+                ref={newSubjectNameRef}
+                type="text"
+                value={newSubjectName}
+                onChange={(e) => setNewSubjectName(e.target.value)}
+                placeholder="Nhập tên môn học"
+                required
+              />
+            </FormGroup>
+          )}
+          <FormGroup>
+            <Label>Số tiết/tuần *</Label>
+            <Input
+              type="number"
+              min="1"
+              value={formData.weekly_slot}
+              onChange={(e) => handleInputChange('weekly_slot', parseInt(e.target.value) || 1)}
+              required
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>Số tiết liên tiếp tối đa *</Label>
+            <Input
+              type="number"
+              min="1"
+              value={formData.continuous_slot}
+              onChange={(e) => handleInputChange('continuous_slot', parseInt(e.target.value) || 1)}
+              required
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>Giới hạn môn cùng thời điểm</Label>
+            <Input
+              type="number"
+              min="0"
+              value={formData.limit}
+              onChange={(e) => handleInputChange('limit', parseInt(e.target.value) || 0)}
+              placeholder="0 = không giới hạn"
+            />
+          </FormGroup>
+          <FormGroup>
+            <Label>Tiết cố định/Tránh</Label>
+            <SlotConfigButton onClick={openSlotModal}>
+              {formData.fixed_slot.length} cố định / {formData.avoid_slot.length} tránh
+            </SlotConfigButton>
+          </FormGroup>
+          {!isEdit && (
+            <FormGroup>
+              <Label>Khối *</Label>
+              <CheckboxGroup>
+                {gradeLevels.map(grade => (
+                  <CheckboxItem key={grade.code_id}>
+                    <input
+                      type="checkbox"
+                      checked={formData.grade_level.includes(grade.code_id)}
+                      onChange={(e) => handleGradeLevelChange(grade.code_id, e.target.checked)}
+                    />
+                    {grade.caption}
+                  </CheckboxItem>
+                ))}
+              </CheckboxGroup>
+            </FormGroup>
+          )}
+          {isEdit && (
+            <FormGroup>
+              <Label htmlFor="alsoUpdateClassSubject">Cập nhật cấu hình lớp học</Label>
+              <Select
+                id="alsoUpdateClassSubject"
+                name="also_update_for_class_subject"
+                value={formData.also_update_for_class_subject}
+                onChange={handleChange}
+                title="Chọn phạm vi cập nhật khi thay đổi thông tin môn học"
+              >
+                <option key="N" value="N">Không cập nhật cấu hình lớp</option>
+                <option key="G" value="G">Cập nhật các lớp dùng cấu hình mặc định</option>
+                <option key="I" value="I">Cập nhật các lớp đã tùy chỉnh cấu hình</option>
+                <option key="A" value="A">Cập nhật tất cả cấu hình lớp</option>
+              </Select>
+            </FormGroup>
+          )}
+        </FormGrid>
+      </ModalBody>
+      <ModalActions>
+        <ActionButton
+          onClick={() => {
+            isEdit ? setShowEditModal(false) : setShowCreateModal(false);
+            setShowSlotModal(false);
+          }}
+        >
+          Hủy
+        </ActionButton>
+        <ActionButton
+          variant="primary"
+          onClick={isEdit ? handleUpdate : handleCreate}
+          disabled={modalLoading}
+        >
+          {modalLoading ? '⏳ Đang lưu...' : (isEdit ? 'Xác nhận' : 'Lưu thông tin')}
+        </ActionButton>
+      </ModalActions>
+      {showSlotModal && (
+        <ModalOverlay>
+          <ModalContent style={{ maxWidth: '1000px', width: '95%' }}>
+            <ModalHeader>
+              <ModalTitle>Cấu hình tiết học</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                  <div
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      background: slotSelectionMode === 'fixed' ? '#000' : '#f1f5f9',
+                      color: slotSelectionMode === 'fixed' ? '#fff' : '#64748b',
+                      border: '1px solid #e2e8f0'
+                    }}
+                    onClick={() => setSlotSelectionMode('fixed')}
+                  >
+                    Tiết cố định ({slotModalData.fixed_slot.length})
+                  </div>
+                  <div
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      background: slotSelectionMode === 'avoid' ? '#f59e0b' : '#f1f5f9',
+                      color: slotSelectionMode === 'avoid' ? '#fff' : '#64748b',
+                      border: '1px solid #e2e8f0'
+                    }}
+                    onClick={() => setSlotSelectionMode('avoid')}
+                  >
+                    Tiết cần tránh ({slotModalData.avoid_slot.length})
+                  </div>
+                </div>
+              </div>
+              <SubjectSlotTable
+                config={{
+                  monday: [
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                  ],
+                  tuesday: [
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                  ],
+                  wednesday: [
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                  ],
+                  thursday: [
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                  ],
+                  friday: [
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                  ],
+                  saturday: [
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                  ],
+                  sunday: [
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                  ]
+                }}
+                timeSlots={timeSlots}
+                isEditing={true}
+                onToggleSlot={handleSlotToggle}
+                slotSelectionMode={slotSelectionMode}
+              />
+            </ModalBody>
+            <ModalActions>
+              <ActionButton onClick={() => setShowSlotModal(false)}>
+                Hủy
+              </ActionButton>
+              <ActionButton variant="primary" onClick={handleSlotModalSave}>
+                Xác nhận
+              </ActionButton>
+            </ModalActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
+    </ModalContent>
+  </ModalOverlay>
+));
+
 function SubjectManagement() {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -930,260 +1217,7 @@ function SubjectManagement() {
     );
   }
 
-  const SubjectModal = ({ isEdit = false }) => (
-    <ModalOverlay onClick={(e) => e.target === e.currentTarget && (isEdit ? setShowEditModal(false) : setShowCreateModal(false))}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{isEdit ? 'Chỉnh sửa môn học' : 'Thêm môn học mới'}</ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          {!isEdit && (
-            <RadioGroup>
-              <RadioItem>
-                <input
-                  type="radio"
-                  name="subjectCodeType"
-                  value="existing"
-                  checked={subjectCodeType === 'existing'}
-                  onChange={(e) => handleSubjectCodeTypeChange(e.target.value)}
-                />
-                Sử dụng môn có sẵn
-              </RadioItem>
-              <RadioItem>
-                <input
-                  type="radio"
-                  name="subjectCodeType"
-                  value="new"
-                  checked={subjectCodeType === 'new'}
-                  onChange={(e) => handleSubjectCodeTypeChange(e.target.value)}
-                />
-                Tạo mã môn mới
-              </RadioItem>
-            </RadioGroup>
-          )}
-          <FormGrid>
-            <FormGroup>
-              <Label>Mã môn học *</Label>
-              {isEdit ? (
-                <Input
-                  type="text"
-                  value={formData.subject_code}
-                  disabled
-                />
-              ) : subjectCodeType === 'existing' ? (
-                <Select
-                  value={formData.subject_code}
-                  onChange={(e) => handleInputChange('subject_code', e.target.value)}
-                  required
-                >
-                  <option value="">Chọn mã môn</option>
-                  {subjectCodes.map(code => (
-                    <option key={code.code_id} value={code.code_id}>
-                      {code.code_id} - {code.caption}
-                    </option>
-                  ))}
-                </Select>
-              ) : (
-                <Input
-                  ref={newSubjectCodeRef}
-                  type="text"
-                  value={newSubjectCode}
-                  onChange={(e) => setNewSubjectCode(e.target.value)}
-                  placeholder="Nhập mã môn học mới"
-                  required
-                />
-              )}
-            </FormGroup>
-            {!isEdit && subjectCodeType === 'new' && (
-              <FormGroup>
-                <Label>Tên môn học *</Label>
-                <Input
-                  ref={newSubjectNameRef}
-                  type="text"
-                  value={newSubjectName}
-                  onChange={(e) => setNewSubjectName(e.target.value)}
-                  placeholder="Nhập tên môn học"
-                  required
-                />
-              </FormGroup>
-            )}
-            <FormGroup>
-              <Label>Số tiết/tuần *</Label>
-              <Input
-                type="number"
-                min="1"
-                value={formData.weekly_slot}
-                onChange={(e) => handleInputChange('weekly_slot', parseInt(e.target.value) || 1)}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label>Số tiết liên tiếp tối đa *</Label>
-              <Input
-                type="number"
-                min="1"
-                value={formData.continuous_slot}
-                onChange={(e) => handleInputChange('continuous_slot', parseInt(e.target.value) || 1)}
-                required
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label>Giới hạn môn cùng thời điểm</Label>
-              <Input
-                type="number"
-                min="0"
-                value={formData.limit}
-                onChange={(e) => handleInputChange('limit', parseInt(e.target.value) || 0)}
-                placeholder="0 = không giới hạn"
-              />
-            </FormGroup>
-            <FormGroup>
-              <Label>Tiết cố định/Tránh</Label>
-              <SlotConfigButton onClick={openSlotModal}>
-                {formData.fixed_slot.length} cố định / {formData.avoid_slot.length} tránh
-              </SlotConfigButton>
-            </FormGroup>
-            {!isEdit && (
-              <FormGroup>
-                <Label>Khối *</Label>
-                <CheckboxGroup>
-                  {gradeLevels.map(grade => (
-                    <CheckboxItem key={grade.code_id}>
-                      <input
-                        type="checkbox"
-                        checked={formData.grade_level.includes(grade.code_id)}
-                        onChange={(e) => handleGradeLevelChange(grade.code_id, e.target.checked)}
-                      />
-                      {grade.caption}
-                    </CheckboxItem>
-                  ))}
-                </CheckboxGroup>
-              </FormGroup>
-            )}
-            {isEdit && (
-              <FormGroup>
-                <Label htmlFor="alsoUpdateClassSubject">Cập nhật cấu hình lớp học</Label>
-                <Select
-                  id="alsoUpdateClassSubject"
-                  name="also_update_for_class_subject"
-                  value={formData.also_update_for_class_subject}
-                  onChange={handleChange}
-                  title="Chọn phạm vi cập nhật khi thay đổi thông tin môn học"
-                >
-                  <option key="N" value="N">Không cập nhật cấu hình lớp</option>
-                  <option key="G" value="G">Cập nhật các lớp dùng cấu hình mặc định</option>
-                  <option key="I" value="I">Cập nhật các lớp đã tùy chỉnh cấu hình</option>
-                  <option key="A" value="A">Cập nhật tất cả cấu hình lớp</option>
-                </Select>
-              </FormGroup>
-            )}
-          </FormGrid>
-        </ModalBody>
-        <ModalActions>
-          <ActionButton
-            onClick={() => {
-              isEdit ? setShowEditModal(false) : setShowCreateModal(false);
-              setShowSlotModal(false);
-            }}
-          >
-            Hủy
-          </ActionButton>
-          <ActionButton
-            variant="primary"
-            onClick={isEdit ? handleUpdate : handleCreate}
-            disabled={modalLoading}
-          >
-            {modalLoading ? '⏳ Đang lưu...' : (isEdit ? 'Xác nhận' : 'Lưu thông tin')}
-          </ActionButton>
-        </ModalActions>
-        {showSlotModal && (
-          <ModalOverlay>
-            <ModalContent style={{ maxWidth: '1000px', width: '95%' }}>
-              <ModalHeader>
-                <ModalTitle>Cấu hình tiết học</ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <div style={{ marginBottom: '20px' }}>
-                  <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                    <div
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        background: slotSelectionMode === 'fixed' ? '#000' : '#f1f5f9',
-                        color: slotSelectionMode === 'fixed' ? '#fff' : '#64748b',
-                        border: '1px solid #e2e8f0'
-                      }}
-                      onClick={() => setSlotSelectionMode('fixed')}
-                    >
-                      Tiết cố định ({slotModalData.fixed_slot.length})
-                    </div>
-                    <div
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        background: slotSelectionMode === 'avoid' ? '#f59e0b' : '#f1f5f9',
-                        color: slotSelectionMode === 'avoid' ? '#fff' : '#64748b',
-                        border: '1px solid #e2e8f0'
-                      }}
-                      onClick={() => setSlotSelectionMode('avoid')}
-                    >
-                      Tiết cần tránh ({slotModalData.avoid_slot.length})
-                    </div>
-                  </div>
-                </div>
-                <SubjectSlotTable
-                  config={{
-                    monday: [
-                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
-                    ],
-                    tuesday: [
-                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
-                    ],
-                    wednesday: [
-                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
-                    ],
-                    thursday: [
-                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
-                    ],
-                    friday: [
-                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
-                    ],
-                    saturday: [
-                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
-                    ],
-                    sunday: [
-                      ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
-                    ]
-                  }}
-                  timeSlots={timeSlots}
-                  isEditing={true}
-                  onToggleSlot={handleSlotToggle}
-                  slotSelectionMode={slotSelectionMode}
-                />
-              </ModalBody>
-              <ModalActions>
-                <ActionButton onClick={() => setShowSlotModal(false)}>
-                  Hủy
-                </ActionButton>
-                <ActionButton variant="primary" onClick={handleSlotModalSave}>
-                  Xác nhận
-                </ActionButton>
-              </ModalActions>
-            </ModalContent>
-          </ModalOverlay>
-        )}
-      </ModalContent>
-    </ModalOverlay>
-  );
+
 
 
   const DetailModal = ({ subject }) => (
@@ -1426,8 +1460,74 @@ function SubjectManagement() {
           </>
         )}
       </TableContainer>
-      {showCreateModal && <SubjectModal />}
-      {showEditModal && <SubjectModal isEdit />}
+      {showCreateModal && (
+        <SubjectModal
+          isEdit={false}
+          subjectCodeType={subjectCodeType}
+          formData={formData}
+          newSubjectCode={newSubjectCode}
+          newSubjectName={newSubjectName}
+          subjectCodes={subjectCodes}
+          gradeLevels={gradeLevels}
+          slotModalData={slotModalData}
+          slotSelectionMode={slotSelectionMode}
+          timeSlots={timeSlots}
+          modalLoading={modalLoading}
+          showSlotModal={showSlotModal}
+          newSubjectCodeRef={newSubjectCodeRef}
+          newSubjectNameRef={newSubjectNameRef}
+          handleSubjectCodeTypeChange={handleSubjectCodeTypeChange}
+          handleInputChange={handleInputChange}
+          setNewSubjectCode={setNewSubjectCode}
+          setNewSubjectName={setNewSubjectName}
+          handleGradeLevelChange={handleGradeLevelChange}
+          handleChange={handleChange}
+          openSlotModal={openSlotModal}
+          handleUpdate={handleUpdate}
+          handleCreate={handleCreate}
+          setShowEditModal={setShowEditModal}
+          setShowCreateModal={setShowCreateModal}
+          setShowSlotModal={setShowSlotModal}
+          setSlotSelectionMode={setSlotSelectionMode}
+          handleSlotToggle={handleSlotToggle}
+          handleSlotModalSave={handleSlotModalSave}
+          SubjectSlotTable={SubjectSlotTable}
+        />
+      )}
+      {showEditModal && (
+        <SubjectModal
+          isEdit={true}
+          subjectCodeType={subjectCodeType}
+          formData={formData}
+          newSubjectCode={newSubjectCode}
+          newSubjectName={newSubjectName}
+          subjectCodes={subjectCodes}
+          gradeLevels={gradeLevels}
+          slotModalData={slotModalData}
+          slotSelectionMode={slotSelectionMode}
+          timeSlots={timeSlots}
+          modalLoading={modalLoading}
+          showSlotModal={showSlotModal}
+          newSubjectCodeRef={newSubjectCodeRef}
+          newSubjectNameRef={newSubjectNameRef}
+          handleSubjectCodeTypeChange={handleSubjectCodeTypeChange}
+          handleInputChange={handleInputChange}
+          setNewSubjectCode={setNewSubjectCode}
+          setNewSubjectName={setNewSubjectName}
+          handleGradeLevelChange={handleGradeLevelChange}
+          handleChange={handleChange}
+          openSlotModal={openSlotModal}
+          handleUpdate={handleUpdate}
+          handleCreate={handleCreate}
+          setShowEditModal={setShowEditModal}
+          setShowCreateModal={setShowCreateModal}
+          setShowSlotModal={setShowSlotModal}
+          setSlotSelectionMode={setSlotSelectionMode}
+          handleSlotToggle={handleSlotToggle}
+          handleSlotModalSave={handleSlotModalSave}
+          SubjectSlotTable={SubjectSlotTable}
+        />
+      )}
       {showDetailModal && <DetailModal subject={selectedSubject} />}
     </Container>
   );
