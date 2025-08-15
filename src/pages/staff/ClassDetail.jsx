@@ -709,7 +709,12 @@ function ClassDetail() {
       ]);
       setClassDetail(detailResult);
       // Add IDs to existing subjects if they don't have one
-      const subjectsWithIds = (subjectsResult || []).map(subject => ({
+      // Ensure subjectsResult is an array before mapping
+      const subjectsArray = Array.isArray(subjectsResult) ? subjectsResult : 
+                           (subjectsResult && subjectsResult.data_set) ? subjectsResult.data_set :
+                           (subjectsResult && subjectsResult.data) ? subjectsResult.data : [];
+      
+      const subjectsWithIds = subjectsArray.map(subject => ({
         ...subject,
         id: subject.id || `existing_${subject.subject_code}_${Date.now()}`
       }));
