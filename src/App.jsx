@@ -14,7 +14,6 @@ import ViewSchedule from './pages/staff/ViewSchedule';
 import MySchedule from './pages/staff/MySchedule';
 import ClassManagement from './pages/staff/ClassManagement';
 import ClassDetail from './pages/staff/ClassDetail';
-import CreateClass from './pages/staff/CreateClass';
 import UpdateClass from './pages/staff/UpdateClass';
 import Profile from './pages/Profile';
 import Dashboard from './pages/admin/Dashboard';
@@ -97,11 +96,7 @@ function AppRoutes() {
               <ClassManagement />
             </ProtectedRoute>
           } />
-          <Route path="/staff/class/create" element={
-            <ProtectedRoute requiredAbility="Quản lí lớp học">
-              <CreateClass />
-            </ProtectedRoute>
-          } />
+
           <Route path="/staff/class/update/:classCode" element={
             <ProtectedRoute requiredAbility="Quản lí lớp học">
               <UpdateClass />

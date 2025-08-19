@@ -1,8 +1,9 @@
+
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useAbilities } from '../../hooks/useAbilities';
-import { fetchClasses, toggleClassStatus, fetchClassScheduleConfig, addClassScheduleConfig } from '../../api';
+import { fetchClasses, toggleClassStatus, createClass, fetchGradeLevels } from '../../api';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -362,6 +363,157 @@ const ActionMenuText = styled.span`
   font-size: 14px;
   color: #2c3e50;
 `;
+const CreateModalContent = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 600px;
+  width: 95%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-height: 80vh;
+  overflow-y: auto;
+`;
+
+const CreateModalHeader = styled.h2`
+  color: #333;
+  margin: 0 0 20px 0;
+`;
+
+const FormContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const Label = styled.label`
+  font-weight: bold;
+  color: #495057;
+  font-size: 14px;
+`;
+
+const Input = styled.input`
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  &:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+`;
+
+const CheckboxGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 15px;
+  background-color: #f8f9fa;
+`;
+
+const CheckboxItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const Checkbox = styled.input`
+  width: 16px;
+  height: 16px;
+`;
+
+const CheckboxLabel = styled.label`
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+`;
+
+const SubmitButton = styled.button`
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  &:hover:not(:disabled) {
+    background-color: #218838;
+  }
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+const CancelButton = styled.button`
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  &:hover {
+    background-color: #5a6268;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 5px;
+`;
+
+const Success = styled.div`
+  background-color: #d4edda;
+  color: #155724;
+  padding: 12px;
+  border-radius: 5px;
+`;
+
+const Loading = styled.div`
+  text-align: center;
+  padding: 20px;
+  color: #666;
+`;
+
+const HelpText = styled.small`
+  color: #666;
+  font-size: 12px;
+  margin-top: 4px;
+`;
+
+const ExampleBox = styled.div`
+  background-color: #e9ecef;
+  border-left: 4px solid #007bff;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #495057;
+`;
 
 function ClassManagement() {
   const { user } = useAuth();
@@ -379,6 +531,16 @@ function ClassManagement() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [modalData, setModalData] = useState({ classCode: '', currentStatus: '', action: '' });
   const [openActionMenu, setOpenActionMenu] = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [loadingGrades, setLoadingGrades] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [createSuccess, setCreateSuccess] = useState('');
+  const [gradeLevels, setGradeLevels] = useState([]);
+  const [formData, setFormData] = useState({
+    class_code: '',
+    quantity: 1,
+    grade_level: []
+  });
   const actionMenuRef = useRef(null);
 
   const loadClasses = async (params = {}) => {
@@ -416,6 +578,19 @@ function ClassManagement() {
     }
   };
 
+  const loadGradeLevels = async () => {
+    setLoadingGrades(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const result = await fetchGradeLevels(token);
+      setGradeLevels(result || []);
+    } catch (err) {
+      setCreateError('Không thể tải danh sách khối học: ' + err.message);
+    } finally {
+      setLoadingGrades(false);
+    }
+  };
+
   useEffect(() => {
     loadClasses();
   }, [currentPage, sortBy, sortOrder]);
@@ -423,6 +598,12 @@ function ClassManagement() {
   useEffect(() => {
     loadClasses();
   }, [searchTerm]);
+
+  useEffect(() => {
+    if (showCreateModal) {
+      loadGradeLevels();
+    }
+  }, [showCreateModal]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -466,7 +647,10 @@ function ClassManagement() {
   };
 
   const handleCreateClass = () => {
-    navigate('/staff/class/create');
+    setShowCreateModal(true);
+    setFormData({ class_code: '', quantity: 1, grade_level: [] });
+    setCreateError('');
+    setCreateSuccess('');
   };
 
   const handlePageChange = (page) => {
@@ -507,6 +691,75 @@ function ClassManagement() {
 
   const handleActionMenuToggle = (classCode) => {
     setOpenActionMenu(openActionMenu === classCode ? null : classCode);
+  };
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year}`;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'quantity' ? parseInt(value) || 1 : value
+    }));
+  };
+
+  const handleGradeLevelChange = (gradeId, checked) => {
+    setFormData(prev => ({
+      ...prev,
+      grade_level: checked
+        ? [...prev.grade_level, gradeId]
+        : prev.grade_level.filter(id => id !== gradeId)
+    }));
+  };
+
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setCreateError('');
+    setCreateSuccess('');
+
+    try {
+      if (!formData.class_code.trim()) {
+        throw new Error('Vui lòng nhập mã lớp');
+      }
+      if (formData.grade_level.length === 0) {
+        throw new Error('Vui lòng chọn ít nhất một khối học');
+      }
+      if (formData.quantity < 1 || formData.quantity > 50) {
+        throw new Error('Số lượng lớp phải từ 1 đến 50');
+      }
+
+      const token = localStorage.getItem('authToken');
+      await createClass(token, formData);
+      setCreateSuccess('Tạo lớp học thành công!');
+      setFormData({
+        class_code: '',
+        quantity: 1,
+        grade_level: []
+      });
+      await loadClasses();
+      setTimeout(() => setShowCreateModal(false), 2000);
+    } catch (err) {
+      setCreateError(err.message || 'Có lỗi xảy ra khi tạo lớp học');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateCancel = () => {
+    setShowCreateModal(false);
+    setFormData({ class_code: '', quantity: 1, grade_level: [] });
+    setCreateError('');
+    setCreateSuccess('');
   };
 
   return (
@@ -583,10 +836,11 @@ function ClassManagement() {
                       Loại phòng
                       <SortIcon>{getSortIcon('room_type_name')}</SortIcon>
                     </TableHeaderCell>
-                    <TableHeaderCell style={{ width: '30%' }} onClick={() => handleSort('teacher_user_name')}>
+                    <TableHeaderCell style={{ width: '20%' }} onClick={() => handleSort('teacher_user_name')}>
                       GVCN
                       <SortIcon>{getSortIcon('teacher_user_name')}</SortIcon>
                     </TableHeaderCell>
+                    <TableHeaderCell style={{ width: '10%' }}>Cập nhật</TableHeaderCell>
                     <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
                     <TableHeaderCell style={{ width: '10%' }}>Thao tác</TableHeaderCell>
                   </TableRow>
@@ -604,6 +858,7 @@ function ClassManagement() {
                           ? `${cls.teacher_full_name} (${cls.teacher_user_name})`
                           : 'Chưa có giáo viên chủ nhiệm'}
                       </TableCell>
+                      <TableCell>{formatDateTime(cls.updated_date)}</TableCell>
                       <TableCell>
                         <StatusBadge status={cls.status}>
                           {cls.status}
@@ -704,6 +959,88 @@ function ClassManagement() {
               </ConfirmButton>
             </ModalFooter>
           </ModalContent>
+        </Modal>
+      )}
+
+      {showCreateModal && (
+        <Modal>
+          <CreateModalContent>
+            <CreateModalHeader>Tạo lớp học mới</CreateModalHeader>
+            {createError && <ErrorMessage>{createError}</ErrorMessage>}
+            {createSuccess && <Success>{createSuccess}</Success>}
+            <FormContainer>
+              <Form onSubmit={handleCreateSubmit}>
+                <FormGroup>
+                  <Label htmlFor="class_code">Mã lớp *</Label>
+                  <Input
+                    type="text"
+                    id="class_code"
+                    name="class_code"
+                    value={formData.class_code}
+                    onChange={handleInputChange}
+                    placeholder="Ví dụ: A, B, C, CLC..."
+                    required
+                  />
+                  <ExampleBox>
+                    <strong>Ví dụ:</strong> Nếu chọn mã lớp "A", số lượng 3, khối 10 → Sẽ tạo: 10A01, 10A02, 10A03
+                  </ExampleBox>
+                </FormGroup>
+
+                <FormGroup>
+                  <Label htmlFor="quantity">Số lượng lớp *</Label>
+                  <Input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    min="1"
+                    max="50"
+                    required
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <Label>Khối học *</Label>
+                  <CheckboxGroup>
+                    {loadingGrades ? (
+                      <Loading>Đang tải danh sách khối học...</Loading>
+                    ) : gradeLevels.length > 0 ? (
+                      gradeLevels.map(grade => (
+                        <CheckboxItem key={grade.code_id}>
+                          <Checkbox
+                            type="checkbox"
+                            id={`grade_${grade.code_id}`}
+                            checked={formData.grade_level.includes(grade.code_id)}
+                            onChange={(e) => handleGradeLevelChange(grade.code_id, e.target.checked)}
+                          />
+                          <CheckboxLabel htmlFor={`grade_${grade.code_id}`}>
+                            {grade.caption}
+                          </CheckboxLabel>
+                        </CheckboxItem>
+                      ))
+                    ) : (
+                      <div style={{ textAlign: 'center', color: '#666' }}>
+                        Không có dữ liệu khối học
+                      </div>
+                    )}
+                  </CheckboxGroup>
+                  <HelpText>
+                    Chọn các khối học để tạo lớp. Có thể chọn nhiều khối.
+                  </HelpText>
+                </FormGroup>
+
+                <ButtonGroup>
+                  <CancelButton type="button" onClick={handleCreateCancel}>
+                    Hủy
+                  </CancelButton>
+                  <SubmitButton type="submit" disabled={loading || loadingGrades}>
+                    {loading ? 'Đang tạo...' : 'Lưu thông tin'}
+                  </SubmitButton>
+                </ButtonGroup>
+              </Form>
+            </FormContainer>
+          </CreateModalContent>
         </Modal>
       )}
     </Container>

@@ -22,7 +22,6 @@ import {
 import { toast } from 'react-hot-toast';
 import styled from 'styled-components';
 
-// Styled components remain the same as in your provided code
 const Container = styled.div`
   padding: 24px;
   background-color: #f8f9fa;
@@ -264,21 +263,21 @@ const StatusBadge = styled.span`
   background: ${(props) => {
     switch (props.status) {
       case 'Đang hoạt động':
-        return '#d4edda'; // xanh nhạt
+        return '#d4edda';
       case 'Tạm khóa':
-        return '#fff3cd'; // vàng nhạt
+        return '#fff3cd';
       default:
-        return '#f8d7da'; // đỏ nhạt
+        return '#f8d7da';
     }
   }};
   color: ${(props) => {
     switch (props.status) {
       case 'Đang hoạt động':
-        return '#155724'; // xanh đậm
+        return '#155724';
       case 'Tạm khóa':
-        return '#856404'; // vàng đậm
+        return '#856404';
       default:
-        return '#721c24'; // đỏ đậm
+        return '#721c24';
     }
   }};
 `;
@@ -617,21 +616,21 @@ const EditableTableCell = styled.td.withConfig({
   cursor: ${props => props.isEditing ? 'pointer' : 'default'};
   background: ${props => {
     if (props.slotType === 'fixed') {
-      return '#d3d3d3'; // Light gray for fixed slots
+      return '#d3d3d3';
     }
     if (props.slotType === 'avoid') {
-      return '#ffc7ce'; // Light red for avoid slots
+      return '#ffc7ce';
     }
-    return '#c6efce'; // Light green for available slots
+    return '#c6efce';
   }};
   color: ${props => {
     if (props.slotType === 'fixed') {
-      return '#000'; // Black text for fixed slots
+      return '#000';
     }
     if (props.slotType === 'avoid') {
-      return '#9c0006'; // Dark red text for avoid slots
+      return '#9c0006';
     }
-    return '#006100'; // Dark green text for available slots
+    return '#006100';
   }};
   
   &:hover {
@@ -671,9 +670,9 @@ function ClassDetail() {
   const [showSlotModal, setShowSlotModal] = useState(false);
   const [selectedSubjectIndex, setSelectedSubjectIndex] = useState(null);
   const [slotModalData, setSlotModalData] = useState({ fixed_slot: [], avoid_slot: [] });
-  const [slotSelectionMode, setSlotSelectionMode] = useState('fixed'); // 'fixed' or 'avoid'
-  const [originalSubjects, setOriginalSubjects] = useState([]); // Track subjects that existed before edit mode
-  const [showAddNewRow, setShowAddNewRow] = useState(false); // Track when to show the add new row
+  const [slotSelectionMode, setSlotSelectionMode] = useState('fixed');
+  const [originalSubjects, setOriginalSubjects] = useState([]);
+  const [showAddNewRow, setShowAddNewRow] = useState(false);
 
   useEffect(() => {
     loadClassData();
@@ -708,12 +707,12 @@ function ClassDetail() {
         fetchTimeSlots(token)
       ]);
       setClassDetail(detailResult);
-      // Add IDs to existing subjects if they don't have one
-      // Ensure subjectsResult is an array before mapping
-      const subjectsArray = Array.isArray(subjectsResult) ? subjectsResult : 
-                           (subjectsResult && subjectsResult.data_set) ? subjectsResult.data_set :
-                           (subjectsResult && subjectsResult.data) ? subjectsResult.data : [];
-      
+
+
+      const subjectsArray = Array.isArray(subjectsResult) ? subjectsResult :
+        (subjectsResult && subjectsResult.data_set) ? subjectsResult.data_set :
+          (subjectsResult && subjectsResult.data) ? subjectsResult.data : [];
+
       const subjectsWithIds = subjectsArray.map(subject => ({
         ...subject,
         id: subject.id || `existing_${subject.subject_code}_${Date.now()}`
@@ -723,7 +722,7 @@ function ClassDetail() {
       setTimeSlots(timeSlotResult || []);
       setSelectedTeacher(detailResult.teacher_user_name || '');
       setSelectedRoom(detailResult.room_code || '');
-      // Initialize editedScheduleConfig with proper structure even if scheduleResult is null
+
       const initialConfig = scheduleResult || {
         monday: [],
         tuesday: [],
@@ -794,8 +793,8 @@ function ClassDetail() {
         throw new Error(result.description || 'Cập nhật thất bại');
       }
     } catch (err) {
-      setError('Lỗi khi cập nhật giáo viên: ' + err.message);
-      toast.error('Lỗi khi cập nhật giáo viên: ' + err.message);
+
+      toast.error(err.message);
     } finally {
       setSaving(false);
     }
@@ -824,8 +823,7 @@ function ClassDetail() {
         throw new Error(result.description || 'Cập nhật thất bại');
       }
     } catch (err) {
-      setError('Lỗi khi cập nhật phòng học: ' + err.message);
-      toast.error('Thất bại: ' + err.message);
+      toast.error(err.message);
     } finally {
       setSaving(false);
     }
@@ -892,7 +890,17 @@ function ClassDetail() {
         : [...prev, classCode]
     );
   };
-
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'N/A';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
   const openTeacherModal = () => {
     setShowTeacherModal(true);
     loadTeachers();
@@ -905,7 +913,7 @@ function ClassDetail() {
 
   const handleEditSchedule = () => {
     setIsEditingSchedule(true);
-    // Initialize with empty structure if scheduleConfig is null
+
     const initialConfig = scheduleConfig || {
       monday: [],
       tuesday: [],
@@ -926,7 +934,7 @@ function ClassDetail() {
     try {
       const token = localStorage.getItem('authToken');
 
-      // Prepare payload similar to ClassScheduleConfig.jsx
+
       const payload = { class_code: classCode };
       const dayKeys = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -941,11 +949,11 @@ function ClassDetail() {
       toast.success(response.description || 'Lưu cấu hình lịch thành công!');
       setIsEditingSchedule(false);
       setEditedScheduleConfig(null);
-      loadClassData(); // Reload data to get updated config
+      loadClassData();
     } catch (err) {
-      console.error('❌ [SAVE SCHEDULE ERROR]', err);
+
       setError('Lỗi khi lưu cấu hình lịch: ' + err.message);
-      toast.error('Lỗi khi lưu cấu hình lịch: ' + err.message);
+      toast.error(err.message);
     } finally {
       setSaving(false);
     }
@@ -965,10 +973,10 @@ function ClassDetail() {
       const slotStr = String(slotId);
 
       if (daySlots.includes(slotStr)) {
-        // Remove slot from unavailable list (make it available)
+
         newConfig[dayKey] = daySlots.filter(s => s !== slotStr);
       } else {
-        // Add slot to unavailable list (make it unavailable)
+
         newConfig[dayKey] = [...daySlots, slotStr].sort((a, b) => parseInt(a) - parseInt(b));
       }
 
@@ -976,15 +984,33 @@ function ClassDetail() {
     });
   };
 
-  // Subject editing functions
+
+
   const handleEditSubjects = async () => {
     setIsEditingSubjects(true);
-    setEditedSubjects([...classSubjects]);
-    setOriginalSubjects([...classSubjects]); // Track original subjects
-    setShowAddNewRow(false); // Reset add new row state
-    loadAvailableSubjects();
+    setOriginalSubjects([...classSubjects]);
+    // Nếu không có dữ liệu
+    if (classSubjects.length === 0) {
+      const newSubject = {
+        id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        subject_code: '',
+        subject_name: '',
+        teacher_user_name: '',
+        weekly_slot: 1,
+        continuous_slot: 1,
+        fixed_slot: [],
+        avoid_slot: [],
+        available_teacher: [],
+        isTemporaryNew: true
+      };
+      setEditedSubjects([newSubject]);
+      setShowAddNewRow(true);
+    } else {
+      setEditedSubjects([...classSubjects]);
+      setShowAddNewRow(false);
+    }
 
-    // Load available teacher data for existing subjects
+    loadAvailableSubjects();
     try {
       const token = localStorage.getItem('authToken');
       const updatedSubjects = await Promise.all(
@@ -1004,7 +1030,9 @@ function ClassDetail() {
           return subject;
         })
       );
-      setEditedSubjects(updatedSubjects);
+      if (classSubjects.length > 0) {
+        setEditedSubjects(updatedSubjects);
+      }
     } catch (error) {
       console.error('Error loading subject configs for edit mode:', error);
     }
@@ -1040,7 +1068,7 @@ function ClassDetail() {
           fixed_slot: subjectData.fixed_slot || [],
           avoid_slot: subjectData.avoid_slot || [],
           available_teacher: subjectData.available_teacher || [],
-          isTemporaryNew: false, // Mark as no longer temporary once a subject is selected
+          isTemporaryNew: false,
         };
         return updated;
       });
@@ -1063,7 +1091,7 @@ function ClassDetail() {
     try {
       const token = localStorage.getItem('authToken');
 
-      // Transform editedSubjects to match the API structure
+
       const subjects = editedSubjects.map(subject => ({
         subject_code: subject.subject_code,
         teacher_user_name: subject.teacher_user_name,
@@ -1073,27 +1101,32 @@ function ClassDetail() {
         avoid_slot: subject.avoid_slot || []
       }));
 
-      // Call the addClassSubject API
+
       const requestData = {
         class_code: classCode,
         force_assign: true,
         subjects: subjects
       };
 
-      await addClassSubject(token, requestData);
+      const response = await addClassSubject(token, requestData);
 
-      // Update local state after successful API call
+
       setClassSubjects(editedSubjects);
       setIsEditingSubjects(false);
-      setOriginalSubjects([]); // Reset original subjects tracking
-      setShowAddNewRow(false); // Reset add new row state
-      toast.success('Cập nhật môn học thành công!');
+      setOriginalSubjects([]);
+      setShowAddNewRow(false);
+      if (response.success) {
+        toast.success(response.description);
+      } else {
+        toast.error(response.description);
+      }
 
-      // Reload class data to ensure consistency
+
+
       await loadClassData();
     } catch (error) {
       console.error('Error saving subjects:', error);
-      toast.error('Lỗi khi lưu môn học: ' + error.message);
+      toast.error(error.message);
     } finally {
       setSaving(false);
     }
@@ -1102,8 +1135,8 @@ function ClassDetail() {
   const handleCancelEditSubjects = () => {
     setIsEditingSubjects(false);
     setEditedSubjects([]);
-    setOriginalSubjects([]); // Reset original subjects tracking
-    setShowAddNewRow(false); // Reset add new row state
+    setOriginalSubjects([]);
+    setShowAddNewRow(false);
   };
 
   const openSlotModal = (index) => {
@@ -1142,9 +1175,9 @@ function ClassDetail() {
   };
 
   const handleAddNewSubject = () => {
-    setShowAddNewRow(true); // Show the add new row when button is clicked
+    setShowAddNewRow(true);
     const newSubject = {
-      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Temporary unique ID
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       subject_code: '',
       subject_name: '',
       teacher_user_name: '',
@@ -1153,7 +1186,7 @@ function ClassDetail() {
       fixed_slot: [],
       avoid_slot: [],
       available_teacher: [],
-      isTemporaryNew: true // Flag to identify newly added subjects
+      isTemporaryNew: true
     };
 
     if (isEditingSubjects) {
@@ -1165,12 +1198,11 @@ function ClassDetail() {
 
 
 
-  // Helper function to check if a subject is an original subject (existed before edit mode)
+
   const isOriginalSubject = (subjectCode) => {
     return originalSubjects.some(subject => subject.subject_code === subjectCode);
   };
 
-  // Helper function to check if there's an empty new row that needs to be filled
   const hasEmptyNewRow = () => {
     const currentSubjects = isEditingSubjects ? editedSubjects : classSubjects;
     return currentSubjects.some(subject => subject.isTemporaryNew && !subject.subject_code);
@@ -1192,25 +1224,24 @@ function ClassDetail() {
     setSlotModalData(prev => {
       const newData = { ...prev };
 
-      // Check if slot exists in either fixed or avoid
       const existsInFixed = newData.fixed_slot.some(s => s.time_slot_id === slotId && s.day_of_week === dayOfWeek);
       const existsInAvoid = newData.avoid_slot.some(s => s.time_slot_id === slotId && s.day_of_week === dayOfWeek);
 
       if (slotSelectionMode === 'fixed') {
         if (existsInFixed) {
-          // Remove from fixed
+
           newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
         } else {
-          // Add to fixed and remove from avoid if exists
+
           newData.fixed_slot = [...newData.fixed_slot, { time_slot_id: slotId, day_of_week: dayOfWeek }];
           newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
         }
       } else {
         if (existsInAvoid) {
-          // Remove from avoid
+
           newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
         } else {
-          // Add to avoid and remove from fixed if exists
+
           newData.avoid_slot = [...newData.avoid_slot, { time_slot_id: slotId, day_of_week: dayOfWeek }];
           newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
         }
@@ -1265,10 +1296,13 @@ function ClassDetail() {
             <InfoRow>
               <InfoLabel>GVCN:</InfoLabel>
               <InfoValue>
-                {classDetail.teacher_full_name ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})` : 'Chưa có GV'}
+                {classDetail.teacher_full_name && classDetail.teacher_full_name !== 'Default'
+                  ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})`
+                  : 'Chưa có GVCN'}
                 <UpdateIcon onClick={openTeacherModal} title="Cập nhật giáo viên">✏️</UpdateIcon>
               </InfoValue>
             </InfoRow>
+
             <InfoRow>
               <InfoLabel>Trạng thái:</InfoLabel>
               <InfoValue>
@@ -1282,7 +1316,7 @@ function ClassDetail() {
             <InfoRow>
               <InfoLabel>Mã phòng học:</InfoLabel>
               <InfoValue>
-                {classDetail.room_code || 'Chưa xếp phòng'}
+                {(!classDetail.room_code || classDetail.room_code === "NONE") ? 'Chưa xếp phòng' : classDetail.room_code}
                 <UpdateIcon onClick={openRoomModal} title="Cập nhật phòng học">✏️</UpdateIcon>
               </InfoValue>
             </InfoRow>
@@ -1293,6 +1327,14 @@ function ClassDetail() {
             <InfoRow>
               <InfoLabel>Loại phòng:</InfoLabel>
               <InfoValue>{classDetail.room_type_name || 'N/A'}</InfoValue>
+            </InfoRow>
+            <InfoRow>
+              <InfoLabel>Ngày tạo:</InfoLabel>
+              <InfoValue>{formatDateTime(classDetail.created_date)}</InfoValue>
+            </InfoRow>
+            <InfoRow>
+              <InfoLabel>Ngày cập nhật:</InfoLabel>
+              <InfoValue>{formatDateTime(classDetail.updated_date)}</InfoValue>
             </InfoRow>
           </div>
         </InfoGrid>
@@ -1402,7 +1444,7 @@ function ClassDetail() {
                           value={subject.teacher_user_name || ''}
                           onChange={(e) => handleChange(index, 'teacher_user_name', e.target.value)}
                           onFocus={async () => {
-                            // For original subjects, ensure we have the latest teacher data
+
                             if (isOriginalSubject(subject.subject_code) && subject.subject_code) {
                               try {
                                 const token = localStorage.getItem('authToken');
