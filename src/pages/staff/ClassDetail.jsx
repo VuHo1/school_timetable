@@ -1171,7 +1171,7 @@ function ClassDetail() {
     } else {
       setClassSubjects(prev => prev.filter(subject => subject.id !== subjectId));
     }
-    toast.success('Đã xóa môn học khỏi danh sách');
+
   };
 
   const handleAddNewSubject = () => {
@@ -1296,7 +1296,7 @@ function ClassDetail() {
             <InfoRow>
               <InfoLabel>GVCN:</InfoLabel>
               <InfoValue>
-                {classDetail.teacher_full_name && classDetail.teacher_full_name !== 'Default'
+                {!classDetail.teacher_full_name && classDetail.teacher_full_name !== 'Default'
                   ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})`
                   : 'Chưa có GVCN'}
                 <UpdateIcon onClick={openTeacherModal} title="Cập nhật giáo viên">✏️</UpdateIcon>
@@ -1379,6 +1379,7 @@ function ClassDetail() {
         )}
       </SubjectsSection>
 
+
       <SubjectsSection>
         <SectionTitle>
           <span>Danh sách môn học ({classSubjects.length} môn)</span>
@@ -1391,14 +1392,12 @@ function ClassDetail() {
                 Chỉnh sửa
               </UpdateButton>
             ) : (
-              <>
-                <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>
-                  Hủy
-                </CancelEditButton>
-                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
-                  {saving ? 'Đang lưu...' : 'Xác nhận'}
-                </SaveButton>
-              </>
+              <AddButton
+                onClick={handleAddNewSubject}
+                disabled={hasEmptyNewRow()}
+              >
+                + Thêm mới
+              </AddButton>
             )}
           </div>
         </SectionTitle>
@@ -1434,17 +1433,16 @@ function ClassDetail() {
                           ))}
                         </Select>
                       ) : (
-                        subject.subject_code || 'N/A'
+                        subject.subject_code
                       )}
                     </TableCell2>
-                    <TableCell2>{subject.subject_name || 'N/A'}</TableCell2>
+                    <TableCell2>{subject.subject_name || '-'}</TableCell2>
                     <TableCell2>
                       {isEditingSubjects ? (
                         <Select
                           value={subject.teacher_user_name || ''}
                           onChange={(e) => handleChange(index, 'teacher_user_name', e.target.value)}
                           onFocus={async () => {
-
                             if (isOriginalSubject(subject.subject_code) && subject.subject_code) {
                               try {
                                 const token = localStorage.getItem('authToken');
@@ -1465,17 +1463,24 @@ function ClassDetail() {
                           style={{ width: '100%', padding: '4px 8px', fontSize: '12px' }}
                         >
                           <option value="">Chọn giáo viên</option>
-                          {subject.available_teacher?.map((teacher) => (
-                            <option key={teacher.user_name} value={teacher.user_name}>
-                              {teacher.full_name} ({teacher.user_name})
-                              {teacher.is_home_room_teacher ? ' ⭐ Chủ nhiệm lớp' : ''}
-                            </option>
-                          )) || []}
+                          {subject.available_teacher && subject.available_teacher.length > 0 ? (
+                            subject.available_teacher.map((teacher) => (
+                              <option key={teacher.user_name} value={teacher.user_name}>
+                                {teacher.full_name} ({teacher.user_name})
+                                {teacher.is_home_room_teacher ? ' Chủ nhiệm lớp' : ''}
+                              </option>
+                            ))
+                          ) : (
+                            <option disabled>Không có gv khả dụng</option>
+                          )}
+
                         </Select>
                       ) : (
                         <span>
-                          {subject.teacher_user_name || 'Chưa phân công'}
-                          {subject.available_teacher?.find(t => t.user_name === subject.teacher_user_name)?.is_home_room_teacher && ' ⭐'}
+                          {(!subject.teacher_user_name || subject.teacher_user_name === 'Default')
+                            ? 'Chưa phân công'
+                            : ` ${subject.teacher_full_name} (${subject.teacher_user_name})`}
+
                         </span>
                       )}
                     </TableCell2>
@@ -1527,34 +1532,35 @@ function ClassDetail() {
                   </TableRow>
                 ))}
               </tbody>
-              {isEditingSubjects && (
-                <tbody>
-                  <TableRow>
-                    <TableCell2>-</TableCell2>
-                    <TableCell2>-</TableCell2>
-                    <TableCell2>-</TableCell2>
-                    <TableCell2>-</TableCell2>
-                    <TableCell2>-</TableCell2>
-                    <TableCell2>-</TableCell2>
-                    <TableCell2>
-                      <AddButton
-                        onClick={handleAddNewSubject}
-                        disabled={hasEmptyNewRow()}
-                      >
-                        + Thêm mới
-                      </AddButton>
-                    </TableCell2>
-                  </TableRow>
-                </tbody>
-              )}
             </Table>
+            {isEditingSubjects && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginTop: '10px' }}>
+                <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>
+                  Hủy
+                </CancelEditButton>
+                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
+                  {saving ? 'Đang lưu...' : 'Xác nhận'}
+                </SaveButton>
+              </div>
+            )}
           </TableContainer>
         ) : (
           <NoSubjects>
             <p>Lớp học chưa có môn học nào được phân công.</p>
+            {isEditingSubjects && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginTop: '10px' }}>
+                <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>
+                  Hủy
+                </CancelEditButton>
+                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
+                  {saving ? 'Đang lưu...' : 'Xác nhận'}
+                </SaveButton>
+              </div>
+            )}
           </NoSubjects>
         )}
       </SubjectsSection>
+
 
       {showScheduleModal && (
         <Modal>

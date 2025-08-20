@@ -850,13 +850,11 @@ function ClassManagement() {
                     <TableRow key={cls.class_code}>
                       <TableCell>{cls.class_code}</TableCell>
                       <TableCell>{cls.grade_level || 'N/A'}</TableCell>
-                      <TableCell>{cls.room_code || 'Chưa xếp phòng'}</TableCell>
-                      <TableCell>{cls.room_name || 'N/A'}</TableCell>
+                      <TableCell>{!cls.room_code || cls.room_code == 'NONE' ? 'Chưa xếp' : cls.room_code}</TableCell>
+                      <TableCell>{cls.room_name}</TableCell>
                       <TableCell>{cls.room_type_name || 'N/A'}</TableCell>
                       <TableCell>
-                        {cls.teacher_full_name
-                          ? `${cls.teacher_full_name} (${cls.teacher_user_name})`
-                          : 'Chưa có giáo viên chủ nhiệm'}
+                        {!cls.teacher_full_name || cls.teacher_full_name == 'Default' ? 'Chưa có GVCN' : `${cls.teacher_full_name} (${cls.teacher_user_name})`}
                       </TableCell>
                       <TableCell>{formatDateTime(cls.updated_date)}</TableCell>
                       <TableCell>
