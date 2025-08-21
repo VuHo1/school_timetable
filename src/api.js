@@ -2108,3 +2108,24 @@ export const fetchRolesFilter = async (token) => {
         throw error;
     }
 };
+
+export const updateUserSchool = async (token, userName, newSchoolId) => {
+    const response = await fetch(`${API_BASE_URL}/api/user/update-school`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            user_name: userName,
+            new_school_id: parseInt(newSchoolId),
+        }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update user school');
+    }
+    const data = await response.json();
+    return data;
+};

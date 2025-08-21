@@ -165,7 +165,7 @@ function Profile() {
     const [avatarFile, setAvatarFile] = useState(null);
     const [fullName, setFullName] = useState(user?.full_name || '');
     const [phone, setPhone] = useState(user?.phone || '');
-    const [gender, setGender] = useState(''); // Khởi tạo rỗng
+    const [gender, setGender] = useState('');
     const [dob, setDob] = useState(user?.dob ? user.dob.split('T')[0] : '');
     const [genderOptions, setGenderOptions] = useState([]);
     const [isGenderOptionsReady, setIsGenderOptionsReady] = useState(false);
@@ -181,16 +181,27 @@ function Profile() {
 
     const avatarUrl = user?.avatar || '';
     const cacheBustUrl = `${avatarUrl}?t=${new Date().getTime()}`;
-
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'N/A';
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    };
     useEffect(() => {
         const fetchGenderOptions = async () => {
             try {
                 const token = localStorage.getItem('authToken');
-                const response = await fetchGenderList(token); // Lấy response từ API
-                const codes = response?.data || response || []; // Xử lý nếu response là object hoặc array
+                const response = await fetchGenderList(token);
+                const codes = response?.data || response || [];
                 const genderCodes = Array.isArray(codes) ? codes.filter(code => code.code_name === 'GENDER') : [];
                 setGenderOptions(genderCodes);
-                // Set gender chỉ khi có dữ liệu
+
                 if (user?.gender && genderCodes.length > 0) {
                     const initialGender = genderCodes.find(opt => opt.caption === user.gender)?.code_id || '';
                     setGender(initialGender);
@@ -199,8 +210,8 @@ function Profile() {
             } catch (error) {
                 console.error('Error fetching gender options:', error);
                 toast.showToast('Không thể tải dữ liệu giới tính. Vui lòng thử lại.', 'error');
-                setIsGenderOptionsReady(true); // Đặt true để tránh treo, dù không có dữ liệu
-                setGenderOptions([]); // Đặt mảng rỗng nếu lỗi
+                setIsGenderOptionsReady(true);
+                setGenderOptions([]);
             }
         };
         fetchGenderOptions();
@@ -310,8 +321,18 @@ function Profile() {
                             <InfoItem>
                                 <Label>Vai trò:</Label> {user.role_name || 'N/A'}
                             </InfoItem>
+
+                            <InfoItem>
+                                <Label>Làm việc tại:</Label> {user.school_name || 'N/A'}
+                            </InfoItem>
                             <InfoItem>
                                 <Label>Tình trạng:</Label> {user.status || 'N/A'}
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Tạo ngày:</Label> {formatDateTime(user.created_date)}
+                            </InfoItem>
+                            <InfoItem>
+                                <Label>Cập nhật:</Label> {formatDateTime(user.updated_date)}
                             </InfoItem>
                             <ButtonContainer>
                                 <ForgotButton onClick={() => setIsChangePassword(true)}>Đổi mật khẩu</ForgotButton>
