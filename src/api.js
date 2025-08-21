@@ -120,7 +120,7 @@ export const fetchClassSubjects = async (token, classCode) => {
     });
     if (!response.ok) throw new Error('Failed to fetch class subjects');
     const data = await response.json();
-    
+
     // Ensure we return an array
     if (data && data.data_set) {
         return data.data_set;
@@ -2020,4 +2020,91 @@ export const removeScheduleBySlot = async (token, id) => {
     }
     const data = await response.json();
     return data;
+};
+export const fetchSchool = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/school`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to fetch');
+    }
+    const data = await response.json();
+    return data.data_set || [];
+};
+export const updateSchool = async (token, schoolData) => {
+    const response = await fetch(`${API_BASE_URL}/api/school/update`, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(schoolData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to update');
+    }
+    const data = await response.json();
+    return data;
+};
+export const deleteSchool = async (token, schoolId) => {
+    const response = await fetch(`${API_BASE_URL}/api/school/remove/${schoolId}`, {
+        method: 'DELETE',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to delete');
+    }
+    const data = await response.json();
+    return data;
+};
+export const createSchool = async (token, schoolData) => {
+    const response = await fetch(`${API_BASE_URL}/api/school/add`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(schoolData),
+    });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to create');
+    }
+    const data = await response.json();
+    return data;
+};
+export const fetchRolesFilter = async (token) => {
+    const url = `${API_BASE_URL}/api/user-role/filter`;
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json', // nên đổi text/plain -> application/json
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            const errorMessage = data.description || `Failed to fetch roles: ${response.status}`;
+            throw new Error(errorMessage);
+        }
+
+        return Array.isArray(data.data_set) ? data.data_set : [];
+    } catch (error) {
+        console.error('[fetchRoles] Exception:', error);
+        throw error;
+    }
 };

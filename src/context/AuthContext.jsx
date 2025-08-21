@@ -9,6 +9,7 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [role, setRole] = useState(null);
+    const [roleId, setRoleId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [abilities, setAbilities] = useState([]);
     const [isProfileFetched, setIsProfileFetched] = useState(false);
@@ -67,10 +68,12 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const token = localStorage.getItem('authToken');
         const storedRole = localStorage.getItem('role');
+        const storedRoleId = localStorage.getItem('role_id');
         const storedAbilities = localStorage.getItem('abilities');
 
-        if (token && storedRole) {
+        if (token && storedRole && storedRoleId) {
             setRole(prevRole => (prevRole !== storedRole ? storedRole : prevRole));
+            setRoleId(prevRole => (prevRole !== storedRoleId ? storedRoleId : prevRole));
             if (storedAbilities) {
                 try {
                     const parsedAbilities = JSON.parse(storedAbilities);
@@ -106,12 +109,14 @@ export function AuthProvider({ children }) {
             }
 
             const data = await response.json();
-            const { token, role_name, abilities } = data.data;
+            const { token, role_name, role_id, abilities } = data.data;
 
             if (data.success) {
                 localStorage.setItem('authToken', token);
                 localStorage.setItem('role', role_name);
+                localStorage.setItem('role_id', role_id);
                 setRole(role_name);
+                setRoleId(role_id);
                 if (abilities && Array.isArray(abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(abilities));
                     setAbilities(abilities);
@@ -154,12 +159,15 @@ export function AuthProvider({ children }) {
 
             const authToken = data.data.token;
             const role_name = data.data.role_name;
+            const role_id = data.data.role_id;
             const abilities = data.data.abilities;
 
             if (data.success) {
                 localStorage.setItem('authToken', authToken);
                 localStorage.setItem('role', role_name);
+                localStorage.setItem('role_id', role_id);
                 setRole(role_name);
+                setRoleId(role_id);
                 if (abilities && Array.isArray(abilities)) {
                     localStorage.setItem('abilities', JSON.stringify(abilities));
                     setAbilities(abilities);
@@ -193,9 +201,11 @@ export function AuthProvider({ children }) {
         } finally {
             localStorage.removeItem('authToken');
             localStorage.removeItem('role');
+            localStorage.removeItem('role_id');
             localStorage.removeItem('abilities');
             setUser(null);
             setRole(null);
+            setRoleId(null);
             setAbilities([]);
             setIsProfileFetched(false);
         }
@@ -205,6 +215,7 @@ export function AuthProvider({ children }) {
         user,
         setUser,
         role,
+        roleId,
         loading,
         abilities,
         login,
