@@ -11,6 +11,7 @@ import {
   fetchRolesFilter,
   assignUserRole,
   fetchSchool,
+  updateUserSchool
 } from '../../api';
 import styled from 'styled-components';
 import DatePicker from 'react-datepicker';
@@ -341,7 +342,6 @@ const EmptyState = styled.div`
   }
 `;
 
-// Modal Styled Components
 const Modal = styled.div`
   position: fixed;
   top: 0;
@@ -527,11 +527,10 @@ const formatDate = (dateString) => {
 };
 const formatLocalDate = (date) => {
   if (!date) return '';
-  // Lấy ngày local (không bị ảnh hưởng bởi múi giờ)
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`; // Trả về định dạng YYYY-MM-DD
+  return `${year}-${month}-${day}`;
 };
 export default function UserAccount() {
   const { user, roleId } = useAuth();
@@ -566,12 +565,14 @@ export default function UserAccount() {
   const [roles, setRoles] = useState([]);
   const [rolesFilter, setRolesFilter] = useState([]);
   const [schools, setSchools] = useState([]);
-  const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState(false); // New state for role assignment modal
-  const [selectedRoleId, setSelectedRoleId] = useState(''); // New state for selected role
-  const [selectedUsername, setSelectedUsername] = useState(''); // New state for selected username
+  const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState(false);
+  const [selectedRoleId, setSelectedRoleId] = useState('');
+  const [selectedUsername, setSelectedUsername] = useState('');
+  const [isAssignSchoolModalOpen, setIsAssignSchoolModalOpen] = useState(false);
+  const [selectedSchoolId, setSelectedSchoolId] = useState('');
   const limit = 10;
 
-  // Refs for dropdown visibility
+
   const statusDropdownRef = useRef(null);
   const genderDropdownRef = useRef(null);
   const roleDropdownRef = useRef(null);
@@ -580,7 +581,7 @@ export default function UserAccount() {
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
 
-  // Add state for action dropdown
+
   const [openActionMenu, setOpenActionMenu] = useState(null);
   const actionMenuRef = useRef(null);
 
@@ -594,7 +595,7 @@ export default function UserAccount() {
 
   const statusOptions = [
     { value: '', label: 'Tất cả trạng thái' },
-    { value: 'Đang hoạt động', label: 'Đang hoạt động' },
+    { value: '  ', label: 'Đang hoạt động' },
     { value: 'Tạm khóa', label: 'Tạm khóa' },
     { value: 'Ngưng hoạt động', label: 'Ngưng hoạt động' },
   ];
@@ -652,9 +653,11 @@ export default function UserAccount() {
     fetchData();
   }, [user]);
 
-  // Load schools when creating a user as School Administrator (role 2) and current user is role 1
+
   useEffect(() => {
-    const shouldLoadSchools = isCreateModalOpen && String(newUser.role_id || '') === '2' && String(roleId || '') === '1';
+    const shouldLoadSchools =
+      (isCreateModalOpen && String(newUser.role_id || '') === '2' && String(roleId || '') === '1') ||
+      (isAssignSchoolModalOpen && String(roleId || '') === '1');
     if (!shouldLoadSchools || !user?.token) return;
     let isMounted = true;
     (async () => {
@@ -669,9 +672,7 @@ export default function UserAccount() {
       }
     })();
     return () => { isMounted = false; };
-  }, [isCreateModalOpen, newUser.role_id, roleId, user]);
-
-  // Clear school selection if role changes away from School Administrator
+  }, [isCreateModalOpen, newUser.role_id, roleId, user, isAssignSchoolModalOpen]);
   useEffect(() => {
     if (String(newUser.role_id || '') !== '2' && newUser.school_id) {
       setNewUser(prev => ({ ...prev, school_id: '' }));
@@ -717,7 +718,6 @@ export default function UserAccount() {
       return 0;
     });
     const totalFilteredPages = Math.ceil(filteredUsers.length / limit);
-    // Ensure currentPage is valid for the filtered results
     if (currentPage > totalFilteredPages && totalFilteredPages > 0) {
       setCurrentPage(1);
     }
@@ -728,8 +728,8 @@ export default function UserAccount() {
     setTotalPages(totalFilteredPages || 1);
   };
   const resetPageAndFilter = () => {
-    setCurrentPage(1); // Đặt lại về trang 1
-    applyFilters(); // Áp dụng bộ lọc
+    setCurrentPage(1);
+    applyFilters();
   };
   useEffect(() => {
     applyFilters();
@@ -737,9 +737,38 @@ export default function UserAccount() {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    applyFilters(); // Chỉ gọi lọc ngay lập tức dựa trên searchKeyword
+    applyFilters();
+  };
+  const handleAssignSchool = async () => {
+    if (!user?.token || !selectedSchoolId || !selectedUsername) return;
+    setLoading(true);
+    try {
+      const resultData = await updateUserSchool(user.token, selectedUsername, selectedSchoolId);
+      if (!resultData.success) {
+        toast.showToast(resultData.description);
+      } else {
+        toast.showToast(resultData.description);
+        setIsAssignSchoolModalOpen(false);
+        const updatedData = await fetchUserList(user.token);
+        setAllUsers(Array.isArray(updatedData) ? updatedData : updatedData.data_set || []);
+        applyFilters();
+        setSelectedSchoolId('');
+        setSelectedUsername('');
+      }
+    } catch (error) {
+      console.error('Error updating school:', error);
+      toast.showToast(error.message || 'Có lỗi xảy ra khi đổi trường.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleOpenAssignSchoolModal = (user) => {
+    setSelectedUsername(user.user_name);
+    setSelectedSchoolId(user.school_id || '');
+    setIsAssignSchoolModalOpen(true);
+    setOpenActionMenu(null);
+  };
   const handleCreateUser = async (e) => {
     e.preventDefault();
     if (!user?.token) return;
@@ -753,7 +782,6 @@ export default function UserAccount() {
         dob: newUser.role_id ? new Date(newUser.dob).toISOString() : new Date().toISOString(),
         role_id: newUser.role_id ? parseInt(newUser.role_id) : 0,
       };
-      // Only attach school_id when creator is role 1 and assigning School Administrator (2)
       if (String(roleId || '') === '1' && String(newUser.role_id || '') === '2' && newUser.school_id) {
         userData.school_id = parseInt(newUser.school_id);
       }
@@ -878,7 +906,6 @@ export default function UserAccount() {
     setIsDetailModalOpen(true);
   };
 
-  // Handle mouse leave to close dropdowns
   useEffect(() => {
     const handleMouseLeave = (event) => {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.relatedTarget)) {
@@ -895,7 +922,7 @@ export default function UserAccount() {
     return () => document.removeEventListener('mouseleave', handleMouseLeave);
   }, []);
 
-  // Handle click outside to close action menu
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
@@ -1005,7 +1032,7 @@ export default function UserAccount() {
                 <TableRow>
                   <TableHeaderCell style={{ width: '10%' }}>Tên tài khoản</TableHeaderCell>
                   <TableHeaderCell style={{ width: '25%' }}>Họ và tên</TableHeaderCell>
-                  <TableHeaderCell style={{ width: '25%' }}>Email</TableHeaderCell>
+                  <TableHeaderCell style={{ width: '25%' }}>Làm việc tại</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Giới tính</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Vai trò</TableHeaderCell>
                   <TableHeaderCell style={{ width: '10%' }}>Trạng thái</TableHeaderCell>
@@ -1017,7 +1044,7 @@ export default function UserAccount() {
                   <TableRow key={user.id}>
                     <TableCell>{user.user_name}</TableCell>
                     <TableCell>{user.full_name}</TableCell>
-                    <TableCell>{user.email || 'N/A'}</TableCell>
+                    <TableCell>{user.school_name}</TableCell>
                     <TableCell>{user.gender}</TableCell>
                     <TableCell>{user.role_name}</TableCell>
                     <TableCell>
@@ -1078,10 +1105,59 @@ export default function UserAccount() {
                           <ActionMenuText>Chặn</ActionMenuText>
                         </ActionMenuItem>
                         <ActionMenuItem
-                          onClick={() => handleOpenAssignRoleModal(user)} // New action menu item
+                          onClick={() => {
+                            if (String(roleId) !== '1') { //Administrator không cho đổi vai tròi
+                              handleOpenAssignRoleModal(user);
+                              setOpenActionMenu(null);
+                            } else {
+                              toast.showToast('Bạn không có quyền đổi vai trò.', 'error');
+                            }
+                          }}
+                          style={{
+                            opacity: String(roleId) === '1' ? 0.5 : 1,
+                            cursor: String(roleId) === '1' ? 'not-allowed' : 'pointer',
+                          }}
+                          onMouseDown={(e) => {
+                            if (String(roleId) === '1') {
+                              e.preventDefault();
+                            }
+                          }}
                         >
                           <ActionMenuText>Đổi vai trò</ActionMenuText>
                         </ActionMenuItem>
+                        {/* {String(roleId) === '1' && (
+                          <ActionMenuItem
+                            onClick={() => {
+                              handleOpenAssignSchoolModal(user);
+                              setOpenActionMenu(null);
+                            }}
+                          >
+                            <ActionMenuText>Đổi trường</ActionMenuText>
+                          </ActionMenuItem>
+                        )} */}
+                        {String(roleId) === '1' && (
+                          <ActionMenuItem
+                            onClick={() => {
+                              if (String(user.role_id) !== '2') {
+                                toast.showToast('Chỉ có thể đổi trường cho School Administrator.', 'error');
+                                return;
+                              }
+                              handleOpenAssignSchoolModal(user);
+                              setOpenActionMenu(null);
+                            }}
+                            style={{
+                              opacity: String(user.role_id) !== '2' ? 0.5 : 1,
+                              cursor: String(user.role_id) !== '2' ? 'not-allowed' : 'pointer',
+                            }}
+                            onMouseDown={(e) => {
+                              if (String(user.role_id) !== '2') {
+                                e.preventDefault();
+                              }
+                            }}
+                          >
+                            <ActionMenuText>Đổi trường</ActionMenuText>
+                          </ActionMenuItem>
+                        )}
                         <ActionMenuItem
                           onClick={() => {
                             if (user.status === 'Ngưng hoạt động') return;
@@ -1144,7 +1220,52 @@ export default function UserAccount() {
           </PaginationButton>
         </Pagination>
       )}
-
+      {isAssignSchoolModalOpen && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Đổi trường</ModalTitle>
+            </ModalHeader>
+            <form onSubmit={(e) => { e.preventDefault(); handleAssignSchool(); }}>
+              <FormGroup>
+                <Label>Tên tài khoản</Label>
+                <Input type="text" value={selectedUsername} disabled />
+              </FormGroup>
+              <FormGroup>
+                <Label>Trường *</Label>
+                <Select
+                  value={selectedSchoolId}
+                  onChange={(e) => setSelectedSchoolId(e.target.value)}
+                  required
+                >
+                  <option value="">Chọn trường</option>
+                  {schools.map((school) => (
+                    <option key={school.id} value={school.id}>
+                      {school.school_name}
+                    </option>
+                  ))}
+                </Select>
+              </FormGroup>
+              <ModalActions>
+                <ActionButton
+                  type="button"
+                  onClick={() => setIsAssignSchoolModalOpen(false)}
+                  disabled={loading}
+                >
+                  Hủy
+                </ActionButton>
+                <ActionButton
+                  type="submit"
+                  variant="primary"
+                  disabled={loading || !selectedSchoolId}
+                >
+                  {loading ? 'Đang Đổi...' : 'Đổi trường'}
+                </ActionButton>
+              </ModalActions>
+            </form>
+          </ModalContent>
+        </Modal>
+      )}
       {/* Create User Modal */}
       {isCreateModalOpen && (
         <Modal>
@@ -1353,6 +1474,10 @@ export default function UserAccount() {
             <DetailItem>
               <span className="label">Vai trò:</span>
               <span className="value">{selectedUser.role_name || 'N/A'}</span>
+            </DetailItem>
+            <DetailItem>
+              <span className="label">Làm việc tại:</span>
+              <span className="value">{selectedUser.school_name || 'N/A'}</span>
             </DetailItem>
             <DetailItem>
               <span className="label">Ngày tạo:</span>
