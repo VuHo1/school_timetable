@@ -8,7 +8,9 @@ import {
   blockUser,
   deleteUser,
   fetchRoles,
+  fetchRolesFilter,
   assignUserRole,
+  fetchSchool,
 } from '../../api';
 import styled from 'styled-components';
 import DatePicker from 'react-datepicker';
@@ -532,7 +534,7 @@ const formatLocalDate = (date) => {
   return `${year}-${month}-${day}`; // Trả về định dạng YYYY-MM-DD
 };
 export default function UserAccount() {
-  const { user } = useAuth();
+  const { user, roleId } = useAuth();
   const toast = useToast();
   const [allUsers, setAllUsers] = useState([]);
   const [users, setUsers] = useState([]);
@@ -554,6 +556,7 @@ export default function UserAccount() {
     gender: '',
     dob: '',
     role_id: '',
+    school_id: '',
   });
   const [loading, setLoading] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -561,6 +564,8 @@ export default function UserAccount() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [roles, setRoles] = useState([]);
+  const [rolesFilter, setRolesFilter] = useState([]);
+  const [schools, setSchools] = useState([]);
   const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState(false); // New state for role assignment modal
   const [selectedRoleId, setSelectedRoleId] = useState(''); // New state for selected role
   const [selectedUsername, setSelectedUsername] = useState(''); // New state for selected username
@@ -611,9 +616,10 @@ export default function UserAccount() {
       setLoading(true);
       try {
 
-        const [userData, rolesData] = await Promise.all([
+        const [userData, rolesData, rolesFilterData] = await Promise.all([
           fetchUserList(user.token),
           fetchRoles(user.token),
+          fetchRolesFilter(user.token),
         ]);
 
 
@@ -623,6 +629,7 @@ export default function UserAccount() {
           setAllUsers(userData.data_set || []);
         }
         setRoles(rolesData);
+        setRolesFilter(rolesFilterData);
         if (Array.isArray(rolesData)) {
           const options = [
             { value: '', label: 'Tất cả Vai trò' },
@@ -644,6 +651,32 @@ export default function UserAccount() {
     };
     fetchData();
   }, [user]);
+
+  // Load schools when creating a user as School Administrator (role 2) and current user is role 1
+  useEffect(() => {
+    const shouldLoadSchools = isCreateModalOpen && String(newUser.role_id || '') === '2' && String(roleId || '') === '1';
+    if (!shouldLoadSchools || !user?.token) return;
+    let isMounted = true;
+    (async () => {
+      try {
+        const data = await fetchSchool(user.token);
+        if (!isMounted) return;
+        const list = Array.isArray(data) ? data : (data?.data_set || []);
+        setSchools(list);
+      } catch (e) {
+        if (!isMounted) return;
+        toast.showToast('Không thể tải danh sách trường', 'error');
+      }
+    })();
+    return () => { isMounted = false; };
+  }, [isCreateModalOpen, newUser.role_id, roleId, user]);
+
+  // Clear school selection if role changes away from School Administrator
+  useEffect(() => {
+    if (String(newUser.role_id || '') !== '2' && newUser.school_id) {
+      setNewUser(prev => ({ ...prev, school_id: '' }));
+    }
+  }, [newUser.role_id]);
 
   const applyFilters = () => {
     let filteredUsers = [...allUsers];
@@ -720,6 +753,10 @@ export default function UserAccount() {
         dob: newUser.role_id ? new Date(newUser.dob).toISOString() : new Date().toISOString(),
         role_id: newUser.role_id ? parseInt(newUser.role_id) : 0,
       };
+      // Only attach school_id when creator is role 1 and assigning School Administrator (2)
+      if (String(roleId || '') === '1' && String(newUser.role_id || '') === '2' && newUser.school_id) {
+        userData.school_id = parseInt(newUser.school_id);
+      }
       const response = await createUser(user.token, userData);
       toast.showToast(response.description, response.success ? 'success' : 'error');
       if (response.success) {
@@ -730,7 +767,7 @@ export default function UserAccount() {
         } else {
           setAllUsers(updatedData.data_set || []);
         }
-        setNewUser({ email: '', full_name: '', phone: '', gender: '', dob: '', role_id: '' });
+        setNewUser({ email: '', full_name: '', phone: '', gender: '', dob: '', role_id: '', school_id: '' });
       }
     } catch (error) {
       console.error('Error creating user:', error);
@@ -1180,13 +1217,30 @@ export default function UserAccount() {
                   onChange={(e) => setNewUser({ ...newUser, role_id: e.target.value })}
                 >
                   <option value="">Chọn vai trò</option>
-                  {roles.map((role) => (
+                  {rolesFilter.map((role) => (
                     <option key={role.id} value={role.id}>
                       {role.role_name}
                     </option>
                   ))}
                 </Select>
               </FormGroup>
+              {String(roleId || '') === '1' && String(newUser.role_id || '') === '2' && (
+                <FormGroup>
+                  <Label>Trường *</Label>
+                  <Select
+                    value={newUser.school_id}
+                    onChange={(e) => setNewUser({ ...newUser, school_id: e.target.value })}
+                    required
+                  >
+                    <option value="">Chọn trường</option>
+                    {schools.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.id} - {s.school_name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormGroup>
+              )}
               <ModalActions>
                 <ActionButton
                   type="button"
@@ -1228,7 +1282,7 @@ export default function UserAccount() {
                   required
                 >
                   <option value="">Chọn vai trò</option>
-                  {roles.map((role) => (
+                  {rolesFilter.map((role) => (
                     <option key={role.id} value={role.id}>
                       {role.role_name}
                     </option>

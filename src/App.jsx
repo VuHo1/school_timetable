@@ -18,6 +18,7 @@ import UpdateClass from './pages/staff/UpdateClass';
 import Profile from './pages/Profile';
 import Dashboard from './pages/admin/Dashboard';
 import TeacherManagement from './pages/teacher/TeacherManagement';
+import SchoolManagement from './pages/admin/SchoolManagement';
 import SubjectManagement from './pages/subject/SubjectManagement';
 import RoomManagement from './pages/room/RoomManagement';
 import TimeslotManagement from './pages/timeslot/TimeslotManagement';
@@ -129,6 +130,11 @@ function AppRoutes() {
           <Route path="/teacher" element={
             <ProtectedRoute requiredAbility="Quản lí giáo viên">
               <TeacherManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="/school" element={
+            <ProtectedRoute requiredAbility="Quản lí trường">
+              <SchoolManagement />
             </ProtectedRoute>
           } />
           <Route path="/subject" element={

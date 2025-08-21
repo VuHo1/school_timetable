@@ -12,6 +12,7 @@ const PAGE_MAPPINGS = {
   'Nhật ký & Giám sát': '/log',
   'Quản lí chức năng': '/admin/user_command',
   'Quản lí tài khoản': '/admin/user_account',
+  'Quản lí trường': '/school',
   'Quản lí vai trò': '/role',
   'Ủy quyền chức năng': '/user_right',
   'Điểm danh': '/attendance',
@@ -636,6 +637,7 @@ function ModernHeader() {
       'Quản lí thời khóa biểu': '📅',
       'Quản lí học kỳ': '📆',
       'Quản lí yêu cầu': '📝',
+      'Quản lí trường': '🏫',
       'Báo cáo thống kê': '📊',
     };
     return iconMap[ability] || '📄';
