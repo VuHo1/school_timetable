@@ -3,7 +3,12 @@ import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
 import ReactSelect from 'react-select';
 import '../../styles/date.css'
-import { FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft, FaArrowRight, FaTimes, FaCheck, FaEllipsisH, FaEye } from 'react-icons/fa';
+import {
+    FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft,
+    FaArrowRight, FaTimes, FaCheck, FaEllipsisH, FaEye, FaSort,
+    FaSortUp, FaSortDown, FaFilter,
+    FaChevronUp, FaChevronDown
+} from 'react-icons/fa';
 import {
     fetchBaseSchedules,
     fetchScheduleDetails,
@@ -515,6 +520,27 @@ const CloseButton = styled(Button)`
 const TemplateList = styled.ul`
   list-style: none;
   padding: 0;
+  max-height: 500px;
+  overflow-y: auto;
+  
+  /* Custom scrollbar styles */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
 `;
 
 const TemplateItem = styled.li.withConfig({
@@ -772,6 +798,60 @@ const AttendanceButton = styled.button`
 const StatusRow = styled.div`
   display: flex;
   align-items: center;
+`;
+
+const FilterSortContainer = styled.div`
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
+const FilterGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const SortButton = styled.button`
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #374151;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+  }
+
+  &:active {
+    background: #d1d5db;
+  }
+`;
+
+const FilterSelect = styled.select`
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #374151;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  }
 `;
 
 const formatTime = (timeStr) => {
@@ -1403,6 +1483,10 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
     const [isDeleting, setIsDeleting] = useState(false);
     const [dropdownOpenId, setDropdownOpenId] = useState(null);
 
+    // Filter and sort state
+    const [selectedSemesterFilter, setSelectedSemesterFilter] = useState('');
+    const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -1416,6 +1500,41 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
             fetchData();
         }
     }, [token]);
+
+    // Filter and sort templates
+    const filteredAndSortedTemplates = useMemo(() => {
+        let result = [...templates];
+
+        // Filter by semester
+        if (selectedSemesterFilter) {
+            result = result.filter(template =>
+                template.semester_id && Number(template.semester_id) === Number(selectedSemesterFilter)
+            );
+        }
+
+        // Sort by creation date (if available) or by name as fallback
+        result.sort((a, b) => {
+            // Try to sort by creation date first
+            if (a.created_date && b.created_date) {
+                const dateA = new Date(a.created_date);
+                const dateB = new Date(b.created_date);
+                return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+            }
+
+            // Fallback to sorting by name
+            const nameA = (a.schedule_name || '').toLowerCase();
+            const nameB = (b.schedule_name || '').toLowerCase();
+            return sortOrder === 'desc' ? nameB.localeCompare(nameA) : nameA.localeCompare(nameB);
+        });
+
+        return result;
+    }, [templates, selectedSemesterFilter, sortOrder]);
+
+    // Get unique semesters from templates for filter options
+    const availableSemesters = useMemo(() => {
+        const semesterIds = [...new Set(templates.map(template => template.semester_id).filter(Boolean))];
+        return semesters.filter(semester => semesterIds.includes(semester.id));
+    }, [templates, semesters]);
 
     const handleGenerate = async () => {
         if (!semesterId) {
@@ -1608,50 +1727,90 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                     </Dialog>
                 </>
             )}
-            <TemplateList>
-                {templates.map((template) => (
-                    <TemplateItem
-                        key={template.id}
-                        isOnUse={template.is_on_use}
-                        isSelected={template.id === selectedScheduleId}
-                        onClick={() => onSelect(template.id)}
+
+            {/* Filter and Sort Controls */}
+            <FilterSortContainer>
+                <FilterGroup>
+                    <FilterSelect
+                        value={selectedSemesterFilter}
+                        onChange={(e) => setSelectedSemesterFilter(e.target.value)}
                     >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-                            {template.schedule_name}
-                            <br></br>
-                            {template.is_on_use && '⭐ Đang áp dụng'}
-                            <DropdownButton
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleDropdown(template.id);
-                                }}
+                        <option value="">Tất cả học kỳ</option>
+                        {availableSemesters.map((semester) => (
+                            <option key={semester.id} value={semester.id}>
+                                {semester.semester_name} ({new Date(semester.start_date).toLocaleDateString('vi-VN')} - {new Date(semester.end_date).toLocaleDateString('vi-VN')})
+                            </option>
+                        ))}
+                    </FilterSelect>
+                </FilterGroup>
+
+                <SortButton
+                    onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
+                    title={sortOrder === 'desc' ? 'Sắp xếp (mới nhất trước)' : 'Sắp xếp (cũ nhất trước)'}
+                >
+                    {sortOrder === 'desc' ? <FaChevronDown /> : <FaChevronUp />}
+                </SortButton>
+            </FilterSortContainer>
+
+            <TemplateList>
+                {filteredAndSortedTemplates.length === 0 ? (
+                    <PlaceholderText>
+                        {selectedSemesterFilter ? 'Không có mẫu thời khóa biểu nào cho học kỳ đã chọn' : 'Không có mẫu thời khóa biểu nào'}
+                    </PlaceholderText>
+                ) : (
+                    <>
+                        {filteredAndSortedTemplates.map((template) => (
+                            <TemplateItem
+                                key={template.id}
+                                isOnUse={template.is_on_use}
+                                isSelected={template.id === selectedScheduleId}
+                                onClick={() => onSelect(template.id)}
                             >
-                                <FaEllipsisH />
-                            </DropdownButton>
-                            {dropdownOpenId === template.id && (
-                                <DropdownMenu>
-                                    <DropdownItem
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                    <div>
+                                        {template.schedule_name}
+                                        <br></br>
+                                        {template.is_on_use && '⭐ Đang áp dụng'}
+                                        {template.created_date && (
+                                            <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                                                Ngày tạo: {new Date(template.created_date).toLocaleDateString('vi-VN')}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <DropdownButton
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            handleEdit(template.id, template.schedule_name);
+                                            toggleDropdown(template.id);
                                         }}
                                     >
-                                        Đổi tên
-                                    </DropdownItem>
-                                    <DropdownItem
-                                        danger
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(template.id);
-                                        }}
-                                    >
-                                        Xóa
-                                    </DropdownItem>
-                                </DropdownMenu>
-                            )}
-                        </div>
-                    </TemplateItem>
-                ))}
+                                        <FaEllipsisH />
+                                    </DropdownButton>
+                                    {dropdownOpenId === template.id && (
+                                        <DropdownMenu>
+                                            <DropdownItem
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleEdit(template.id, template.schedule_name);
+                                                }}
+                                            >
+                                                Đổi tên
+                                            </DropdownItem>
+                                            <DropdownItem
+                                                danger
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(template.id);
+                                                }}
+                                            >
+                                                Xóa
+                                            </DropdownItem>
+                                        </DropdownMenu>
+                                    )}
+                                </div>
+                            </TemplateItem>
+                        ))}
+                    </>
+                )}
             </TemplateList>
         </TemplateListWrapper>
     );
