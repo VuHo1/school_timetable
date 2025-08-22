@@ -1526,21 +1526,31 @@ function ClassDetail() {
                     </TableCell2>
                     <TableCell2>
                       {isEditingSubjects && (
-                        <div style={{ display: 'flex', gap: '5px' }}>
-                          <DeleteButton onClick={() => handleDeleteSubject(subject.id || index)}>
-                            Xóa
-                          </DeleteButton>
-                          <AddButton
-                            onClick={handleAddNewSubject}
-                            disabled={hasEmptyNewRow()}
-                          >
-                            + Thêm mới
-                          </AddButton>
-                        </div>
+                        <DeleteButton onClick={() => handleDeleteSubject(subject.id || index)}>
+                          Xóa
+                        </DeleteButton>
                       )}
                     </TableCell2>
                   </TableRow>
                 ))}
+                {isEditingSubjects && (
+                  <TableRow>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>-</TableCell2>
+                    <TableCell2>
+                      <AddButton
+                        onClick={handleAddNewSubject}
+                        disabled={hasEmptyNewRow()}
+                      >
+                        + Thêm mới
+                      </AddButton>
+                    </TableCell2>
+                  </TableRow>
+                )}
               </tbody>
             </Table>
           </TableContainer>
