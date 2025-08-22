@@ -759,8 +759,8 @@ export const fetchSubjectByCode = async (token, subjectCode, classCode = null) =
     return data.data || data.data_set || [];
 };
 
-export const fetchSubjectsByGrade = async (token, gradeLevel) => {
-    const response = await fetch(`${API_BASE_URL}/api/subject/grade/${gradeLevel}`, {
+export const fetchSubjectsByGrade = async (token, gradeLevel, classCode) => {
+    const response = await fetch(`${API_BASE_URL}/api/subject/grade/${gradeLevel}?classCode=${classCode}`, {
         method: 'GET',
         headers: {
             'Accept': 'text/plain',
