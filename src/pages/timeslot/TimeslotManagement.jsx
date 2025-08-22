@@ -213,7 +213,7 @@ function TimeslotManagement() {
   const fetchTimeslots = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const data = await fetchTimeSlots(token);
       setTimeslots(data);
     } catch (error) {
@@ -235,7 +235,7 @@ function TimeslotManagement() {
     const slot = timeslots.find(s => s.id === id);
     if (!slot || !slot.id) return;
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken');
 
     try {
       var resultData = await updateTimeSlot(token, {
@@ -255,7 +255,7 @@ function TimeslotManagement() {
     }
   };
   const handleAddSlot = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken');
     const newTimeslot = {
       start_time: newSlot.start_time,
       end_time: newSlot.end_time,
