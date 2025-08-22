@@ -1042,7 +1042,7 @@ function ClassDetail() {
     try {
       const token = localStorage.getItem('authToken');
       const gradeLevel = classCode.slice(0, 2);
-      const subjects = await fetchSubjectsByGrade(token, gradeLevel);
+      const subjects = await fetchSubjectsByGrade(token, gradeLevel, classCode);
       setAvailableSubjects(subjects);
     } catch (error) {
       console.error('Error loading available subjects:', error);
