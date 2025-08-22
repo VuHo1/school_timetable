@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
 import ReactSelect from 'react-select';
@@ -87,17 +87,17 @@ const DropdownButton = styled.button`
 `;
 
 const DropdownMenu = styled.div`
-  position: absolute;
-  right: 0;
-  top: 100%;
+  position: fixed;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  z-index: 99999;
   min-width: 140px;
   overflow: hidden;
   animation: fadeIn 0.2s ease-in;
+  pointer-events: auto;
+  user-select: none;
 
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-10px); }
@@ -1482,6 +1482,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
     const [editScheduleName, setEditScheduleName] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [dropdownOpenId, setDropdownOpenId] = useState(null);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
     // Filter and sort state
     const [selectedSemesterFilter, setSelectedSemesterFilter] = useState('');
@@ -1535,6 +1536,22 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
         const semesterIds = [...new Set(templates.map(template => template.semester_id).filter(Boolean))];
         return semesters.filter(semester => semesterIds.includes(semester.id));
     }, [templates, semesters]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownOpenId && !event.target.closest('.dropdown-container')) {
+                setDropdownOpenId(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dropdownOpenId]);
+
+
 
     const handleGenerate = async () => {
         if (!semesterId) {
@@ -1612,8 +1629,76 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
         }
     };
 
-    const toggleDropdown = (scheduleId) => {
-        setDropdownOpenId(dropdownOpenId === scheduleId ? null : scheduleId);
+    const toggleDropdown = (scheduleId, event) => {
+        if (dropdownOpenId === scheduleId) {
+            setDropdownOpenId(null);
+            return;
+        }
+
+        // Calculate dropdown position relative to viewport
+        const button = event.currentTarget;
+        const buttonRect = button.getBoundingClientRect();
+
+        // Estimate dropdown dimensions
+        const dropdownWidth = 140;
+        const dropdownHeight = 80;
+
+        // Calculate available space
+        const spaceBelow = window.innerHeight - buttonRect.bottom;
+        const spaceAbove = buttonRect.top;
+
+        // Determine if dropdown should appear above or below
+        const shouldPositionAbove = spaceBelow < dropdownHeight && spaceAbove > dropdownHeight;
+
+        // Calculate position
+        let top, left;
+
+        if (shouldPositionAbove) {
+            // Position above the button
+            top = buttonRect.top - dropdownHeight - 8;
+        } else {
+            // Position below the button
+            top = buttonRect.bottom + 8;
+        }
+
+        // Calculate horizontal position (right-aligned with button)
+        left = buttonRect.right - dropdownWidth;
+
+        // Ensure dropdown doesn't go off-screen horizontally
+        if (left < 10) {
+            left = 10;
+        }
+
+        // Ensure dropdown doesn't go off-screen vertically
+        if (top < 10) {
+            top = 10;
+        } else if (top + dropdownHeight > window.innerHeight - 10) {
+            top = window.innerHeight - dropdownHeight - 10;
+        }
+
+        setDropdownPosition({ top, left });
+        setDropdownOpenId(scheduleId);
+
+        // Adjust position after render if needed
+        setTimeout(() => {
+            const dropdownElement = document.querySelector('.dropdown-menu-fixed');
+            if (dropdownElement) {
+                const dropdownRect = dropdownElement.getBoundingClientRect();
+
+                // Check if dropdown goes off-screen and adjust
+                if (dropdownRect.right > window.innerWidth - 10) {
+                    dropdownElement.style.left = `${window.innerWidth - dropdownRect.width - 10}px`;
+                }
+
+                if (dropdownRect.bottom > window.innerHeight - 10) {
+                    dropdownElement.style.top = `${buttonRect.top - dropdownRect.height - 8}px`;
+                }
+
+                if (dropdownRect.top < 10) {
+                    dropdownElement.style.top = '10px';
+                }
+            }
+        }, 0);
     };
 
     return (
@@ -1752,7 +1837,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                 </SortButton>
             </FilterSortContainer>
 
-            <TemplateList>
+            <TemplateList className="template-list-container">
                 {filteredAndSortedTemplates.length === 0 ? (
                     <PlaceholderText>
                         {selectedSemesterFilter ? 'Không có mẫu thời khóa biểu nào cho học kỳ đã chọn' : 'Không có mẫu thời khóa biểu nào'}
@@ -1766,7 +1851,7 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                 isSelected={template.id === selectedScheduleId}
                                 onClick={() => onSelect(template.id)}
                             >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                                <div className="dropdown-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                                     <div>
                                         {template.schedule_name}
                                         <br></br>
@@ -1780,13 +1865,19 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                                     <DropdownButton
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            toggleDropdown(template.id);
+                                            toggleDropdown(template.id, e);
                                         }}
                                     >
                                         <FaEllipsisH />
                                     </DropdownButton>
                                     {dropdownOpenId === template.id && (
-                                        <DropdownMenu>
+                                        <DropdownMenu
+                                            className="dropdown-menu-fixed"
+                                            style={{
+                                                top: `${dropdownPosition.top}px`,
+                                                left: `${dropdownPosition.left}px`
+                                            }}
+                                        >
                                             <DropdownItem
                                                 onClick={(e) => {
                                                     e.stopPropagation();
