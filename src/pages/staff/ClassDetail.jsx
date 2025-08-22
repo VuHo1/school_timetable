@@ -1296,7 +1296,7 @@ function ClassDetail() {
             <InfoRow>
               <InfoLabel>GVCN:</InfoLabel>
               <InfoValue>
-                {!classDetail.teacher_full_name && classDetail.teacher_full_name !== 'Default'
+                {classDetail.teacher_full_name && classDetail.teacher_full_name !== 'Default'
                   ? `${classDetail.teacher_full_name} (${classDetail.teacher_user_name})`
                   : 'Chưa có GVCN'}
                 <UpdateIcon onClick={openTeacherModal} title="Cập nhật giáo viên">✏️</UpdateIcon>
@@ -1392,12 +1392,14 @@ function ClassDetail() {
                 Chỉnh sửa
               </UpdateButton>
             ) : (
-              <AddButton
-                onClick={handleAddNewSubject}
-                disabled={hasEmptyNewRow()}
-              >
-                + Thêm mới
-              </AddButton>
+              <>
+                <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>
+                  Hủy
+                </CancelEditButton>
+                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
+                  {saving ? 'Đang lưu...' : 'Xác nhận'}
+                </SaveButton>
+              </>
             )}
           </div>
         </SectionTitle>
@@ -1524,38 +1526,35 @@ function ClassDetail() {
                     </TableCell2>
                     <TableCell2>
                       {isEditingSubjects && (
-                        <DeleteButton onClick={() => handleDeleteSubject(subject.id || index)}>
-                          Xóa
-                        </DeleteButton>
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <DeleteButton onClick={() => handleDeleteSubject(subject.id || index)}>
+                            Xóa
+                          </DeleteButton>
+                          <AddButton
+                            onClick={handleAddNewSubject}
+                            disabled={hasEmptyNewRow()}
+                          >
+                            + Thêm mới
+                          </AddButton>
+                        </div>
                       )}
                     </TableCell2>
                   </TableRow>
                 ))}
               </tbody>
             </Table>
-            {isEditingSubjects && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginTop: '10px' }}>
-                <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>
-                  Hủy
-                </CancelEditButton>
-                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
-                  {saving ? 'Đang lưu...' : 'Xác nhận'}
-                </SaveButton>
-              </div>
-            )}
           </TableContainer>
         ) : (
           <NoSubjects>
             <p>Lớp học chưa có môn học nào được phân công.</p>
             {isEditingSubjects && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '5px', marginTop: '10px' }}>
-                <CancelEditButton onClick={handleCancelEditSubjects} disabled={saving}>
-                  Hủy
-                </CancelEditButton>
-                <SaveButton onClick={handleSaveSubjects} disabled={saving}>
-                  {saving ? 'Đang lưu...' : 'Xác nhận'}
-                </SaveButton>
-              </div>
+              <AddButton
+                onClick={handleAddNewSubject}
+                style={{ marginTop: '10px' }}
+                disabled={hasEmptyNewRow()}
+              >
+                + Thêm mới
+              </AddButton>
             )}
           </NoSubjects>
         )}
