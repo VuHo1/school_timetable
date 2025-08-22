@@ -239,7 +239,7 @@ function TimeslotManagement() {
 
     try {
       var resultData = await updateTimeSlot(token, {
-        id: slot.id,
+        time_slot_code: slot.id,
         start_time: slot.start_time,
         end_time: slot.end_time,
       }); if (resultData.success) {
