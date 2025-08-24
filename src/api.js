@@ -1286,6 +1286,30 @@ export const addSemester = async (token, { semester_name, start_date, end_date }
         pagination: data.pagination,
     };
 };
+export const updateSemester = async (token, { id, semester_name, start_date, end_date }) => {
+    const response = await fetch(`${API_BASE_URL}/api/semester/update`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'text/plain',
+        },
+        body: JSON.stringify({ id, semester_name, start_date, end_date }),
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+        throw new Error(data.description || 'Failed to update semester');
+    }
+
+    return {
+        success: data.success,
+        description: data.description,
+        data: data.data,
+        data_set: data.data_set,
+        pagination: data.pagination,
+    };
+};
 
 export const removeSemester = async (token, semesterId) => {
     const response = await fetch(`${API_BASE_URL}/api/semester/remove/${semesterId}`, {
