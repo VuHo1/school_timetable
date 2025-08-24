@@ -26,6 +26,7 @@ import {
     fetchSemesters,
     addSemester,
     removeSemester,
+    updateSemester,
     getDatesInUse,
     fetchScheduleConfig,
     updateScheduleConfig,
@@ -308,6 +309,13 @@ const ButtonUpdate = styled(Button)`
   background: #6B7280;
   &:hover {
     background: #6B7280;
+  }
+`;
+
+const ButtonEdit = styled(Button)`
+  background: #3b82f6;
+  &:hover {
+    background: #2563eb;
   }
 `;
 
@@ -1166,6 +1174,14 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
     const [newSemesterEndDate, setNewSemesterEndDate] = useState('');
     const [semesterError, setSemesterError] = useState('');
 
+    // State for edit semester
+    const [isEditSemesterDialogOpen, setIsEditSemesterDialogOpen] = useState(false);
+    const [editingSemester, setEditingSemester] = useState(null);
+    const [editSemesterName, setEditSemesterName] = useState('');
+    const [editSemesterStartDate, setEditSemesterStartDate] = useState('');
+    const [editSemesterEndDate, setEditSemesterEndDate] = useState('');
+    const [editSemesterError, setEditSemesterError] = useState('');
+
     const handleAddSemester = async () => {
         if (!newSemesterName.trim()) {
             showToast('Tên học kỳ không được để trống', 'error');
@@ -1205,6 +1221,67 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
         } finally {
             setIsGenerating(false);
         }
+    };
+
+    const handleEditSemester = (semester) => {
+        setEditingSemester(semester);
+        setEditSemesterName(semester.semester_name);
+        setEditSemesterStartDate(new Date(semester.start_date));
+        setEditSemesterEndDate(new Date(semester.end_date));
+        setEditSemesterError('');
+        setIsEditSemesterDialogOpen(true);
+    };
+
+    const handleUpdateSemester = async () => {
+        if (!editSemesterName.trim()) {
+            setEditSemesterError('Tên học kỳ không được để trống');
+            return;
+        }
+        if (!editSemesterStartDate || !editSemesterEndDate) {
+            setEditSemesterError('Vui lòng nhập đầy đủ ngày bắt đầu và ngày kết thúc');
+            return;
+        }
+        if (new Date(editSemesterStartDate) > new Date(editSemesterEndDate)) {
+            setEditSemesterError('Ngày bắt đầu phải nhỏ hơn hoặc bằng ngày kết thúc');
+            return;
+        }
+
+        try {
+            setIsGenerating(true);
+            const response = await updateSemester(token, {
+                id: editingSemester.id,
+                semester_name: editSemesterName,
+                start_date: formatDate(editSemesterStartDate),
+                end_date: formatDate(editSemesterEndDate),
+            });
+            if (response.success) {
+                showToast(response.description, 'success');
+                const newSemesters = await fetchSemesters(token);
+                setSemesters(newSemesters);
+                setIsEditSemesterDialogOpen(false);
+                setEditingSemester(null);
+                setEditSemesterName('');
+                setEditSemesterStartDate('');
+                setEditSemesterEndDate('');
+                setEditSemesterError('');
+            } else {
+                setEditSemesterError(response.description);
+            }
+        } catch (err) {
+            const errorMessage = err.message || 'Lỗi khi cập nhật học kỳ';
+            setEditSemesterError(errorMessage);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const closeEditDialog = () => {
+        setIsEditSemesterDialogOpen(false);
+        setEditingSemester(null);
+        setEditSemesterName('');
+        setEditSemesterStartDate('');
+        setEditSemesterEndDate('');
+        setEditSemesterError('');
     };
 
     return (
@@ -1275,9 +1352,9 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
                             >
                                 Hủy
                             </CancelButton>
-                            <ButtonAdd onClick={handleAddSemester} disabled={isGenerating}>
-                                Lưu thông tin
-                            </ButtonAdd>
+                            <Button onClick={handleAddSemester} disabled={isGenerating}>
+                                Xác nhận
+                            </Button>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -1285,10 +1362,10 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
             <Table>
                 <thead>
                     <tr>
-                        <Th>Tên</Th>
-                        <Th>Ngày bắt đầu</Th>
-                        <Th>Ngày kết thúc</Th>
-                        <Th>Hành động</Th>
+                        <Th style={{ width: '40%' }}>Tên</Th>
+                        <Th style={{ width: '20%' }}>Ngày bắt đầu</Th>
+                        <Th style={{ width: '20%' }}>Ngày kết thúc</Th>
+                        <Th style={{ width: '20%' }}>Hành động</Th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1298,17 +1375,90 @@ const SemesterList = ({ semesters, onDelete, setSemesters, token, showToast, isA
                             <Td>{new Date(semester.start_date).toLocaleDateString('vi-VN')}</Td>
                             <Td>{new Date(semester.end_date).toLocaleDateString('vi-VN')}</Td>
                             <Td>
-                                <ButtonDelete
-                                    onClick={() => onDelete(semester.id)}
-                                    disabled={isGenerating}
-                                >
-                                    <FaTrash /> Xóa
-                                </ButtonDelete>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                    <ButtonUpdate
+                                        onClick={() => handleEditSemester(semester)}
+                                        disabled={isGenerating}
+                                    >
+                                        Chỉnh sửa
+                                    </ButtonUpdate>
+                                    <ButtonDelete
+                                        onClick={() => onDelete(semester.id)}
+                                        disabled={isGenerating}
+                                    >
+                                        Xóa
+                                    </ButtonDelete>
+                                </div>
                             </Td>
                         </tr>
                     ))}
                 </tbody>
             </Table>
+
+            {/* Edit Semester Dialog */}
+            {isEditSemesterDialogOpen && (
+                <>
+                    <DialogOverlay onClick={closeEditDialog} />
+                    <Dialog>
+                        <SubHeading>
+                            <FaEdit /> Cập nhật học kỳ
+                        </SubHeading>
+                        <FormGroup1>
+                            <Label>Tên học kỳ</Label>
+                            <Input
+                                type="text"
+                                value={editSemesterName}
+                                onChange={(e) => setEditSemesterName(e.target.value)}
+                                placeholder="Nhập tên học kỳ"
+                                disabled={isGenerating}
+                            />
+                        </FormGroup1>
+                        <FormGroup1>
+                            <Label>Ngày bắt đầu</Label>
+                            <DatePicker
+                                selected={editSemesterStartDate}
+                                onChange={(date) => {
+                                    setEditSemesterStartDate(date);
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Chọn ngày bắt đầu"
+                                disabled={isGenerating}
+                                customInput={<Input />}
+                                minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
+                            />
+                        </FormGroup1>
+                        <FormGroup1>
+                            <Label>Ngày kết thúc</Label>
+                            <DatePicker
+                                selected={editSemesterEndDate}
+                                onChange={(date) => {
+                                    setEditSemesterEndDate(date);
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                placeholderText="Chọn ngày kết thúc"
+                                disabled={isGenerating}
+                                customInput={<Input />}
+                                minDate={new Date(new Date().setDate(new Date().getDate() + 1))}
+                            />
+                        </FormGroup1>
+                        {editSemesterError && <DialogError>{editSemesterError}</DialogError>}
+                        <DialogButtonGroup>
+                            <CancelButton
+                                onClick={closeEditDialog}
+                                disabled={isGenerating}
+                            >
+                                Hủy
+                            </CancelButton>
+                            <Button
+                                onClick={handleUpdateSemester}
+                                disabled={isGenerating}
+                            >
+                                Xác nhận
+                            </Button>
+                        </DialogButtonGroup>
+                    </Dialog>
+                </>
+            )}
         </div>
     );
 };
@@ -1781,9 +1931,9 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                             >
                                 Hủy
                             </CancelButton>
-                            <ButtonAdd onClick={handleGenerate} disabled={isGenerating}>
-                                Lưu thông tin
-                            </ButtonAdd>
+                            <Button onClick={handleGenerate} disabled={isGenerating}>
+                                Xác nhận
+                            </Button>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -1805,9 +1955,9 @@ const ScheduleTemplateList = ({ templates, onSelect, onGenerate, token, selected
                             <CancelButton onClick={() => setIsEditDialogOpen(false)}>
                                 Hủy
                             </CancelButton>
-                            <ButtonSave onClick={handleUpdate}>
+                            <Button onClick={handleUpdate}>
                                 Xác nhận
-                            </ButtonSave>
+                            </Button>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -3019,11 +3169,8 @@ export default function ViewSchedule() {
             try {
                 setIsLoadingClassSubjects(true);
                 const response = await fetchClassSubjects(token, classCode);
-                if (response.success) {
-                    setClassSubjects(response.data_set || []);
-                } else {
-                    showToast(response.description || 'Lỗi khi tải danh sách môn học', 'error');
-                }
+                setClassSubjects(response || []);
+
             } catch (err) {
                 showToast(`Lỗi: ${err.message}`, 'error');
             } finally {
@@ -3625,8 +3772,13 @@ export default function ViewSchedule() {
                                                 setApplyBeginDate(date);
                                                 setApplyDateError('');
                                             }}
-                                            minDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.start_date) : null}
-                                            maxDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.end_date) : null}
+                                            minDate={new Date(Math.max(
+                                                applySemesterId
+                                                    ? new Date(semesters.find(s => s.id == applySemesterId)?.start_date).getTime()
+                                                    : 0,
+                                                new Date().setDate(new Date().getDate() + 1)
+                                            ))}
+                                            maxDate={applySemesterId ? new Date(semesters.find(s => s.id == applySemesterId)?.end_date) : null}
                                             excludeDates={datesInUse.map(date => new Date(date))}
                                             disabled={!applySemesterId}
                                             dateFormat="dd/MM/yyyy"
@@ -3643,8 +3795,13 @@ export default function ViewSchedule() {
                                                 setApplyEndDate(date);
                                                 setApplyDateError('');
                                             }}
-                                            minDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.start_date) : null}
-                                            maxDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.end_date) : null}
+                                            minDate={new Date(Math.max(
+                                                applySemesterId
+                                                    ? new Date(semesters.find(s => s.id == applySemesterId)?.start_date).getTime()
+                                                    : 0,
+                                                new Date().setDate(new Date().getDate() + 1)
+                                            ))}
+                                            maxDate={applySemesterId ? new Date(semesters.find(s => s.id == applySemesterId)?.end_date) : null}
                                             excludeDates={datesInUse.map(date => new Date(date))}
                                             disabled={!applySemesterId}
                                             dateFormat="dd/MM/yyyy"
@@ -3677,9 +3834,9 @@ export default function ViewSchedule() {
                                         }}>
                                             Hủy
                                         </CancelButton>
-                                        <ButtonAdd onClick={handleApplySchedule} disabled={isLoading}>
-                                            Lưu
-                                        </ButtonAdd>
+                                        <Button onClick={handleApplySchedule} disabled={isLoading}>
+                                            Xác nhận
+                                        </Button>
                                     </DialogButtonGroup>
                                 </Dialog>
                             </>
@@ -3732,9 +3889,9 @@ export default function ViewSchedule() {
                                         }}>
                                             Hủy
                                         </CancelButton>
-                                        <ButtonAdd onClick={handleRemoveTimeTable} disabled={isLoading}>
-                                            Lưu
-                                        </ButtonAdd>
+                                        <Button onClick={handleRemoveTimeTable} disabled={isLoading}>
+                                            Xác nhận
+                                        </Button>
                                     </DialogButtonGroup>
                                 </Dialog>
                             </>
@@ -3797,7 +3954,7 @@ export default function ViewSchedule() {
                                     }} disabled={isMarkingHoliday}>
                                         Hủy
                                     </CancelButton>
-                                    <ButtonAdd
+                                    <Button
                                         onClick={async () => {
                                             if (!holidayDate) {
                                                 showToast('Vui lòng chọn ngày nghỉ', 'error');
@@ -3829,8 +3986,8 @@ export default function ViewSchedule() {
                                         }}
                                         disabled={isMarkingHoliday}
                                     >
-                                        Lưu
-                                    </ButtonAdd>
+                                        Xác nhận
+                                    </Button>
                                 </DialogButtonGroup>
                             </Dialog>
                         )}
@@ -3933,9 +4090,9 @@ export default function ViewSchedule() {
                             }} disabled={isMovingSchedule}>
                                 Hủy
                             </CancelButton>
-                            <ButtonAdd onClick={handleMoveSchedule} disabled={isMovingSchedule}>
+                            <Button onClick={handleMoveSchedule} disabled={isMovingSchedule}>
                                 {isMovingSchedule ? 'Đang xử lý...' : 'Xác nhận'}
-                            </ButtonAdd>
+                            </Button>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -4136,9 +4293,9 @@ export default function ViewSchedule() {
                             }} disabled={isMovingScheduleDetail}>
                                 Hủy
                             </CancelButton>
-                            <ButtonAdd onClick={handleMoveScheduleDetail} disabled={isMovingScheduleDetail}>
+                            <Button onClick={handleMoveScheduleDetail} disabled={isMovingScheduleDetail}>
                                 {isMovingScheduleDetail ? 'Đang xử lý...' : 'Xác nhận'}
-                            </ButtonAdd>
+                            </Button>
                         </DialogButtonGroup>
                     </Dialog>
                 </>
@@ -4245,8 +4402,13 @@ export default function ViewSchedule() {
                                             setApplyBeginDate(date);
                                             setApplyDateError('');
                                         }}
-                                        minDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.start_date) : null}
-                                        maxDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.end_date) : null}
+                                        minDate={new Date(Math.max(
+                                            applySemesterId
+                                                ? new Date(semesters.find(s => s.id == applySemesterId)?.start_date).getTime()
+                                                : 0,
+                                            new Date().setDate(new Date().getDate() + 1)
+                                        ))}
+                                        maxDate={applySemesterId ? new Date(semesters.find(s => s.id == applySemesterId)?.end_date) : null}
                                         excludeDates={datesInUse.map(date => new Date(date))}
                                         disabled={!applySemesterId}
                                         dateFormat="dd/MM/yyyy"
@@ -4263,8 +4425,13 @@ export default function ViewSchedule() {
                                             setApplyEndDate(date);
                                             setApplyDateError('');
                                         }}
-                                        minDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.start_date) : null}
-                                        maxDate={applySemesterId ? new Date(semesters.find(s => s.id === applySemesterId)?.end_date) : null}
+                                        minDate={new Date(Math.max(
+                                            applySemesterId
+                                                ? new Date(semesters.find(s => s.id == applySemesterId)?.start_date).getTime()
+                                                : 0,
+                                            new Date().setDate(new Date().getDate() + 1)
+                                        ))}
+                                        maxDate={applySemesterId ? new Date(semesters.find(s => s.id == applySemesterId)?.end_date) : null}
                                         excludeDates={datesInUse.map(date => new Date(date))}
                                         disabled={!applySemesterId}
                                         dateFormat="dd/MM/yyyy"
@@ -4297,9 +4464,9 @@ export default function ViewSchedule() {
                                     }}>
                                         Hủy
                                     </CancelButton>
-                                    <ButtonAdd onClick={handleApplySchedule} disabled={isLoading}>
-                                        Lưu
-                                    </ButtonAdd>
+                                    <Button onClick={handleApplySchedule} disabled={isLoading}>
+                                        Xác nhận
+                                    </Button>
                                 </DialogButtonGroup>
                             </>
                         ) : (
