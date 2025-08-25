@@ -53,7 +53,7 @@ npm install
 
 ### 2.2 Cấu Hình Environment Variables
 
-Tạo file `.env.production` trong thư mục gốc:
+Tạo file `.env` trong thư mục gốc:
 
 ```env
 # Backend API URL
@@ -107,7 +107,7 @@ dist/
 2. Cấu hình:
    - **Site name**: HAST_Frontend
    - **Application pool**: HAST_Frontend_AppPool
-   - **Physical path**: C:\inetpub\wwwroot\frontend
+   - **Physical path**: C:\inetpub\wwwroot\publish-web
    - **Port**: 80 (hoặc port khác tùy chọn)
 
 ### 3.3 Cấu Hình Application Pool
@@ -123,15 +123,15 @@ dist/
 ### 4.1 Copy Files Build
 
 ```powershell
-# Copy toàn bộ nội dung thư mục dist vào C:\inetpub\wwwroot\frontend
-Copy-Item -Path ".\dist\*" -Destination "C:\inetpub\wwwroot\frontend" -Recurse -Force
+# Copy toàn bộ nội dung thư mục dist vào C:\inetpub\wwwroot\publish-web
+Copy-Item -Path ".\dist\*" -Destination "C:\inetpub\wwwroot\publish-web" -Recurse -Force
 ```
 
 ### 4.2 Cấp Quyền Thư Mục
 
 ```powershell
 # Cấp quyền cho AppPool
-icacls "C:\inetpub\wwwroot\frontend" /grant "IIS AppPool\HAST_Frontend_AppPool:(OI)(CI)(RX)" /T
+icacls "C:\inetpub\wwwroot\publish-web" /grant "IIS AppPool\HAST_Frontend_AppPool:(OI)(CI)(RX)" /T
 ```
 
 ## 5. Cấu Hình URL Rewrite (Quan Trọng cho SPA)
@@ -142,65 +142,24 @@ Tải và cài đặt từ: https://www.iis.net/downloads/microsoft/url-rewrite
 
 ### 5.2 Tạo web.config
 
-Tạo file `web.config` trong thư mục `C:\inetpub\wwwroot\frontend`:
+Tạo file `web.config` trong thư mục `C:\inetpub\wwwroot\publish-web`:
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <system.webServer>
     <rewrite>
       <rules>
-        <rule name="Handle History Mode and custom 404/500" stopProcessing="true">
-          <match url="(.*)" />
+        <rule name="React Routes" stopProcessing="true">
+          <match url=".*" />
           <conditions logicalGrouping="MatchAll">
             <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
             <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
           </conditions>
-          <action type="Rewrite" url="/" />
+          <action type="Rewrite" url="/index.html" />
         </rule>
       </rules>
     </rewrite>
-    
-    <!-- Cấu hình MIME types cho các file tĩnh -->
-    <staticContent>
-      <mimeMap fileExtension=".js" mimeType="application/javascript" />
-      <mimeMap fileExtension=".css" mimeType="text/css" />
-      <mimeMap fileExtension=".json" mimeType="application/json" />
-      <mimeMap fileExtension=".woff" mimeType="application/font-woff" />
-      <mimeMap fileExtension=".woff2" mimeType="application/font-woff2" />
-    </staticContent>
-    
-    <!-- Cấu hình cache cho static assets -->
-    <caching>
-      <profiles>
-        <add extension=".js" policy="CacheForTimePeriod" duration="00:01:00:00" />
-        <add extension=".css" policy="CacheForTimePeriod" duration="00:01:00:00" />
-        <add extension=".png" policy="CacheForTimePeriod" duration="00:01:00:00" />
-        <add extension=".jpg" policy="CacheForTimePeriod" duration="00:01:00:00" />
-        <add extension=".gif" policy="CacheForTimePeriod" duration="00:01:00:00" />
-        <add extension=".ico" policy="CacheForTimePeriod" duration="00:01:00:00" />
-      </profiles>
-    </caching>
-    
-    <!-- Cấu hình compression -->
-    <httpCompression>
-      <dynamicTypes>
-        <add mimeType="text/*" enabled="true" />
-        <add mimeType="message/*" enabled="true" />
-        <add mimeType="application/javascript" enabled="true" />
-        <add mimeType="application/json" enabled="true" />
-        <add mimeType="*/*" enabled="false" />
-      </dynamicTypes>
-      <staticTypes>
-        <add mimeType="text/*" enabled="true" />
-        <add mimeType="message/*" enabled="true" />
-        <add mimeType="application/javascript" enabled="true" />
-        <add mimeType="application/atom+xml" enabled="true" />
-        <add mimeType="application/xaml+xml" enabled="true" />
-        <add mimeType="image/svg+xml" enabled="true" />
-        <add mimeType="*/*" enabled="false" />
-      </staticTypes>
-    </httpCompression>
   </system.webServer>
 </configuration>
 ```
@@ -261,7 +220,7 @@ New-SelfSignedCertificate -DnsName "localhost" -CertStoreLocation "cert:\LocalMa
 - Kiểm tra Application Pool configuration
 
 ### 9.3 Lỗi API Calls
-- Kiểm tra VITE_API_BASE_URL trong .env.production
+- Kiểm tra VITE_API_BASE_URL trong .env
 - Kiểm tra CORS configuration
 - Kiểm tra network connectivity
 
