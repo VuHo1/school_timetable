@@ -244,10 +244,12 @@ const DetailSection = styled.div`
 const DetailItem = styled.div`
   display: flex;
   margin-bottom: 15px;
+  
   .label {
     font-weight: 600;
     color: #2c3e50;
     min-width: 150px;
+    margin-right: 20px;
   }
   .value {
     color: #666;
@@ -258,12 +260,13 @@ const DetailItem = styled.div`
 const DetailLabel = styled.span`
   font-weight: 600;
   color: #2c3e50;
-  font-size: 14px;
+  min-width: 150px;
+  margin-right: 20px;
 `;
 
 const DetailValue = styled.span`
   color: #666;
-  font-size: 14px;
+  word-break: break-word;
 `;
 
 const FormGroup = styled.div`
