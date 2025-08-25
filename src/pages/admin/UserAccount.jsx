@@ -362,6 +362,7 @@ const ModalContent = styled.div`
   width:auto;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  max-width: 700px;
 `;
 
 const ModalHeader = styled.div`
@@ -501,6 +502,7 @@ const DetailItem = styled.div`
   .value {
     color: #666;
     flex: 1;
+     word-break: break-word;
   }
 `;
 

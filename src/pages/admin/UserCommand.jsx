@@ -417,6 +417,7 @@ const DetailItem = styled.div`
   .value {
     color: #666;
     flex: 1;
+    word-break: break-word;
   }
 `;
 

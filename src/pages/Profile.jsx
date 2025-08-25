@@ -51,9 +51,12 @@ const InfoItem = styled.div`
   margin-bottom: 20px;
   font-size: 15px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   position: relative;
+  word-break: break-word;
+  white-space: normal;
 `;
+
 
 const Label = styled.div`
   min-width: 180px;
