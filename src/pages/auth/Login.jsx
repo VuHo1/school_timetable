@@ -241,7 +241,7 @@ function Login() {
                 throw new Error('Email không hợp lệ. Vui lòng nhập email.');
             }
 
-            const body = JSON.stringify({ email });
+            const body = JSON.stringify(email);
 
             const response = await fetch(`${(import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online')}/api/auth/reset-password`, {
                 method: 'PUT',
@@ -295,6 +295,7 @@ function Login() {
             showPasswordIcon: showPassword ? <EyeOff size={16} /> : <Eye size={16} />,
             value: password,
             onChange: (e) => setPassword(e.target.value),
+
         },
     ];
 

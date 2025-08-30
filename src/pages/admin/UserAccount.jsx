@@ -597,7 +597,7 @@ export default function UserAccount() {
 
   const statusOptions = [
     { value: '', label: 'Tất cả trạng thái' },
-    { value: '  ', label: 'Đang hoạt động' },
+    { value: 'Đang hoạt động', label: 'Đang hoạt động' },
     { value: 'Tạm khóa', label: 'Tạm khóa' },
     { value: 'Ngưng hoạt động', label: 'Ngưng hoạt động' },
   ];
@@ -1284,6 +1284,7 @@ export default function UserAccount() {
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                   placeholder="Nhập email"
+                  required
                 />
               </FormGroup>
               <FormGroup>
@@ -1293,6 +1294,7 @@ export default function UserAccount() {
                   value={newUser.full_name}
                   onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
                   placeholder="Nhập họ và tên"
+                  required
                 />
               </FormGroup>
               <FormGroup>
@@ -1300,8 +1302,14 @@ export default function UserAccount() {
                 <Input
                   type="text"
                   value={newUser.phone}
-                  onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^[0-9+]*$/.test(value)) {
+                      setNewUser({ ...newUser, phone: value });
+                    }
+                  }}
                   placeholder="Nhập số điện thoại"
+                  required
                 />
               </FormGroup>
               <FormGroup>
@@ -1317,6 +1325,7 @@ export default function UserAccount() {
                     }}
                     dateFormat="dd/MM/yyyy"
                     placeholderText="dd/MM/yyyy"
+                    required
                   />
                 </DatePickerWrapper>
               </FormGroup>
