@@ -15,7 +15,6 @@ import {
 import { toast } from 'react-hot-toast';
 import { FaCheckCircle, FaTimesCircle, FaEye, FaSpinner } from 'react-icons/fa';
 
-// Styled Components (matching SubjectManagement style)
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -298,7 +297,7 @@ const PaginationButton = styled.button`
   }
 `;
 
-// Reject Dialog Component
+
 const RejectDialog = ({ isOpen, onClose, onSubmit, actionLoading, rejectReason, setRejectReason }) => {
     if (!isOpen) return null;
 
@@ -332,7 +331,7 @@ const RejectDialog = ({ isOpen, onClose, onSubmit, actionLoading, rejectReason, 
     );
 };
 
-// Main Request Component
+
 const Request = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -354,14 +353,14 @@ const Request = () => {
     const userName = user?.user_name;
     const ITEMS_PER_PAGE = 10;
 
-    // Extract unique filter options
+
     const filterOptions = useMemo(() => {
         const primaryStatuses = [...new Set(requests.map(r => r.primary_status))].filter(Boolean);
         const typeNames = [...new Set(requests.map(r => r.type_name))].filter(Boolean);
         return { primaryStatuses, typeNames };
     }, [requests]);
 
-    // Filter and sort requests
+
     const filteredRequests = useMemo(() => {
         let result = [...requests];
         if (filters.primary_status) {
@@ -378,22 +377,22 @@ const Request = () => {
         return result;
     }, [requests, filters]);
 
-    // Paginate filtered requests
+
     const paginatedRequests = useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredRequests.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredRequests, currentPage]);
 
-    // Update total pages
+
     useEffect(() => {
         setTotalPages(Math.ceil(filteredRequests.length / ITEMS_PER_PAGE) || 1);
-        // Reset to first page if currentPage exceeds totalPages
+
         if (currentPage > Math.ceil(filteredRequests.length / ITEMS_PER_PAGE)) {
             setCurrentPage(1);
         }
     }, [filteredRequests]);
 
-    // Fetch requests
+
     const loadRequests = async () => {
         if (!user?.token) return;
         try {
@@ -410,24 +409,24 @@ const Request = () => {
         }
     };
 
-    // Fetch requests when component mounts or sortOrder changes
+
     useEffect(() => {
         loadRequests();
     }, [user?.token, filters.sortOrder]);
 
-    // Handle filter change
+
     const handleFilterChange = (type, value) => {
         setFilters(prev => ({ ...prev, [type]: value }));
-        setCurrentPage(1); // Reset to first page on filter change
+        setCurrentPage(1);
     };
 
-    // Handle page change
+
     const handlePageChange = (page) => {
         console.log('Changing to page:', page);
         setCurrentPage(page);
     };
 
-    // Handle approve
+
     const handleApprove = async (requestId) => {
         try {
             setActionLoading(true);
@@ -457,7 +456,7 @@ const Request = () => {
         const seconds = String(date.getSeconds()).padStart(2, '0');
         return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
     };
-    // Handle approve
+
     const handleCreatorApprove = async (requestId) => {
         try {
             setActionLoading(true);
@@ -475,7 +474,7 @@ const Request = () => {
             setActionLoading(false);
         }
     };
-    // Handle cancel
+
     const handleCreatorCancel = async (requestId) => {
         try {
             setActionLoading(true);
@@ -493,7 +492,7 @@ const Request = () => {
             setActionLoading(false);
         }
     };
-    // Handle approve
+
     const handleSubApprove = async (requestId) => {
         try {
             setActionLoading(true);
@@ -512,7 +511,7 @@ const Request = () => {
         }
     };
 
-    // Handle reject
+
     const handleReject = (requestId) => {
         setSelectedRequestId(requestId);
         setRejectReason('');
@@ -554,7 +553,7 @@ const Request = () => {
                 setIsRejectDialogOpen(false);
                 setRejectReason('');
                 setSelectedRequestId(null);
-                setRejectType(''); // Reset reject type
+                setRejectType('');
             } else {
                 toast.error(response?.description || 'Có lỗi xảy ra');
             }

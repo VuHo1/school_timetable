@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Get API base URL with fallback
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
 
 const AuthContext = createContext();

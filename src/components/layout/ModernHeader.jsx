@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import { FaBell, FaTimes, FaCheck, FaList } from 'react-icons/fa';
 import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../../api';
 
-// Page mappings based on abilities
 const PAGE_MAPPINGS = {
   'Cấu hình hệ thống': '/admin/setting',
   'Danh mục dùng chung': '/admin/code_list',
@@ -483,7 +482,7 @@ function ModernHeader() {
   const avatarDropdownRef = useRef(null);
   const notificationDropdownRef = useRef(null);
 
-  // Fetch notifications
+
   const fetchNotificationsData = async () => {
     const token = user?.token;
     if (token) {
@@ -500,12 +499,11 @@ function ModernHeader() {
     }
   };
 
-  // Initial fetch
+
   useEffect(() => {
     fetchNotificationsData();
   }, [user?.token]);
 
-  // Listen for notification marked as read event
   useEffect(() => {
     const handleNotificationUpdate = () => {
 
@@ -516,7 +514,6 @@ function ModernHeader() {
     return () => window.removeEventListener('notificationMarkedAsRead', handleNotificationUpdate);
   }, [user?.token]);
 
-  // Update currentAbilities when abilities change
   useEffect(() => {
     const storedAbilities = localStorage.getItem('abilities');
     let abilitiesToProcess = [];
@@ -544,7 +541,6 @@ function ModernHeader() {
     setCurrentAbilities(filteredAbilities);
   }, [abilities]);
 
-  // Handle clicks outside dropdowns and modal
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuDropdownRef.current && !menuDropdownRef.current.contains(event.target)) {

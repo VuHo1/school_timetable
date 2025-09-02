@@ -989,7 +989,6 @@ function ClassDetail() {
   const handleEditSubjects = async () => {
     setIsEditingSubjects(true);
     setOriginalSubjects([...classSubjects]);
-    // Nếu không có dữ liệu
     if (classSubjects.length === 0) {
       const newSubject = {
         id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

@@ -5,10 +5,10 @@ import { fetchTimeSlots, fetchAllTeachers } from '../../api';
 import { Tooltip } from 'react-tooltip';
 
 
-// Get API base URL with fallback
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://api.hast-app.online';
 
-// Styled Components
+
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -156,21 +156,21 @@ const StatusBadge = styled.span.withConfig({
   background: ${(props) => {
     switch (props.status) {
       case 'Đang hoạt động':
-        return '#d4edda'; // xanh nhạt
+        return '#d4edda';
       case 'Tạm khóa':
-        return '#fff3cd'; // vàng nhạt
+        return '#fff3cd';
       default:
-        return '#f8d7da'; // đỏ nhạt
+        return '#f8d7da';
     }
   }};
   color: ${(props) => {
     switch (props.status) {
       case 'Đang hoạt động':
-        return '#155724'; // xanh đậm
+        return '#155724';
       case 'Tạm khóa':
-        return '#856404'; // vàng đậm
+        return '#856404';
       default:
-        return '#721c24'; // đỏ đậm
+        return '#721c24';
     }
   }};
 `;
@@ -229,7 +229,7 @@ const EmptyState = styled.div`
   }
 `;
 
-// Modal Styled Components
+
 const Modal = styled.div`
   position: fixed;
   top: 0;
@@ -326,7 +326,7 @@ const CheckboxItem = styled.label`
   }
 `;
 
-// Modern Schedule Table Components
+
 const ScheduleTableContainer = styled.div`
   margin: 20px 0;
   border-radius: 8px;
@@ -436,7 +436,7 @@ const DetailItem = styled.div`
   }
 `;
 
-// Tab Components
+
 const TabContainer = styled.div`
   display: flex;
   border-bottom: 2px solid #f1f1f1;

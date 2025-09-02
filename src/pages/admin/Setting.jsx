@@ -4,7 +4,7 @@ import { useToast } from '../../components/ToastProvider';
 import { fetchAppSetting, updateAppSetting } from '../../api';
 import styled from 'styled-components';
 
-// Styled components with updated styles inspired by CodeList.jsx
+
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -302,7 +302,7 @@ export default function Setting() {
     }
   };
 
-  // Pagination logic
+
   const totalPages = Math.ceil(settings.length / limit);
   const paginatedSettings = settings.slice((currentPage - 1) * limit, currentPage * limit);
 

@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 
-// Styled components with soft mint theme
+
 const Container = styled.div`
   min-height: calc(100vh - 70px);
   background: linear-gradient(135deg, #f2f8f5 0%, #e8f2ed 100%);
@@ -216,7 +216,7 @@ function Dashboard() {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
-      document.body.style.overflow = 'auto'; // Reset khi component unmount
+      document.body.style.overflow = 'auto';
     };
   }, []);
   useEffect(() => {
@@ -248,7 +248,7 @@ function Dashboard() {
     { icon: "⚙️", title: "Cấu hình hệ thống", description: "" }
   ];
 
-  // Animation variants for sparkles
+
   const sparkleVariants = {
     animate: (i) => ({
       x: [0, Math.random() * 20 - 10, 0],

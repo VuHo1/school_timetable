@@ -542,6 +542,7 @@ export default function UserAccount() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterGender, setFilterGender] = useState('');
+  const [filterSchoolId, setFilterSchoolId] = useState('');
   const [filterRoleName, setFilterRoleName] = useState('');
   const [sortField, setSortField] = useState('user_name');
   const [sortOrder, setSortOrder] = useState('ASC');
@@ -619,10 +620,11 @@ export default function UserAccount() {
       setLoading(true);
       try {
 
-        const [userData, rolesData, rolesFilterData] = await Promise.all([
+        const [userData, rolesData, rolesFilterData, schoolData] = await Promise.all([
           fetchUserList(user.token),
           fetchRoles(user.token),
           fetchRolesFilter(user.token),
+          fetchSchool(user.token),
         ]);
 
 
@@ -633,6 +635,7 @@ export default function UserAccount() {
         }
         setRoles(rolesData);
         setRolesFilter(rolesFilterData);
+        setSchools(Array.isArray(schoolData) ? schoolData : schoolData.data_set || []);//note
         if (Array.isArray(rolesData)) {
           const options = [
             { value: '', label: 'Tất cả Vai trò' },
@@ -709,6 +712,9 @@ export default function UserAccount() {
     if (filterRoleName) {
       filteredUsers = filteredUsers.filter(user => user.role_name === filterRoleName);
     }
+    if (filterSchoolId) {
+      filteredUsers = filteredUsers.filter(user => String(user.school_id) === filterSchoolId);
+    }
 
     filteredUsers.sort((a, b) => {
       let aValue = a[sortField];
@@ -735,7 +741,7 @@ export default function UserAccount() {
   };
   useEffect(() => {
     applyFilters();
-  }, [searchKeyword, filterStatus, filterGender, filterRoleName, sortField, sortOrder, currentPage, allUsers]);
+  }, [searchKeyword, filterStatus, filterGender, filterRoleName, filterSchoolId, sortField, sortOrder, currentPage, allUsers]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -971,6 +977,21 @@ export default function UserAccount() {
           <option value="user_name:DESC">Tên tài khoản (Z-A)</option>
           <option value="full_name:ASC">Họ tên (A-Z)</option>
           <option value="full_name:DESC">Họ tên (Z-A)</option>
+        </SelectMenu>
+        {/* Dropdown bộ lọc trường học mới */}
+        <SelectMenu
+          value={filterSchoolId}
+          onChange={(e) => {
+            setFilterSchoolId(e.target.value);
+            resetPageAndFilter();
+          }}
+        >
+          <option value="">Tất cả Trường</option>
+          {schools.map((school) => (
+            <option key={school.id} value={school.id}>
+              {school.school_name}
+            </option>
+          ))}
         </SelectMenu>
         <SelectMenu
           value={filterRoleName}
@@ -1367,7 +1388,7 @@ export default function UserAccount() {
                     <option value="">Chọn trường</option>
                     {schools.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.id} - {s.school_name}
+                        {s.school_name}
                       </option>
                     ))}
                   </Select>

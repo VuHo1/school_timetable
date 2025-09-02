@@ -11,11 +11,11 @@ export function ToastProvider({ children }) {
                 toastOptions={{
                     style: {
                         maxWidth: '90%',
-                        maxHeight: '80vh',    // 👈 Giới hạn toast bằng 80% chiều cao màn hình
+                        maxHeight: '80vh',
                         fontSize: '14px',
-                        overflowY: 'auto',    // 👈 Cuộn dọc khi dài
-                        overflowX: 'auto',    // 👈 Cuộn ngang khi dài
-                        whiteSpace: 'pre-wrap', // 👈 Giữ format và xuống dòng khi cần
+                        overflowY: 'auto',
+                        overflowX: 'auto',
+                        whiteSpace: 'pre-wrap',
                         wordBreak: 'break-word'
                     },
                 }}

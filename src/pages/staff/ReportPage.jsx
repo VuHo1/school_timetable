@@ -398,14 +398,14 @@ function ReportPage() {
     if (option === 'Semester') {
       return currentSemesterIndex === 0;
     }
-    return false; // Allow negative numbers for Weekly/Monthly
+    return false;
   };
 
   const isNextDisabled = () => {
     if (option === 'Semester') {
       return currentSemesterIndex === semesters.length - 1;
     }
-    return false; // Allow unlimited forward navigation for Weekly/Monthly
+    return false;
   };
 
   const getStatusColor = (status) => {
@@ -461,12 +461,12 @@ function ReportPage() {
     );
   }
 
-  // Extract overview data from the first report (school overview)
+
   const schoolOverview = reports.find(report =>
     report.report_name === "Báo cáo tổng quan thời khóa biểu toàn trường"
   )?.report_data || {};
 
-  // Reorder reports to show school overview first
+
   const reorderedReports = [...reports].sort((a, b) => {
     if (a.report_name === "Báo cáo tổng quan thời khóa biểu toàn trường") return -1;
     if (b.report_name === "Báo cáo tổng quan thời khóa biểu toàn trường") return 1;

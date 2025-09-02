@@ -490,7 +490,6 @@ const EditableTableCell = styled.td.withConfig({
   }
 `;
 
-// SubjectModal component moved outside to prevent re-creation on every render
 const SubjectModal = React.memo(({
   isEdit = false,
   subjectCodeType,
@@ -809,13 +808,13 @@ function SubjectManagement() {
     fixed_slot: [],
     avoid_slot: []
   });
-  const [subjectCodeType, setSubjectCodeType] = useState('existing'); // 'existing' or 'new'
-  const [newSubjectCode, setNewSubjectCode] = useState(''); // Separate state for new subject code input
-  const [newSubjectName, setNewSubjectName] = useState(''); // Separate state for new subject name input
+  const [subjectCodeType, setSubjectCodeType] = useState('existing');
+  const [newSubjectCode, setNewSubjectCode] = useState('');
+  const [newSubjectName, setNewSubjectName] = useState('');
   const [gradeLevels, setGradeLevels] = useState([]);
   const [subjectCodes, setSubjectCodes] = useState([]);
 
-  // Fetch subjects from API
+
   const fetchSubjects = async () => {
     try {
       setLoading(true);
@@ -864,7 +863,7 @@ function SubjectManagement() {
       setModalLoading(true);
       const token = localStorage.getItem('authToken');
 
-      // Prepare data based on subject code type
+
       const submitData = { ...formData };
 
       if (subjectCodeType === 'new') {
@@ -876,13 +875,13 @@ function SubjectManagement() {
         submitData.is_new = false;
       }
 
-      // Validation
+
       if (!submitData.subject_code || submitData.grade_level.length === 0) {
         toast.error('Vui lòng điền đầy đủ thông tin');
         return;
       }
 
-      // Additional validation for new subject code
+
       if (subjectCodeType === 'new' && !submitData.subject_name) {
         toast.error('Vui lòng nhập tên môn học');
         return;
@@ -1118,16 +1117,16 @@ function SubjectManagement() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Keep focus on input when component re-renders
+
   useEffect(() => {
     if (subjectCodeType === 'new' && newSubjectCodeRef.current) {
       const currentFocus = document.activeElement;
       if (currentFocus === newSubjectCodeRef.current) {
-        // If the input was focused, keep it focused after re-render
+
         setTimeout(() => {
           if (newSubjectCodeRef.current) {
             newSubjectCodeRef.current.focus();
-            // Restore cursor position if possible
+
             const length = newSubjectCodeRef.current.value.length;
             newSubjectCodeRef.current.setSelectionRange(length, length);
           }
@@ -1143,7 +1142,7 @@ function SubjectManagement() {
   const handleSubjectCodeTypeChange = (value) => {
     setSubjectCodeType(value);
 
-    // Auto focus to the appropriate input when switching to "new"
+
     if (value === 'new') {
       setTimeout(() => {
         if (newSubjectCodeRef.current) {

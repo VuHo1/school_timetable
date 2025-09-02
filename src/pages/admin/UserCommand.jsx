@@ -520,7 +520,7 @@ const UserCommand = () => {
         });
 
         const totalFilteredPages = Math.ceil(filteredCommands.length / limit);
-        // Ensure currentPage is valid for the filtered results
+
         if (currentPage > totalFilteredPages && totalFilteredPages > 0) {
             setCurrentPage(1);
         }
