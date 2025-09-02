@@ -213,7 +213,7 @@ function Notification() {
           n.id === notification.id ? { ...n, is_read: true } : n
         ));
 
-        // Phát custom event để thông báo cho ModernHeader
+
         const event = new CustomEvent('notificationMarkedAsRead');
         window.dispatchEvent(event);
       } catch (error) {
@@ -228,7 +228,7 @@ function Notification() {
       await markAllNotificationsAsRead(user?.token);
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
 
-      // Phát custom event để thông báo cho ModernHeader
+
       const event = new CustomEvent('notificationMarkedAsRead');
       window.dispatchEvent(event);
     } catch (error) {

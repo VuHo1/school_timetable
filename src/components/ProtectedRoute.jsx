@@ -81,7 +81,7 @@ function ProtectedRoute({ children, requiredAbility }) {
     }
   }
 
-  // Kiểm tra xem user có ability này không
+  // Kiểm tra xem user có ability này không?
   const hasAccess = currentAbilities && currentAbilities.includes(requiredAbility);
 
   if (!hasAccess) {
@@ -90,7 +90,7 @@ function ProtectedRoute({ children, requiredAbility }) {
         <AccessDeniedIcon>🚫</AccessDeniedIcon>
         <AccessDeniedTitle>Không có quyền truy cập</AccessDeniedTitle>
         <AccessDeniedMessage>
-          Bạn không có quyền truy cập vào trang này. 
+          Bạn không có quyền truy cập vào trang này.
           Vui lòng liên hệ quản trị viên để được cấp quyền "{requiredAbility}".
         </AccessDeniedMessage>
         <BackButton onClick={() => window.history.back()}>

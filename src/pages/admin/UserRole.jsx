@@ -4,7 +4,7 @@ import { useToast } from '../../components/ToastProvider';
 import { fetchRoles, createRole, updateRole, deleteRole, fetchCodeListSYSSTS } from '../../api';
 import styled from 'styled-components';
 
-// Styled components inspired by UserAccount.jsx
+
 const StatusBadge = styled.span.withConfig({
   shouldForwardProp: (prop) => prop !== 'status',
 })`

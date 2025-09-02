@@ -4,7 +4,7 @@ import { useToast } from '../../components/ToastProvider';
 import { fetchCodeList, addCode, updateCode, deleteCode } from '../../api';
 import styled from 'styled-components';
 
-// Styled components inspired by UserAccount.jsx
+
 const Container = styled.div`
   padding: 20px;
   background-color: #f5f7fa;
@@ -406,7 +406,7 @@ export default function CodeList() {
   const actionMenuRef = useRef(null);
   const limit = 10;
 
-  // Handle click outside to close action menu
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
@@ -417,7 +417,7 @@ export default function CodeList() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch code list and populate code_name options
+
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.token) {
@@ -444,7 +444,6 @@ export default function CodeList() {
     fetchData();
   }, [user]);
 
-  // Apply filters and pagination
   const applyFilters = () => {
 
     let filteredCodes = [...allCodes];
@@ -492,13 +491,12 @@ export default function CodeList() {
     applyFilters();
   }, [searchKeyword, filterCodeName, filterStatus, sortField, sortOrder, currentPage, allCodes]);
 
-  // Handle action menu toggle
+
   const handleActionMenuToggle = (id) => {
 
     setOpenActionMenu(openActionMenu === id ? null : id);
   };
 
-  // Handle create code
   const handleCreateCode = async (e) => {
     e.preventDefault();
     if (!user?.token) {
@@ -530,7 +528,7 @@ export default function CodeList() {
     }
   };
 
-  // Handle update code
+
   const handleUpdateCode = async (e) => {
     e.preventDefault();
     if (!user?.token || !selectedCode) {
@@ -557,7 +555,7 @@ export default function CodeList() {
     }
   };
 
-  // Handle delete code
+
   const handleDeleteCode = async (id) => {
 
     if (!user?.token) {
@@ -587,7 +585,7 @@ export default function CodeList() {
     }
   };
 
-  // Handle view detail
+
   const handleViewDetail = (code) => {
 
     setSelectedCode(code);
@@ -595,7 +593,7 @@ export default function CodeList() {
     setOpenActionMenu(null);
   };
 
-  // Handle open edit modal
+
   const handleOpenEditModal = (code) => {
 
     setSelectedCode(code);

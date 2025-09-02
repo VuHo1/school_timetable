@@ -37,8 +37,6 @@ import { listenToForegroundMessage } from './firebase/init.jsx';
 
 function AppRoutes() {
   const { role, abilities, loading } = useAuth();
-
-  // Tạo default route dựa trên abilities
   const getDefaultRoute = () => {
 
 

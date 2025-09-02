@@ -291,7 +291,7 @@ const UserRight = () => {
   const [masterLoaded, setMasterLoaded] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 10; // 10 items per page
+  const limit = 10;
 
   const groupedCommands = React.useMemo(() => {
     const result = commands.reduce((acc, command) => {
@@ -456,7 +456,7 @@ const UserRight = () => {
     return result;
   }, [userRights, roleFilter]);
 
-  // Pagination logic
+
   const paginatedUserRights = React.useMemo(() => {
     const totalFilteredPages = Math.ceil(filteredUserRights.length / limit);
     setTotalPages(totalFilteredPages || 1);
