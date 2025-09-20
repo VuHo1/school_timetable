@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { fetchReport, fetchReportSemester } from '../../api';
+import { fetchReport, fetchReportSemester, exportReport } from '../../api';
 import {
   Users,
   BookOpen,
@@ -19,7 +19,8 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Download
 } from 'lucide-react';
 
 const Container = styled.div`
@@ -65,6 +66,30 @@ const Select = styled.select`
   &:focus {
     outline: none;
     border-color: #8e44ad;
+  }
+`;
+
+const ExportButton = styled.button`
+  padding: 10px 20px;
+  background-color: #10B981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #059669;
+  }
+
+  &:disabled {
+    background-color: #6EE7B7;
+    cursor: not-allowed;
   }
 `;
 
@@ -199,8 +224,8 @@ const StatusBadge = styled.span`
 
 const GridContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
   margin-top: 16px;
 `;
 
@@ -281,7 +306,9 @@ function ReportPage() {
   const [semesters, setSemesters] = useState([]);
   const [reportDescription, setReportDescription] = useState([]);
   const [currentSemesterIndex, setCurrentSemesterIndex] = useState(0);
+  const [exporting, setExporting] = useState(false);
   const token = user?.token;
+
   useEffect(() => {
     if (option === 'Semester') {
       fetchSemesterData();
@@ -355,6 +382,47 @@ function ReportPage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      const currentValue = option === 'Semester' && semesters.length > 0
+        ? semesters[currentSemesterIndex].id
+        : current;
+      const blob = await exportReport(token, currentValue, option);
+      const sanitizeForFilename = (str) => {
+        if (!str || str === 'Không có dữ liệu' || str === 'Không có học kỳ') {
+          return 'Unknown';
+        }
+        return str
+          .replace(/[^a-zA-Z0-9-]/g, '')
+          .trim();
+      };
+      let fileName;
+      const periodDescription = getPeriodDescription();
+      if (option === 'Semester' && semesters.length > 0 && semesters[currentSemesterIndex]?.semester_name) {
+        const semesterName = sanitizeForFilename(semesters[currentSemesterIndex].semester_name);
+        fileName = `Report_${semesterName}.xlsx`;
+      } else {
+        const periodName = sanitizeForFilename(periodDescription);
+        fileName = `Report_${option}_${periodName}.xlsx`;
+      }
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Xuất báo cáo thành công!');
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error('Không thể xuất báo cáo: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
   const toggleCard = (cardId) => {
     setExpandedCards(prev => ({
       ...prev,
@@ -461,11 +529,9 @@ function ReportPage() {
     );
   }
 
-
   const schoolOverview = reports.find(report =>
     report.report_name === "Báo cáo tổng quan thời khóa biểu toàn trường"
   )?.report_data || {};
-
 
   const reorderedReports = [...reports].sort((a, b) => {
     if (a.report_name === "Báo cáo tổng quan thời khóa biểu toàn trường") return -1;
@@ -477,6 +543,10 @@ function ReportPage() {
     <Container>
       <Header>
         <Title>📊 Báo cáo thống kê</Title>
+        <ExportButton onClick={handleExport} disabled={exporting || loading}>
+          <Download size={18} />
+          {exporting ? 'Đang xuất...' : 'Xuất báo cáo'}
+        </ExportButton>
       </Header>
 
       <FilterSection>
@@ -503,7 +573,6 @@ function ReportPage() {
             </NavButton>
           </NavigationContainer>
         </div>
-
       </FilterSection>
 
       {/* Overview Cards */}
@@ -598,7 +667,6 @@ function ReportPage() {
 
           {expandedCards[index] && (
             <ReportCardContent>
-
               {report.report_name === "Báo cáo tổng quan thời khóa biểu toàn trường" && (
                 <div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>

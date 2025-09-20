@@ -2153,3 +2153,19 @@ export const updateUserSchool = async (token, userName, newSchoolId) => {
     const data = await response.json();
     return data;
 };
+
+// Export report
+export const exportReport = async (token, current, option) => {
+    const response = await fetch(`${API_BASE_URL}/api/report/export?current=${current}&option=${option}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to export report');
+    }
+    return response.blob();
+};
