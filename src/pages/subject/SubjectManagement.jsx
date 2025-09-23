@@ -833,7 +833,15 @@ function SubjectManagement() {
         if (statusFilter) params.filter.status = statusFilter;
       }
       const data = await apiFetchSubjects(token, params);
+      console.log('fetchSubjects - API response:', data); // Log toàn bộ dữ liệu API
       const subjectList = data.data_set || data.data || [];
+      console.log('fetchSubjects - Subject list:', subjectList); // Log danh sách môn học
+      subjectList.forEach(subject => {
+        console.log(`fetchSubjects - Subject ${subject.subject_code}:`, {
+          fixed_slot: subject.fixed_slot || [],
+          avoid_slot: subject.avoid_slot || []
+        }); // Log fixed_slot và avoid_slot của mỗi môn
+      });
       setSubjects(subjectList);
       setTotalPages(data.pagination.last);
     } catch (error) {
@@ -848,10 +856,13 @@ function SubjectManagement() {
     try {
       const token = localStorage.getItem('authToken');
       const grades = await fetchGradeLevels(token);
+      console.log('Fetched grade levels:', grades); // Log danh sách khối
       setGradeLevels(grades || []);
       const subjectCodeList = await fetchSubjectCodeList(token);
+      console.log('Fetched subject codes:', subjectCodeList); // Log danh sách mã môn
       setSubjectCodes(subjectCodeList || []);
       const timeSlotsData = await fetchTimeSlots(token);
+      console.log('Fetched time slots:', timeSlotsData); // Log danh sách tiết học
       setTimeSlots(timeSlotsData || []);
     } catch (error) {
       toast.error(error.message);
@@ -958,7 +969,11 @@ function SubjectManagement() {
 
 
   const handleViewDetails = (subject) => {
+    console.log('handleViewDetails - Selected subject:', subject); // Log subject được chọn
+    console.log('handleViewDetails - Fixed slots:', subject.fixed_slot || []); // Log fixed_slot
+    console.log('handleViewDetails - Avoid slots:', subject.avoid_slot || []);
     setSelectedSubject(subject);
+    console.log('handleViewDetails - Set selectedSubject:', subject); // Log sau khi set
     setShowDetailModal(true);
     setOpenActionMenu(null);
   };
@@ -1220,6 +1235,7 @@ function SubjectManagement() {
 
 
   const DetailModal = ({ subject }) => (
+
     <ModalOverlay>
       <ModalContent>
         <ModalHeader>

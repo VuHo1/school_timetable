@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import styled from 'styled-components';
 import { useToast } from '../../components/ToastProvider';
 import ReactSelect from 'react-select';
+import ExportBox from '../staff/ExportBox';
 import '../../styles/date.css'
 import {
     FaPlus, FaTrash, FaEdit, FaSpinner, FaCalendarAlt, FaArrowLeft,
@@ -149,7 +150,9 @@ const Input = styled.input`
     color: #9ca3af;
   }
 `;
-
+const ExportBoxContainer = styled.div`
+    position: relative;
+`;
 const DialogError = styled.p`
   color: #dc2626;
   font-size: 13px;
@@ -2574,6 +2577,7 @@ export default function ViewSchedule() {
     const [moveScheduleNewDay, setMoveScheduleNewDay] = useState('Monday');
     const [moveScheduleNewTimeSlot, setMoveScheduleNewTimeSlot] = useState('');
     const [isMovingSchedule, setIsMovingSchedule] = useState(false);
+    const [isExportBoxOpen, setIsExportBoxOpen] = useState(false);
 
     // State variables for Applied view "Dời lịch" feature
     const [isMoveScheduleDetailDialogOpen, setIsMoveScheduleDetailDialogOpen] = useState(false);
@@ -3298,7 +3302,20 @@ export default function ViewSchedule() {
                 <Button onClick={() => handleViewMode('Config')}>
                     Cấu hình thời khóa biểu
                 </Button>
+                <Button onClick={() => setIsExportBoxOpen(true)}>
+                    Xuất Thời Khóa Biểu
+                </Button>
             </FormGroup>
+            <ExportBoxContainer>
+                <ExportBox
+                    isOpen={isExportBoxOpen}
+                    onClose={() => setIsExportBoxOpen(false)}
+                    classes={classes}
+                    teachers={teachers}
+                    token={token}
+                />
+            </ExportBoxContainer>
+
             {viewMode === 'Base' && (
                 <>
                     <FormGroup>

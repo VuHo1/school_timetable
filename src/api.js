@@ -2153,3 +2153,83 @@ export const updateUserSchool = async (token, userName, newSchoolId) => {
     const data = await response.json();
     return data;
 };
+
+// Export report
+export const exportReport = async (token, current, option) => {
+    const response = await fetch(`${API_BASE_URL}/api/report/export?current=${current}&option=${option}`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to export report');
+    }
+    return response.blob();
+};
+
+// Export class timetable
+export const exportClassTimetable = async (token, current, option) => {
+    const response = await fetch(`${API_BASE_URL}/api/report/export/timetable/class?current=${current}&option=${option}`, {
+        method: 'GET',
+        headers: {
+            'Accept': '*/*',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to export class timetable');
+    }
+    return response.blob(); // Return blob for file download
+};
+
+// Export teacher timetable
+export const exportTeacherTimetable = async (token, current, option) => {
+    const response = await fetch(`${API_BASE_URL}/api/report/export/timetable/teacher?current=${current}&option=${option}`, {
+        method: 'GET',
+        headers: {
+            'Accept': '*/*',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to export teacher timetable');
+    }
+    return response.blob(); // Return blob for file download
+};
+
+// Export class timetable as PDF
+export const exportClassTimetablePDF = async (token, current, option) => {
+    const response = await fetch(`${API_BASE_URL}/api/report/export/timetable/class/pdf?current=${current}&option=${option}`, {
+        method: 'GET',
+        headers: {
+            'Accept': '*/*',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to export class timetable as PDF');
+    }
+    return response.blob(); // Return blob for PDF download
+};
+
+// Export teacher timetable as PDF
+export const exportTeacherTimetablePDF = async (token, current, option) => {
+    const response = await fetch(`${API_BASE_URL}/api/report/export/timetable/teacher/pdf?current=${current}&option=${option}`, {
+        method: 'GET',
+        headers: {
+            'Accept': '*/*',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to export teacher timetable as PDF');
+    }
+    return response.blob(); // Return blob for PDF download
+};
