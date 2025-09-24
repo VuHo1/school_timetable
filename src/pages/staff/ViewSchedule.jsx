@@ -50,7 +50,9 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { result } from 'lodash';
+import {
+    Download
+} from 'lucide-react';
 
 const Spinner = styled.div`
   border: 4px solid #e2e8f0;
@@ -176,6 +178,7 @@ const Heading = styled.h1`
   color: #111827;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
 `;
 
@@ -293,6 +296,29 @@ const ButtonAdd = styled(Button)`
   color: white;
   &:hover{
      background: #0ea170;
+  }
+`;
+const ExportButton = styled.button`
+  padding: 10px 20px;
+  background-color: #10B981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #059669;
+  }
+
+  &:disabled {
+    background-color: #6EE7B7;
+    cursor: not-allowed;
   }
 `;
 
@@ -3286,7 +3312,12 @@ export default function ViewSchedule() {
         <Container>
             <Heading>
                 📅 Quản lí thời khóa biểu
+                <ExportButton onClick={() => setIsExportBoxOpen(true)}>
+                    <Download size={18} />
+                    Xuất Thời Khóa Biểu
+                </ExportButton>
             </Heading>
+
             {error && <ErrorMessage> {error}</ErrorMessage>}
             {isLoading && <LoadingMessage><FaSpinner className="animate-spin" /> Đang tải...</LoadingMessage>}
             <FormGroup>
@@ -3302,9 +3333,8 @@ export default function ViewSchedule() {
                 <Button onClick={() => handleViewMode('Config')}>
                     Cấu hình thời khóa biểu
                 </Button>
-                <Button onClick={() => setIsExportBoxOpen(true)}>
-                    Xuất Thời Khóa Biểu
-                </Button>
+
+
             </FormGroup>
             <ExportBoxContainer>
                 <ExportBox

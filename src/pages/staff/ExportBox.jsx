@@ -258,7 +258,7 @@ const ExportBox = ({ isOpen, onClose, token }) => {
             <ModalContainer ref={modalRef}>
                 <Title>Xuất Thời Khóa Biểu</Title>
                 <FieldContainer>
-                    <Label>Kiểu</Label>
+
                     <ReactSelect
                         value={type ? { value: type, label: type === 'Class' ? 'Lớp' : 'Giáo Viên' } : null}
                         onChange={handleTypeChange}
