@@ -727,32 +727,32 @@ const SubjectModal = React.memo(({
               <SubjectSlotTable
                 config={{
                   monday: [
-                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                   ],
                   tuesday: [
-                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                   ],
                   wednesday: [
-                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                   ],
                   thursday: [
-                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                   ],
                   friday: [
-                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                   ],
                   saturday: [
-                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                   ],
                   sunday: [
-                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                    ...slotModalData.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                    ...slotModalData.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                   ]
                 }}
                 timeSlots={timeSlots}
@@ -1080,22 +1080,22 @@ function SubjectManagement() {
     setSlotModalData(prev => {
       const newData = { ...prev };
 
-      const existsInFixed = newData.fixed_slot.some(s => s.time_slot_id === slotId && s.day_of_week === dayOfWeek);
-      const existsInAvoid = newData.avoid_slot.some(s => s.time_slot_id === slotId && s.day_of_week === dayOfWeek);
+      const existsInFixed = newData.fixed_slot.some(s => s.time_slot_code === slotId && s.day_of_week === dayOfWeek);
+      const existsInAvoid = newData.avoid_slot.some(s => s.time_slot_code === slotId && s.day_of_week === dayOfWeek);
 
       if (slotSelectionMode === 'fixed') {
         if (existsInFixed) {
-          newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+          newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_code === slotId && s.day_of_week === dayOfWeek));
         } else {
-          newData.fixed_slot = [...newData.fixed_slot, { time_slot_id: slotId, day_of_week: dayOfWeek }];
-          newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+          newData.fixed_slot = [...newData.fixed_slot, { time_slot_code: slotId, day_of_week: dayOfWeek }];
+          newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_code === slotId && s.day_of_week === dayOfWeek));
         }
       } else {
         if (existsInAvoid) {
-          newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+          newData.avoid_slot = newData.avoid_slot.filter(s => !(s.time_slot_code === slotId && s.day_of_week === dayOfWeek));
         } else {
-          newData.avoid_slot = [...newData.avoid_slot, { time_slot_id: slotId, day_of_week: dayOfWeek }];
-          newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === dayOfWeek));
+          newData.avoid_slot = [...newData.avoid_slot, { time_slot_code: slotId, day_of_week: dayOfWeek }];
+          newData.fixed_slot = newData.fixed_slot.filter(s => !(s.time_slot_code === slotId && s.day_of_week === dayOfWeek));
         }
       }
 
@@ -1297,32 +1297,32 @@ function SubjectManagement() {
                 <SubjectSlotTable
                   config={{
                     monday: [
-                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Monday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                     ],
                     tuesday: [
-                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Tuesday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                     ],
                     wednesday: [
-                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Wednesday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                     ],
                     thursday: [
-                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Thursday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                     ],
                     friday: [
-                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Friday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                     ],
                     saturday: [
-                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Saturday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                     ],
                     sunday: [
-                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'fixed' })),
-                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_id, type: 'avoid' }))
+                      ...subject.fixed_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_code, type: 'fixed' })),
+                      ...subject.avoid_slot.filter(s => s.day_of_week === 'Sunday').map(s => ({ id: s.time_slot_code, type: 'avoid' }))
                     ]
                   }}
                   timeSlots={timeSlots}
