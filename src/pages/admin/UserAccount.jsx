@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ToastProvider';
+import UserImport from '../../components/UserImport';
 import {
   fetchUserList,
   createUser,
@@ -610,7 +611,19 @@ export default function UserAccount() {
   //     label: role || 'N/A',
   //   })),
   // ];
-
+  const handleImportSuccess = async () => {
+    setLoading(true);
+    try {
+      const updatedData = await fetchUserList(user.token);
+      setAllUsers(Array.isArray(updatedData) ? updatedData : updatedData.data_set || []);
+      applyFilters();
+    } catch (error) {
+      console.error('Error refreshing user list:', error);
+      toast.showToast('Không thể làm mới danh sách người dùng', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.token) {
@@ -955,7 +968,7 @@ export default function UserAccount() {
           + Tạo tài khoản
         </AddButton>
       </Header>
-
+      <UserImport token={user?.token} onImportSuccess={handleImportSuccess} />
 
       <FilterSection>
         <SearchInput

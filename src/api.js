@@ -2231,5 +2231,45 @@ export const exportTeacherTimetablePDF = async (token, current, option) => {
         const errorData = await response.text();
         throw new Error(errorData || 'Failed to export teacher timetable as PDF');
     }
-    return response.blob(); // Return blob for PDF download
+    return response.blob();
+};
+
+
+export const importUsers = async (token, file, dryRun = false) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/import/users?dryRun=${dryRun}`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to import users');
+    }
+
+    const data = await response.json();
+    return data;
+};
+
+export const downloadUserImportTemplate = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/import/template-users`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to download user import template');
+    }
+
+    return response.blob();
 };
