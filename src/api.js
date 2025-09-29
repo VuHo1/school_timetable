@@ -2233,3 +2233,42 @@ export const exportTeacherTimetablePDF = async (token, current, option) => {
     }
     return response.blob(); // Return blob for PDF download
 };
+
+// Import users from Excel file
+export const importUsers = async (token, file, dryRun = false) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch(`${API_BASE_URL}/api/import/users?dryRun=${dryRun}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Failed to import users');
+    }
+    
+    const data = await response.json();
+    return data;
+};
+
+// Download template Excel file for users import
+export const downloadTemplateUsers = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/import/template-users`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+    
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to download template');
+    }
+    
+    return response.blob(); // Return blob for file download
+};
