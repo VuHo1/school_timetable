@@ -12,7 +12,9 @@ import {
   fetchRolesFilter,
   assignUserRole,
   fetchSchool,
-  updateUserSchool
+  updateUserSchool,
+  importUsers,
+  downloadTemplateUsers
 } from '../../api';
 import styled from 'styled-components';
 import DatePicker from 'react-datepicker';
@@ -28,6 +30,56 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
+`;
+
+const HeaderActions = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: center;
+`;
+
+const ExportButton = styled.button`
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const ImportButton = styled.button`
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const Title = styled.h1`
@@ -480,6 +532,71 @@ const DatePickerWrapper = styled.div`
   }
 `;
 
+const FileInput = styled.input`
+  box-sizing: border-box;
+  width: 510px;
+  margin-left:10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  &::file-selector-button {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-right: 10px;
+    cursor: pointer;
+    
+    &:hover {
+      background: #e9ecef;
+    }
+  }
+`;
+
+const PreviewSection = styled.div`
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  
+  h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+  }
+  
+  h5 {
+    margin: 15px 0 10px 0;
+    color: #e74c3c;
+    font-size: 14px;
+  }
+  
+  p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  ul {
+    margin: 10px 0;
+    padding-left: 20px;
+    
+    li {
+      font-size: 13px;
+      color: #e74c3c;
+      margin: 5px 0;
+    }
+  }
+`;
 
 const ModalActions = styled.div`
   display: flex;
@@ -574,6 +691,12 @@ export default function UserAccount() {
   const [selectedUsername, setSelectedUsername] = useState('');
   const [isAssignSchoolModalOpen, setIsAssignSchoolModalOpen] = useState(false);
   const [selectedSchoolId, setSelectedSchoolId] = useState('');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [importPreviewData, setImportPreviewData] = useState(null);
+  const [isDryRun, setIsDryRun] = useState(true);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef(null);
   const limit = 10;
 
 
@@ -958,15 +1081,118 @@ export default function UserAccount() {
     setOpenActionMenu(openActionMenu === userId ? null : userId);
   };
 
+  // Handle export template
+  const handleExportTemplate = async () => {
+    if (!user?.token) return;
+    try {
+      const blob = await downloadTemplateUsers(user.token);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = 'template_users.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.showToast('Tải mẫu Excel thành công!', 'success');
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      toast.showToast(error.message || 'Không thể tải mẫu Excel', 'error');
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        toast.showToast('Vui lòng chọn file Excel (.xlsx hoặc .xls)', 'error');
+        return;
+      }
+      setSelectedFile(file);
+      setImportPreviewData(null);
+    }
+  };
+
+  // Handle import preview (dry run)
+  const handleImportPreview = async () => {
+    if (!selectedFile || !user?.token) return;
+    setIsImporting(true);
+    try {
+      const result = await importUsers(user.token, selectedFile, true);
+      setImportPreviewData(result);
+      toast.showToast('Xem trước dữ liệu thành công!', 'success');
+    } catch (error) {
+      console.error('Error previewing import:', error);
+      toast.showToast(error.message || 'Không thể xem trước dữ liệu', 'error');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Handle actual import
+  const handleImportConfirm = async () => {
+    if (!selectedFile || !user?.token) return;
+    
+    // Nếu chưa có preview data, hỏi xác nhận trước khi upload trực tiếp
+    if (!importPreviewData) {
+      const confirmUpload = window.confirm(
+        `Bạn có chắc chắn muốn upload file "${selectedFile.name}" trực tiếp không?\n\n` +
+        'Khuyến nghị: Nên "Xem trước dữ liệu" để kiểm tra lỗi trước khi upload.'
+      );
+      if (!confirmUpload) return;
+    }
+    
+    setIsImporting(true);
+    try {
+      const result = await importUsers(user.token, selectedFile, false);
+      toast.showToast(result.description || 'Import dữ liệu thành công!', 'success');
+      setIsImportModalOpen(false);
+      setSelectedFile(null);
+      setImportPreviewData(null);
+      // Refresh user list
+      const updatedData = await fetchUserList(user.token);
+      setAllUsers(Array.isArray(updatedData) ? updatedData : updatedData.data_set || []);
+    } catch (error) {
+      console.error('Error importing users:', error);
+      toast.showToast(error.message || 'Không thể import dữ liệu', 'error');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Handle close import modal
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false);
+    setSelectedFile(null);
+    setImportPreviewData(null);
+    setIsDryRun(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <Container>
 
 
       <Header>
         <Title>👨‍💼 Quản lí tài khoản</Title>
-        <AddButton onClick={() => setIsCreateModalOpen(true)}>
-          + Tạo tài khoản
-        </AddButton>
+        <HeaderActions>
+          {String(roleId) === '2' && ( // Only School Admin can import/export
+            <>
+              <ExportButton onClick={handleExportTemplate} disabled={loading}>
+                📥 Tải mẫu Excel
+              </ExportButton>
+              <ImportButton onClick={() => setIsImportModalOpen(true)} disabled={loading}>
+                📤 Import Excel
+              </ImportButton>
+            </>
+          )}
+          <AddButton onClick={() => setIsCreateModalOpen(true)}>
+            + Tạo tài khoản
+          </AddButton>
+        </HeaderActions>
       </Header>
       <UserImport token={user?.token} onImportSuccess={handleImportSuccess} />
 
@@ -1536,6 +1762,125 @@ export default function UserAccount() {
               <CloseButton onClick={() => setIsDetailModalOpen(false)}>
                 Đóng
               </CloseButton>
+            </ModalActions>
+          </ModalContent>
+        </Modal>
+      )}
+      {isImportModalOpen && (
+        <Modal>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Import dữ liệu tài khoản</ModalTitle>
+            </ModalHeader>
+            
+            <FormGroup>
+              <Label>Chọn file Excel (.xlsx hoặc .xls) *</Label>
+              <FileInput
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                ref={fileInputRef}
+                required
+              />
+            </FormGroup>
+
+            {selectedFile && (
+              <FormGroup>
+                <Label>File đã chọn:</Label>
+                <p style={{ marginLeft: '10px', color: '#666', fontSize: '14px' }}>
+                  📄 {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                </p>
+              </FormGroup>
+            )}
+
+            {selectedFile && !importPreviewData && (
+              <>
+                <div style={{ 
+                  background: '#f0f8ff', 
+                  padding: '15px', 
+                  borderRadius: '8px', 
+                  border: '1px solid #e1f5fe',
+                  marginBottom: '20px' 
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#1976d2', fontSize: '14px' }}>
+                    💡 Chọn cách thức upload:
+                  </h4>
+                  <p style={{ margin: '5px 0', fontSize: '13px', color: '#666' }}>
+                    • <strong>Xem trước dữ liệu:</strong> Kiểm tra lỗi trước khi upload (khuyến nghị)
+                  </p>
+                  <p style={{ margin: '5px 0', fontSize: '13px', color: '#666' }}>
+                    • <strong>Upload trực tiếp:</strong> Upload ngay mà không kiểm tra trước
+                  </p>
+                </div>
+                <ModalActions>
+                  <ActionButton
+                    type="button"
+                    onClick={handleImportPreview}
+                    disabled={isImporting}
+                    style={{ background: '#3b82f6' }}
+                  >
+                    {isImporting ? '🔄 Đang xem trước...' : '👁️ Xem trước dữ liệu'}
+                  </ActionButton>
+                  <ActionButton
+                    type="button"
+                    onClick={handleImportConfirm}
+                    disabled={isImporting}
+                    variant="primary"
+                    style={{ background: '#10B981' }}
+                  >
+                    {isImporting ? '🔄 Đang upload...' : '🚀 Upload trực tiếp'}
+                  </ActionButton>
+                </ModalActions>
+              </>
+            )}
+
+            {importPreviewData && (
+              <PreviewSection>
+                <h4>📊 Kết quả xem trước:</h4>
+                <p><strong>Tổng số dòng:</strong> {importPreviewData.total_rows || 0}</p>
+                <p><strong>Số dòng hợp lệ:</strong> {importPreviewData.success_count || 0}</p>
+                <p><strong>Số dòng lỗi:</strong> {importPreviewData.failed_count || 0}</p>
+                
+                {importPreviewData.failed_rows && importPreviewData.failed_rows.length > 0 && (
+                  <>
+                    <h5>⚠️ Danh sách lỗi:</h5>
+                    <ul>
+                      {importPreviewData.failed_rows.map((row, index) => (
+                        <li key={index}>
+                          <strong>Dòng {row.row_number}:</strong> {row.error_message}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                
+                {importPreviewData.success_count > 0 && (
+                  <p style={{ color: '#10B981', fontWeight: 'bold', marginTop: '15px' }}>
+                    ✅ Sẵn sàng import {importPreviewData.success_count} tài khoản
+                  </p>
+                )}
+              </PreviewSection>
+            )}
+
+            <ModalActions>
+              <ActionButton
+                type="button"
+                onClick={handleCloseImportModal}
+                disabled={isImporting}
+              >
+                Hủy
+              </ActionButton>
+              
+              {importPreviewData && importPreviewData.success_count > 0 && (
+                <ActionButton
+                  type="button"
+                  onClick={handleImportConfirm}
+                  variant="primary"
+                  disabled={isImporting}
+                >
+                  {isImporting ? '🔄 Đang import...' : `✅ Xác nhận import ${importPreviewData.success_count} tài khoản`}
+                </ActionButton>
+              )}
             </ModalActions>
           </ModalContent>
         </Modal>
