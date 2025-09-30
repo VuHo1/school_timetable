@@ -222,11 +222,6 @@ const ModalContent = styled.div`
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
 `;
 
-const SmallModalContent = styled(ModalContent)`
-  max-width: 420px;
-  padding: 20px;
-`;
-
 const ModalHeader = styled.h3`
   margin: 0 0 20px 0;
   color: #dc3545;
@@ -521,55 +516,6 @@ const ExampleBox = styled.div`
   color: #495057;
 `;
 
-const HeaderActions = styled.div`
-  display: flex;
-  gap: 10px;
-`;
-
-const ExportButton = styled.button`
-  background: #3b82f6;
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-`;
-
-const ImportButton = styled.button`
-  background: #f59e0b;
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-`;
-
-const Select = styled.select`
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
-  background: white;
-`;
-
-const CompactButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'variant'
-})`
-  background: ${props => props.variant === 'danger' ? '#e74c3c' : props.variant === 'warning' ? '#f59e0b' : '#3b82f6'};
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-`;
-
 function ClassManagement() {
   const { user } = useAuth();
   const { hasAbility } = useAbilities();
@@ -597,75 +543,6 @@ function ClassManagement() {
     grade_level: []
   });
   const actionMenuRef = useRef(null);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importType, setImportType] = useState('classes');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewData, setPreviewData] = useState(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const [previewSummary, setPreviewSummary] = useState(null);
-
-  const buildPreviewSummary = (res) => {
-    try {
-      const root = res || {};
-      const data = root.data || root.result || root.report || {};
-      const pagination = root.pagination || data.pagination || {};
-      const totals = {
-        total: root.total_rows ?? data.total_rows ?? pagination.total ?? 0,
-        success: root.success_count ?? data.success_count ?? data.success_rows ?? 0,
-        failed: root.failed_count ?? data.failed_count ?? data.failed_rows_count ?? 0,
-      };
-      let failedRows = root.failed_rows || data.failed_rows || [];
-      const extra = {
-        created_classes: data.created_classes ?? 0,
-        updated_classes: data.updated_classes ?? 0,
-        created_teacher_subjects: data.created_teacher_subjects ?? 0,
-        updated_teacher_subjects: data.updated_teacher_subjects ?? 0,
-        created_class_subjects: data.created_class_subjects ?? 0,
-        updated_class_subjects: data.updated_class_subjects ?? 0,
-        deleted_class_subjects: data.deleted_class_subjects ?? 0,
-      };
-
-      // Map errors array nếu backend trả về
-      const errorsArr = root.errors || data.errors || [];
-      if (Array.isArray(errorsArr) && errorsArr.length > 0) {
-        const mapped = errorsArr.map((e) => {
-          const row = e.row_num ?? e.row ?? data.process_row ?? data.processed_row ?? data.processed_rows ?? '-';
-          const parts = [
-            e.error_message,
-            e.sheet_name ? `Sheet: ${e.sheet_name}` : '',
-            e.column_name ? `Cột: ${e.column_name}` : '',
-            e.cell_value ? `Giá trị: ${e.cell_value}` : ''
-          ].filter(Boolean).join(' | ');
-          return { row_number: row, error_message: parts || (root.description || 'Lỗi không xác định') };
-        });
-        failedRows = failedRows.concat(mapped);
-        if (!totals.failed) totals.failed = mapped.length;
-        if (!totals.total) totals.total = data.total_rows ?? mapped.length;
-        if (!totals.success && totals.total) totals.success = Math.max(totals.total - totals.failed, 0);
-      }
-
-      // Thu thập lỗi đơn lẻ nếu backend chỉ trả trong error/error_detail
-      const err = root.error || data.error || root.error_detail || data.error_detail || {};
-      const hasSingleError = Object.keys(err).length > 0;
-      if (hasSingleError) {
-        const composed = [
-          err.message,
-          err.sheet_name ? `Sheet: ${err.sheet_name}` : '',
-          (err.row_num || err.row) ? `Dòng: ${err.row_num ?? err.row}` : '',
-          (err.col_name || err.column) ? `Cột: ${err.col_name ?? err.column}` : '',
-          err.cell_value ? `Giá trị: ${err.cell_value}` : '',
-        ].filter(Boolean).join(' | ');
-        failedRows = failedRows.concat([{ row_number: err.row_num ?? err.row ?? '-', error_message: composed || (root.description || 'Lỗi không xác định') }]);
-        totals.failed = failedRows.length;
-        totals.total = Math.max(totals.total || 0, failedRows.length);
-        totals.success = Math.max(totals.total - totals.failed, 0);
-      }
-      return { totals, failedRows, extra };
-    } catch (e) {
-      return { totals: { total: 0, success: 0, failed: 0 }, failedRows: [], extra: {} };
-    }
-  };
-
   const loadClasses = async (params = {}) => {
     setLoading(true);
     setError('');
@@ -897,103 +774,14 @@ function ClassManagement() {
     setCreateSuccess('');
   };
 
-  const handleDownloadTemplate = async () => {
-    if (!user?.token) return;
-    try {
-      let blob;
-      if (importType === 'classes') blob = await downloadTemplateClasses(user.token);
-      else if (importType === 'teacher-subjects') blob = await downloadTemplateTeacherSubjects(user.token);
-      else blob = await downloadTemplateClassSubjects(user.token);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `template-${importType}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-      alert('Tải template thất bại');
-    }
-  };
-
-  const handlePreviewImport = async () => {
-    if (!user?.token || !selectedFile) return;
-    setIsImporting(true);
-    try {
-      let res;
-      if (importType === 'classes') res = await importClasses(user.token, selectedFile, true);
-      else if (importType === 'teacher-subjects') res = await importTeacherSubjects(user.token, selectedFile, true);
-      else res = await importClassSubjects(user.token, selectedFile, true);
-      setPreviewData(res);
-      setPreviewSummary(buildPreviewSummary(res));
-      // Nếu API trả về lỗi 400 nhưng có message mô tả, thêm vào failedRows để hiển thị
-      if (!res.http_ok && res.description && (!res.failed_rows || res.failed_rows.length === 0)) {
-        setPreviewSummary(prev => prev ? ({
-          ...prev,
-          totals: { total: prev.totals.total || 1, success: 0, failed: 1 },
-          failedRows: [{ row_number: '-', error_message: res.description }]
-        }) : ({ totals: { total: 1, success: 0, failed: 1 }, failedRows: [{ row_number: '-', error_message: res.description }], extra: {} }));
-      }
-    } catch (e) {
-      console.error(e);
-      alert(e.message || 'Xem trước thất bại');
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const handleConfirmImport = async () => {
-    if (!selectedFile || !user?.token) return;
-    setIsImporting(true);
-    try {
-      let res;
-      if (importType === 'classes') res = await importClasses(user.token, selectedFile, false);
-      else if (importType === 'teacher-subjects') res = await importTeacherSubjects(user.token, selectedFile, false);
-      else res = await importClassSubjects(user.token, selectedFile, false);
-      if (!res.http_ok || res.success === false) {
-        // Hiển thị lỗi trong modal thay vì alert
-        const summary = buildPreviewSummary(res);
-        // Nếu vẫn chưa có failedRows, thêm description làm lỗi
-        if ((!summary.failedRows || summary.failedRows.length === 0) && res.description) {
-          summary.failedRows = [{ row_number: '-', error_message: res.description }];
-          summary.totals = { total: 1, success: 0, failed: 1 };
-        }
-        setPreviewSummary(summary);
-        setPreviewData(res);
-      } else {
-        window.alert(res?.description || 'Import thành công');
-        setIsImportModalOpen(false);
-        setSelectedFile(null);
-        setPreviewData(null);
-        setPreviewSummary(null);
-        // Làm mới danh sách lớp
-        await loadClasses();
-      }
-    } catch (error) {
-      console.error('Error importing users:', error);
-      // Không alert chung chung; đưa lỗi vào preview
-      setPreviewSummary({ totals: { total: 1, success: 0, failed: 1 }, failedRows: [{ row_number: '-', error_message: error.message || 'Không thể import dữ liệu' }], extra: {} });
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
   return (
     <Container>
       <Header>
         <Title>🏫 Quản lí lớp học</Title>
         {hasAbility('Quản lí lớp học') && (
-          <HeaderActions>
-            <Select value={importType} onChange={(e) => setImportType(e.target.value)}>
-              <option value="classes">Lớp</option>
-              <option value="teacher-subjects">Phân công môn dạy</option>
-              <option value="class-subjects">Môn học lớp</option>
-            </Select>
-            <ExportButton onClick={handleDownloadTemplate}>📥 Tải mẫu</ExportButton>
-            <ImportButton onClick={() => setIsImportModalOpen(true)}>📤 Import</ImportButton>
-            <CreateButton onClick={handleCreateClass}>+ Tạo lớp học</CreateButton>
-          </HeaderActions>
+          <CreateButton onClick={handleCreateClass}>
+            + Tạo lớp học
+          </CreateButton>
         )}
       </Header>
       <ClassAndSubjectImport
@@ -1266,69 +1054,6 @@ function ClassManagement() {
               </Form>
             </FormContainer>
           </CreateModalContent>
-        </Modal>
-      )}
-
-      {isImportModalOpen && (
-        <Modal>
-          <SmallModalContent>
-            <h3 style={{ marginTop: 0, marginBottom: 12 }}>
-              Import {importType === 'classes' ? 'Lớp' : importType === 'teacher-subjects' ? 'Phân công môn dạy' : 'Môn học lớp'}
-            </h3>
-
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontSize: 14, color: '#2c3e50', minWidth: 90 }}>File Excel</span>
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => { setSelectedFile(e.target.files?.[0] || null); setPreviewData(null); }}
-                style={{ flex: 1, border: '1px solid #ddd', padding: 8, borderRadius: 8, background: '#fff' }}
-              />
-            </div>
-
-            {previewSummary && (
-              <div style={{
-                background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8,
-                padding: 12, marginBottom: 12
-              }}>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ background: '#eef2ff', color: '#3730a3', padding: '4px 8px', borderRadius: 12, fontSize: 12 }}>Tổng: {previewSummary.totals.total}</span>
-                  <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: 12, fontSize: 12 }}>Hợp lệ: {previewSummary.totals.success}</span>
-                  <span style={{ background: '#fee2e2', color: '#991b1b', padding: '4px 8px', borderRadius: 12, fontSize: 12 }}>Lỗi: {previewSummary.totals.failed}</span>
-                </div>
-                {Array.isArray(previewSummary.failedRows) && previewSummary.failedRows.length > 0 && (
-                  <div style={{ marginTop: 10, maxHeight: 180, overflow: 'auto' }}>
-                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                      {previewSummary.failedRows.map((r, i) => (
-                        <li key={i} style={{ fontSize: 12, color: '#991b1b' }}>Dòng {r.row_number}: {r.error_message}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {/* Hiển thị thêm chỉ số chi tiết nếu có */}
-                {previewSummary.extra && Object.values(previewSummary.extra).some(v => Number(v) > 0) && (
-                  <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 12, color: '#334155' }}>
-                    {Object.entries(previewSummary.extra).map(([k, v]) => (
-                      <div key={k}>{k.replaceAll('_', ' ')}: <strong>{v}</strong></div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, color: '#64748b' }}>
-                Mẹo: Hãy dùng "👁️ Xem trước" để kiểm tra lỗi trước khi import.
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <CompactButton variant="warning" onClick={handlePreviewImport} disabled={!selectedFile || isImporting}>👁️ Xem trước</CompactButton>
-                <CompactButton variant="primary" onClick={handleConfirmImport} disabled={isImporting || (!previewSummary && !selectedFile)}>
-                  {previewSummary ? '✅ Xác nhận import' : '🚀 Upload trực tiếp'}
-                </CompactButton>
-                <CompactButton variant="danger" onClick={() => { setIsImportModalOpen(false); setSelectedFile(null); setPreviewData(null); }}>Đóng</CompactButton>
-              </div>
-            </div>
-          </SmallModalContent>
         </Modal>
       )}
     </Container>

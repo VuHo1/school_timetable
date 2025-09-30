@@ -2273,9 +2273,7 @@ export const downloadUserImportTemplate = async (token) => {
 
     return response.blob();
 };
-// api.js
 
-// API tải template cho lớp học
 export const downloadClassImportTemplate = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/import/template-classes`, {
         method: 'GET',
@@ -2293,7 +2291,6 @@ export const downloadClassImportTemplate = async (token) => {
     return response.blob();
 };
 
-// API tải template cho phân công môn dạy
 export const downloadTeacherSubjectsTemplate = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/import/template-teacher-subjects`, {
         method: 'GET',
@@ -2311,7 +2308,6 @@ export const downloadTeacherSubjectsTemplate = async (token) => {
     return response.blob();
 };
 
-// API tải template cho môn học của lớp
 export const downloadClassSubjectsTemplate = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/import/template-class-subjects`, {
         method: 'GET',
@@ -2329,7 +2325,6 @@ export const downloadClassSubjectsTemplate = async (token) => {
     return response.blob();
 };
 
-// API import lớp học
 export const importClasses = async (token, file, dryRun = false) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -2352,7 +2347,6 @@ export const importClasses = async (token, file, dryRun = false) => {
     return data;
 };
 
-// API import phân công môn dạy
 export const importTeacherSubjects = async (token, file, dryRun = false) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -2375,7 +2369,6 @@ export const importTeacherSubjects = async (token, file, dryRun = false) => {
     return data;
 };
 
-// API import môn học của lớp
 export const importClassSubjects = async (token, file, dryRun = false) => {
     const formData = new FormData();
     formData.append('file', file);
@@ -2396,132 +2389,4 @@ export const importClassSubjects = async (token, file, dryRun = false) => {
 
     const data = await response.json();
     return data;
-};
-
-// Import users from Excel file
-export const importUsers = async (token, file, dryRun = false) => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await fetch(`${API_BASE_URL}/api/import/users?dryRun=${dryRun}`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.description || 'Failed to import users');
-    }
-
-    const data = await response.json();
-    return data;
-};
-
-// Download template Excel file for users import
-export const downloadTemplateUsers = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/import/template-users`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-    });
-
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to download template');
-    }
-
-    return response.blob(); // Return blob for file download
-};
-
-// Import classes (from Excel)
-export const importClasses = async (token, file, dryRun = false) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(`${API_BASE_URL}/api/import/classes?dryRun=${dryRun}`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-    });
-    const text = await response.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch { data = { success: false, description: text }; }
-    // Trả về object kèm trạng thái http
-    return { http_ok: response.ok, ...data };
-};
-
-// Import teacher-subject assignments
-export const importTeacherSubjects = async (token, file, dryRun = false) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(`${API_BASE_URL}/api/import/teacher-subjects?dryRun=${dryRun}`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-    });
-    const text = await response.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch { data = { success: false, description: text }; }
-    return { http_ok: response.ok, ...data };
-};
-
-// Import class-subjects
-export const importClassSubjects = async (token, file, dryRun = false) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await fetch(`${API_BASE_URL}/api/import/class-subjects?dryRun=${dryRun}`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-    });
-    const text = await response.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch { data = { success: false, description: text }; }
-    return { http_ok: response.ok, ...data };
-};
-
-// Download templates
-export const downloadTemplateClasses = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/import/template-classes`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to download class template');
-    }
-    return response.blob();
-};
-
-export const downloadTemplateTeacherSubjects = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/import/template-teacher-subjects`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to download teacher-subjects template');
-    }
-    return response.blob();
-};
-
-export const downloadTemplateClassSubjects = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/import/template-class-subjects`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to download class-subjects template');
-    }
-    return response.blob();
 };
