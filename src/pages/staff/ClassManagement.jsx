@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useAbilities } from '../../hooks/useAbilities';
 import { fetchClasses, toggleClassStatus, createClass, fetchGradeLevels } from '../../api';
+import ClassAndSubjectImport from '../../components/ClassAndSubjectImport';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -590,6 +591,18 @@ function ClassManagement() {
       setLoadingGrades(false);
     }
   };
+  const handleImportSuccess = async () => {
+    setLoading(true);
+    try {
+      await loadClasses();
+      toast.showToast('Import lớp học và môn học thành công!', 'success');
+    } catch (error) {
+      console.error('Error refreshing classes:', error);
+      toast.showToast('Không thể làm mới danh sách lớp học', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadClasses();
@@ -772,7 +785,10 @@ function ClassManagement() {
           </CreateButton>
         )}
       </Header>
-
+      <ClassAndSubjectImport
+        token={user?.token}
+        onImportSuccess={handleImportSuccess}
+      />
       <FilterSection>
         <SearchInput
           type="text"

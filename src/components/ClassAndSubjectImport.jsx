@@ -1,0 +1,255 @@
+// ClassAndSubjectImport.js
+import React, { useState, useRef } from 'react';
+import styled from 'styled-components';
+import { useToast } from './ToastProvider';
+import { importClasses, downloadClassImportTemplate, importClassSubjects, downloadClassSubjectsTemplate } from '../api';
+
+// Reusing styles from UserImport
+const ImportContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`;
+const ImportContainer1 = styled.div`
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  margin-left: 20px;
+`;
+const ImportTitle = styled.h2`
+  color: #2c3e50;
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+`;
+
+const FileInput = styled.input`
+  display: none;
+`;
+
+const FileInputLabel = styled.label`
+  background: #10B981;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #059669;
+    transform: translateY(-2px);
+  }
+`;
+
+const DownloadButton = styled.button`
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+  
+  &:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+  }
+`;
+
+const ActionButton = styled.button.withConfig({
+    shouldForwardProp: (prop) => prop !== 'variant',
+})`
+  background: ${(props) => (props.variant === 'primary' ? '#3b82f6' : '#e74c3c')};
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const ClassAndSubjectImport = ({ token, onImportSuccess }) => {
+    const toast = useToast();
+    const [classFile, setClassFile] = useState(null);
+    const [classSubjectFile, setClassSubjectFile] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const classFileInputRef = useRef(null);
+    const classSubjectFileInputRef = useRef(null);
+
+    const handleClassFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+            setClassFile(file);
+        } else {
+            toast.showToast('Vui lòng chọn file Excel (.xlsx) cho lớp học', 'error');
+            setClassFile(null);
+            if (classFileInputRef.current) classFileInputRef.current.value = '';
+        }
+    };
+
+    const handleClassSubjectFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file && file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+            setClassSubjectFile(file);
+        } else {
+            toast.showToast('Vui lòng chọn file Excel (.xlsx) cho môn học của lớp', 'error');
+            setClassSubjectFile(null);
+            if (classSubjectFileInputRef.current) classSubjectFileInputRef.current.value = '';
+        }
+    };
+
+    const handleImportClasses = async () => {
+        if (!token || !classFile) {
+            toast.showToast('Vui lòng chọn file để import lớp học', 'error');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await importClasses(token, classFile, false);
+            toast.showToast(result.description, result.success ? 'success' : 'error');
+            if (result.success) {
+                setClassFile(null);
+                if (classFileInputRef.current) classFileInputRef.current.value = '';
+                onImportSuccess();
+            }
+        } catch (error) {
+            toast.showToast(error.message || 'Import lớp học thất bại', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleImportClassSubjects = async () => {
+        if (!token || !classSubjectFile) {
+            toast.showToast('Vui lòng chọn file để import môn học của lớp', 'error');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await importClassSubjects(token, classSubjectFile, false);
+            toast.showToast(result.description, result.success ? 'success' : 'error');
+            if (result.success) {
+                setClassSubjectFile(null);
+                if (classSubjectFileInputRef.current) classSubjectFileInputRef.current.value = '';
+                onImportSuccess();
+            }
+        } catch (error) {
+            toast.showToast(error.message || 'Import môn học của lớp thất bại', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDownloadClassTemplate = async () => {
+        setLoading(true);
+        try {
+            const blob = await downloadClassImportTemplate(token);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Mau_Import_Lop_Hoc.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.showToast('Tải template lớp học thành công', 'success');
+        } catch (error) {
+            toast.showToast(error.message || 'Tải template lớp học thất bại', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDownloadClassSubjectTemplate = async () => {
+        setLoading(true);
+        try {
+            const blob = await downloadClassSubjectsTemplate(token);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'Mau_Import_Mon_Hoc_Lop.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            toast.showToast('Tải template môn học của lớp thành công', 'success');
+        } catch (error) {
+            toast.showToast(error.message || 'Tải template môn học của lớp thất bại', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <ImportContainer>
+            <ImportContainer1>
+                <ImportTitle>Thêm danh sách GVCN và phòng học theo lớp</ImportTitle>
+                <FileInput
+                    type="file"
+                    accept=".xlsx"
+                    ref={classFileInputRef}
+                    onChange={handleClassFileChange}
+                    id="class-file-upload"
+                />
+                <FileInputLabel htmlFor="class-file-upload">
+                    {classFile ? classFile.name : 'Tải file lên'}
+                </FileInputLabel>
+                <DownloadButton onClick={handleDownloadClassTemplate} disabled={loading}>
+                    {loading ? 'Đang tải...' : 'Lấy file mẫu'}
+                </DownloadButton>
+                <ActionButton
+                    variant="primary"
+                    onClick={handleImportClasses}
+                    disabled={loading || !classFile}
+                    style={{ marginLeft: '10px' }}
+                >
+                    {loading ? 'Đang tạo...' : 'Tạo lớp học'}
+                </ActionButton>
+            </ImportContainer1>
+            <ImportContainer1>
+                <ImportTitle>Thêm danh sách môn học theo lớp</ImportTitle>
+                <FileInput
+                    type="file"
+                    accept=".xlsx"
+                    ref={classSubjectFileInputRef}
+                    onChange={handleClassSubjectFileChange}
+                    id="class-subject-file-upload"
+                />
+                <FileInputLabel htmlFor="class-subject-file-upload">
+                    {classSubjectFile ? classSubjectFile.name : 'Tải file lên'}
+                </FileInputLabel>
+                <DownloadButton onClick={handleDownloadClassSubjectTemplate} disabled={loading}>
+                    {loading ? 'Đang tải...' : 'Lấy file mẫu'}
+                </DownloadButton>
+                <ActionButton
+                    variant="primary"
+                    onClick={handleImportClassSubjects}
+                    disabled={loading || !classSubjectFile}
+                    style={{ marginLeft: '10px' }}
+                >
+                    {loading ? 'Đang tạo...' : 'Tạo môn học'}
+                </ActionButton>
+            </ImportContainer1>
+        </ImportContainer>
+    );
+};
+
+export default ClassAndSubjectImport;

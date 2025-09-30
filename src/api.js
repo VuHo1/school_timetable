@@ -2273,3 +2273,127 @@ export const downloadUserImportTemplate = async (token) => {
 
     return response.blob();
 };
+// api.js
+
+// API tải template cho lớp học
+export const downloadClassImportTemplate = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/import/template-classes`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Tải template lớp học thất bại');
+    }
+
+    return response.blob();
+};
+
+// API tải template cho phân công môn dạy
+export const downloadTeacherSubjectsTemplate = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/import/template-teacher-subjects`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Tải template phân công môn dạy thất bại');
+    }
+
+    return response.blob();
+};
+
+// API tải template cho môn học của lớp
+export const downloadClassSubjectsTemplate = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/import/template-class-subjects`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Tải template môn học của lớp thất bại');
+    }
+
+    return response.blob();
+};
+
+// API import lớp học
+export const importClasses = async (token, file, dryRun = false) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/import/classes?dryRun=${dryRun}`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Import lớp học thất bại');
+    }
+
+    const data = await response.json();
+    return data;
+};
+
+// API import phân công môn dạy
+export const importTeacherSubjects = async (token, file, dryRun = false) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/import/teacher-subjects?dryRun=${dryRun}`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Import phân công môn dạy thất bại');
+    }
+
+    const data = await response.json();
+    return data;
+};
+
+// API import môn học của lớp
+export const importClassSubjects = async (token, file, dryRun = false) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/api/import/class-subjects?dryRun=${dryRun}`, {
+        method: 'POST',
+        headers: {
+            'Accept': 'text/plain',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Import môn học của lớp thất bại');
+    }
+
+    const data = await response.json();
+    return data;
+};
