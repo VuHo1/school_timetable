@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
 import { fetchTimeSlots, fetchAllTeachers } from '../../api';
 import { Tooltip } from 'react-tooltip';
+import TeacherSubjectsImport from '../../components/TeacherSubjectsImport';
 
 
 
@@ -989,7 +990,24 @@ function TeacherManagement() {
       setTeacherScheduleConfig(null);
     }
   };
+  const handleImportSuccess = async () => {
+    setLoading(true);
+    try {
 
+      await fetchTeachers();
+
+      if (selectedTeacher) {
+        await fetchTeacherSubjects(selectedTeacher.user_name);
+      }
+
+      toast.success('Import phân công môn học thành công!');
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast.error('Không thể làm mới dữ liệu sau khi import');
+    } finally {
+      setLoading(false);
+    }
+  };
   // Fetch time slots once when component mounts
   useEffect(() => {
     fetchTimeSlotsData(); // Load time slots for schedule
@@ -1840,7 +1858,10 @@ function TeacherManagement() {
       <Header>
         <Title>👨‍🏫 Quản lí giáo viên</Title>
       </Header>
-
+      <TeacherSubjectsImport
+        token={localStorage.getItem('authToken')}
+        onImportSuccess={handleImportSuccess}
+      />
       <FilterSection>
         <SearchInput
           type="text"

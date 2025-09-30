@@ -2231,133 +2231,162 @@ export const exportTeacherTimetablePDF = async (token, current, option) => {
         const errorData = await response.text();
         throw new Error(errorData || 'Failed to export teacher timetable as PDF');
     }
-    return response.blob(); // Return blob for PDF download
+    return response.blob();
 };
 
-// Import users from Excel file
+
 export const importUsers = async (token, file, dryRun = false) => {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     const response = await fetch(`${API_BASE_URL}/api/import/users?dryRun=${dryRun}`, {
         method: 'POST',
         headers: {
+            'Accept': 'text/plain',
             'Authorization': `Bearer ${token}`,
         },
         body: formData,
     });
-    
+
     if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.description || 'Failed to import users');
     }
-    
+
     const data = await response.json();
     return data;
 };
 
-// Download template Excel file for users import
-export const downloadTemplateUsers = async (token) => {
+export const downloadUserImportTemplate = async (token) => {
     const response = await fetch(`${API_BASE_URL}/api/import/template-users`, {
         method: 'GET',
         headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Authorization': `Bearer ${token}`,
         },
     });
-    
+
     if (!response.ok) {
         const errorData = await response.text();
-        throw new Error(errorData || 'Failed to download template');
+        throw new Error(errorData || 'Failed to download user import template');
     }
-    
-    return response.blob(); // Return blob for file download
+
+    return response.blob();
 };
 
-// Import classes (from Excel)
+export const downloadClassImportTemplate = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/import/template-classes`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Tải template lớp học thất bại');
+    }
+
+    return response.blob();
+};
+
+export const downloadTeacherSubjectsTemplate = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/import/template-teacher-subjects`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Tải template phân công môn dạy thất bại');
+    }
+
+    return response.blob();
+};
+
+export const downloadClassSubjectsTemplate = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/api/import/template-class-subjects`, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Tải template môn học của lớp thất bại');
+    }
+
+    return response.blob();
+};
+
 export const importClasses = async (token, file, dryRun = false) => {
     const formData = new FormData();
     formData.append('file', file);
+
     const response = await fetch(`${API_BASE_URL}/api/import/classes?dryRun=${dryRun}`, {
         method: 'POST',
         headers: {
+            'Accept': 'text/plain',
             'Authorization': `Bearer ${token}`,
         },
         body: formData,
     });
-    const text = await response.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch { data = { success: false, description: text }; }
-    // Trả về object kèm trạng thái http
-    return { http_ok: response.ok, ...data };
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Import lớp học thất bại');
+    }
+
+    const data = await response.json();
+    return data;
 };
 
-// Import teacher-subject assignments
 export const importTeacherSubjects = async (token, file, dryRun = false) => {
     const formData = new FormData();
     formData.append('file', file);
+
     const response = await fetch(`${API_BASE_URL}/api/import/teacher-subjects?dryRun=${dryRun}`, {
         method: 'POST',
         headers: {
+            'Accept': 'text/plain',
             'Authorization': `Bearer ${token}`,
         },
         body: formData,
     });
-    const text = await response.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch { data = { success: false, description: text }; }
-    return { http_ok: response.ok, ...data };
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Import phân công môn dạy thất bại');
+    }
+
+    const data = await response.json();
+    return data;
 };
 
-// Import class-subjects
 export const importClassSubjects = async (token, file, dryRun = false) => {
     const formData = new FormData();
     formData.append('file', file);
+
     const response = await fetch(`${API_BASE_URL}/api/import/class-subjects?dryRun=${dryRun}`, {
         method: 'POST',
         headers: {
+            'Accept': 'text/plain',
             'Authorization': `Bearer ${token}`,
         },
         body: formData,
     });
-    const text = await response.text();
-    let data = {};
-    try { data = JSON.parse(text); } catch { data = { success: false, description: text }; }
-    return { http_ok: response.ok, ...data };
-};
 
-// Download templates
-export const downloadTemplateClasses = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/import/template-classes`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
-    });
     if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to download class template');
+        const errorData = await response.json();
+        throw new Error(errorData.description || 'Import môn học của lớp thất bại');
     }
-    return response.blob();
-};
 
-export const downloadTemplateTeacherSubjects = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/import/template-teacher-subjects`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to download teacher-subjects template');
-    }
-    return response.blob();
-};
-
-export const downloadTemplateClassSubjects = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/api/import/template-class-subjects`, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to download class-subjects template');
-    }
-    return response.blob();
+    const data = await response.json();
+    return data;
 };
