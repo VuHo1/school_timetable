@@ -2235,7 +2235,7 @@ export const exportTeacherTimetablePDF = async (token, current, option) => {
 };
 
 
-export const importUsers = async (token, file, dryRun = false) => {
+export const importUsers = async (token, file, dryRun) => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -2248,12 +2248,13 @@ export const importUsers = async (token, file, dryRun = false) => {
         body: formData,
     });
 
+    const data = await response.json();
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.description || 'Failed to import users');
+        const error = new Error(data.description || 'Failed to import users');
+        error.data = data; // Gắn toàn bộ dữ liệu lỗi vào error
+        throw error;
     }
 
-    const data = await response.json();
     return data;
 };
 
@@ -2325,7 +2326,7 @@ export const downloadClassSubjectsTemplate = async (token) => {
     return response.blob();
 };
 
-export const importClasses = async (token, file, dryRun = false) => {
+export const importClasses = async (token, file, dryRun) => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -2337,17 +2338,16 @@ export const importClasses = async (token, file, dryRun = false) => {
         },
         body: formData,
     });
-
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.description || 'Import lớp học thất bại');
-    }
-
     const data = await response.json();
+    if (!response.ok) {
+        const error = new Error(data.description || 'Failed to import users');
+        error.data = data;
+        throw error;
+    }
     return data;
 };
 
-export const importTeacherSubjects = async (token, file, dryRun = false) => {
+export const importTeacherSubjects = async (token, file, dryRun) => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -2359,17 +2359,18 @@ export const importTeacherSubjects = async (token, file, dryRun = false) => {
         },
         body: formData,
     });
-
+    const data = await response.json();
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.description || 'Import phân công môn dạy thất bại');
+        const error = new Error(data.description || 'Failed to import users');
+        error.data = data;
+        throw error;
     }
 
-    const data = await response.json();
+
     return data;
 };
 
-export const importClassSubjects = async (token, file, dryRun = false) => {
+export const importClassSubjects = async (token, file, dryRun) => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -2382,11 +2383,11 @@ export const importClassSubjects = async (token, file, dryRun = false) => {
         body: formData,
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.description || 'Import môn học của lớp thất bại');
-    }
-
     const data = await response.json();
+    if (!response.ok) {
+        const error = new Error(data.description || 'Failed to import users');
+        error.data = data;
+        throw error;
+    }
     return data;
 };
