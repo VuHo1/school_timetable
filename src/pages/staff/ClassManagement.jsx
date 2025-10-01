@@ -2,8 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../components/ToastProvider';
 import { useAbilities } from '../../hooks/useAbilities';
-import { fetchClasses, toggleClassStatus, createClass, fetchGradeLevels } from '../../api';
+import { fetchClasses, toggleClassStatus, createClass, fetchGradeLevels, fetchUserProfile } from '../../api';
 import ClassAndSubjectImport from '../../components/ClassAndSubjectImport';
 import styled from 'styled-components';
 
@@ -519,6 +520,7 @@ const ExampleBox = styled.div`
 function ClassManagement() {
   const { user } = useAuth();
   const { hasAbility } = useAbilities();
+  const toast = useToast();
   const navigate = useNavigate();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -537,6 +539,7 @@ function ClassManagement() {
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
   const [gradeLevels, setGradeLevels] = useState([]);
+  const userRoleRef = useRef(null);
   const [formData, setFormData] = useState({
     class_code: '',
     quantity: 1,
@@ -602,7 +605,25 @@ function ClassManagement() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user?.token) {
+        toast.showToast('Vui lòng đăng nhập để tải dữ liệu.', 'error');
+        return;
+      }
+      try {
+        const profileData = await fetchUserProfile(user.token);
+        userRoleRef.current = profileData.role_name || null;
+        console.log('Current role_name:', userRoleRef.current);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        userRoleRef.current = null;
+        toast.showToast('Không thể tải thông tin vai trò người dùng', 'error');
+      }
+    };
 
+    fetchUserRole();
+  }, [user?.token, toast]);
   useEffect(() => {
     loadClasses();
   }, [currentPage, sortBy, sortOrder]);
@@ -784,10 +805,13 @@ function ClassManagement() {
           </CreateButton>
         )}
       </Header>
-      <ClassAndSubjectImport
-        token={user?.token}
-        onImportSuccess={handleImportSuccess}
-      />
+      {userRoleRef.current === 'School Staff' && (
+        <ClassAndSubjectImport
+          token={user?.token}
+          onImportSuccess={handleImportSuccess}
+        />
+      )}
+
       <FilterSection>
         <SearchInput
           type="text"
