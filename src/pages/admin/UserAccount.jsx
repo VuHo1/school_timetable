@@ -12,7 +12,8 @@ import {
   fetchRolesFilter,
   assignUserRole,
   fetchSchool,
-  updateUserSchool
+  updateUserSchool,
+  fetchUserProfile
 } from '../../api';
 import styled from 'styled-components';
 import DatePicker from 'react-datepicker';
@@ -581,6 +582,7 @@ export default function UserAccount() {
   const statusDropdownRef = useRef(null);
   const genderDropdownRef = useRef(null);
   const roleDropdownRef = useRef(null);
+  const userRoleRef = useRef(null);
 
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
@@ -612,6 +614,25 @@ export default function UserAccount() {
   //     label: role || 'N/A',
   //   })),
   // ];
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user?.token) {
+        toast.showToast('Vui lòng đăng nhập để tải dữ liệu.', 'error');
+        return;
+      }
+      try {
+        const profileData = await fetchUserProfile(user.token);
+        userRoleRef.current = profileData.role_name || null;
+        console.log('Current role_name:', userRoleRef.current);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        userRoleRef.current = null;
+        toast.showToast('Không thể tải thông tin vai trò người dùng', 'error');
+      }
+    };
+
+    fetchUserRole();
+  }, [user?.token, toast]);
   const handleImportSuccess = async () => {
     setLoading(true);
     try {
@@ -968,7 +989,9 @@ export default function UserAccount() {
           + Tạo tài khoản
         </AddButton>
       </Header>
-      <UserImport token={user?.token} onImportSuccess={handleImportSuccess} />
+      {userRoleRef.current === 'School Administrator' && (
+        <UserImport token={user?.token} onImportSuccess={handleImportSuccess} />
+      )}
 
       <FilterSection>
         <SearchInput

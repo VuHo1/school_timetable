@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { toast } from 'react-hot-toast';
-import { fetchTimeSlots, fetchAllTeachers } from '../../api';
+import { fetchTimeSlots, fetchAllTeachers, fetchUserProfile } from '../../api';
 import { Tooltip } from 'react-tooltip';
 import TeacherSubjectsImport from '../../components/TeacherSubjectsImport';
 
@@ -638,6 +638,7 @@ function TeacherManagement() {
   const [editingSchedule, setEditingSchedule] = useState(false);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
+  const [myRoles, setMyRoles] = useState([]);
 
   // Schedule data state - moved to main component level for proper re-rendering
   const [scheduleData, setScheduleData] = useState({
@@ -655,7 +656,19 @@ function TeacherManagement() {
     weekly_minimum_day: 0,
     weekly_maximum_day: 0,
   });
-
+  const fetchMyRoles = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const profileData = await fetchUserProfile(token);
+      const roleNames = profileData.role_name;
+      setMyRoles(roleNames);
+      console.log('Current myRoles value:', roleNames);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setMyRoles([]);
+      toast.error('Không thể tải thông tin vai trò người dùng');
+    }
+  };
   const fetchTeachers = async () => {
     setLoading(true);
     setError('');
@@ -852,7 +865,7 @@ function TeacherManagement() {
   const fetchRoles = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/api/user-role?filter[status]=Đang hoạt động&filter[is_teacher]=true`, {
+      const response = await fetch(`${API_BASE_URL}/api/user-role`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -863,11 +876,12 @@ function TeacherManagement() {
         const data = await response.json();
         const roleList = data.data_set || data.data || [];
         setRoles(roleList);
+        console.log('Current roles value:', roleList);
       }
     } catch (error) {
       console.error('Error fetching roles:', error);
       // Use default fallback
-      setRoles([{ id: 2, role_name: 'Teacher' }]);
+      setRoles([]);
     }
   };
 
@@ -1018,6 +1032,7 @@ function TeacherManagement() {
     fetchTeachers();
     fetchRoles(); // Load roles for create modal
     fetchAvailableSubjects(); // Load subjects for assignment
+    fetchMyRoles();
   }, [currentPage, searchTerm, statusFilter]);
 
   // Convert API schedule format to internal format and vice versa
@@ -1858,10 +1873,12 @@ function TeacherManagement() {
       <Header>
         <Title>👨‍🏫 Quản lí giáo viên</Title>
       </Header>
-      <TeacherSubjectsImport
-        token={localStorage.getItem('authToken')}
-        onImportSuccess={handleImportSuccess}
-      />
+      {myRoles === 'School Staff' && (
+        <TeacherSubjectsImport
+          token={localStorage.getItem('authToken')}
+          onImportSuccess={handleImportSuccess}
+        />
+      )}
       <FilterSection>
         <SearchInput
           type="text"

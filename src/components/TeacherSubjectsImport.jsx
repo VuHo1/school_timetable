@@ -1,10 +1,8 @@
-// TeacherSubjectsImport.js
+
 import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import { useToast } from './ToastProvider';
 import { importTeacherSubjects, downloadTeacherSubjectsTemplate } from '../api';
-
-// Reusing styles from UserImport
 const ImportContainer = styled.div`
   display: flex;
   justify-content: space-between;
