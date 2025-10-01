@@ -39,7 +39,16 @@ const FileInputLabel = styled.label`
     transform: translateY(-2px);
   }
 `;
-
+const CheckboxContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+`;
+const CheckboxLabel = styled.label`
+  font-size: 14px;
+  color: #2c3e50;
+  margin-left: 8px;
+`;
 const DownloadButton = styled.button`
   background: #3b82f6;
   color: white;
@@ -57,7 +66,36 @@ const DownloadButton = styled.button`
     transform: translateY(-2px);
   }
 `;
-
+const ErrorTitle = styled.h3`
+  color: #b91c1c;
+  font-size: 16px;
+  font-weight: 500;
+  margin: 10px 0 5px 0;
+`;
+const ErrorItem = styled.li`
+  color: #b91c1c;
+  font-size: 14px;
+  margin-bottom: 5px;
+`;
+const ErrorList = styled.ul`
+  margin-top: 10px;
+  padding: 10px;
+  background: #fef2f2;
+  border: 1px solid #f87171;
+  border-radius: 8px;
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+`;
+const Container1 = styled.div`
+  flex:1;
+  background-color: white;
+  padding: 20px;
+  margin-left: 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  
+`;
 const ActionButton = styled.button.withConfig({
     shouldForwardProp: (prop) => prop !== 'variant',
 })`
@@ -83,6 +121,9 @@ const ActionButton = styled.button.withConfig({
 const TeacherSubjectsImport = ({ token, onImportSuccess }) => {
     const toast = useToast();
     const [selectedFile, setSelectedFile] = useState(null);
+    const [dryRun, setDryRun] = useState(true);
+    const [errors, setErrors] = useState([]);
+    const [errorDescription, setErrorDescription] = useState('');
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -90,9 +131,13 @@ const TeacherSubjectsImport = ({ token, onImportSuccess }) => {
         const file = e.target.files[0];
         if (file && file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
             setSelectedFile(file);
+            setErrors([]);
+            setErrorDescription('');
         } else {
             toast.showToast('Vui lòng chọn file Excel (.xlsx)', 'error');
             setSelectedFile(null);
+            setErrors([]);
+            setErrorDescription('');
             if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
@@ -100,20 +145,52 @@ const TeacherSubjectsImport = ({ token, onImportSuccess }) => {
     const handleImport = async () => {
         if (!token || !selectedFile) {
             toast.showToast('Vui lòng chọn file để import phân công môn dạy', 'error');
+            setErrors([]);
+            setErrorDescription('');
             return;
         }
 
         setLoading(true);
         try {
-            const result = await importTeacherSubjects(token, selectedFile, false);
-            toast.showToast(result.description, result.success ? 'success' : 'error');
+            const result = await importTeacherSubjects(token, selectedFile, dryRun);
+
             if (result.success) {
+                toast.showToast(result.description);
+                setErrors([]);
+                setErrorDescription('');
                 setSelectedFile(null);
-                if (fileInputRef.current) fileInputRef.current.value = '';
-                onImportSuccess();
+                if (!dryRun) {
+                    setSelectedFile(null);
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                    onImportSuccess();
+                }
+            } else {
+                const hasErrors = result.data && Array.isArray(result.data.errors) && result.data.errors.length > 0;
+                const errorMessages = hasErrors
+                    ? result.data.errors.map(
+                        (err) => `Dòng ${err.row_index}: ${err.error_message}`
+                    )
+                    : [];
+                setErrors(errorMessages);
+                setErrorDescription(
+                    result.description || 'Có lỗi trong quá trình import'
+                );
+                toast.showToast(
+                    result.description || 'Có lỗi trong quá trình import',
+                    'error'
+                );
             }
+
         } catch (error) {
-            toast.showToast(error.message || 'Import phân công môn dạy thất bại', 'error');
+            setErrorDescription(error.message || 'Import tài khoản thất bại');
+            toast.showToast(error.message || 'Import tài khoản thất bại', 'error');
+            const hasErrors = error.data && error.data.data && Array.isArray(error.data.data.errors) && error.data.data.errors.length > 0;
+            if (hasErrors) {
+                const errorMessages = error.data.data.errors.map(
+                    (err) => `Dòng ${err.row_index}: ${err.error_message}`
+                );
+                setErrors(errorMessages);
+            }
         } finally {
             setLoading(false);
         }
@@ -141,30 +218,54 @@ const TeacherSubjectsImport = ({ token, onImportSuccess }) => {
 
     return (
         <ImportContainer>
-            <ImportTitle>Thêm danh sách phân công môn dạy</ImportTitle>
-            <div>
-                <FileInput
-                    type="file"
-                    accept=".xlsx"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    id="teacher-subjects-file-upload"
-                />
-                <FileInputLabel htmlFor="teacher-subjects-file-upload">
-                    {selectedFile ? selectedFile.name : 'Tải file phân công môn dạy lên'}
-                </FileInputLabel>
-                <DownloadButton onClick={handleDownloadTemplate} disabled={loading}>
-                    {loading ? 'Đang tải...' : 'Lấy file mẫu'}
-                </DownloadButton>
-                <ActionButton
-                    variant="primary"
-                    onClick={handleImport}
-                    disabled={loading || !selectedFile}
-                    style={{ marginLeft: '10px' }}
-                >
-                    {loading ? 'Đang tạo...' : 'Tạo'}
-                </ActionButton>
-            </div>
+            <Container1>
+                <ImportTitle>Thêm danh sách phân công môn dạy</ImportTitle>
+                <div>
+                    <FileInput
+                        type="file"
+                        accept=".xlsx"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        id="teacher-subjects-file-upload"
+                    />
+                    <FileInputLabel htmlFor="teacher-subjects-file-upload">
+                        {selectedFile ? selectedFile.name : 'Tải file phân công môn dạy lên'}
+                    </FileInputLabel>
+                    <DownloadButton onClick={handleDownloadTemplate} disabled={loading}>
+                        {loading ? 'Đang tải...' : 'Lấy file mẫu'}
+                    </DownloadButton>
+                    <ActionButton
+                        variant="primary"
+                        onClick={handleImport}
+                        disabled={loading || !selectedFile}
+                        style={{ marginLeft: '10px' }}
+                    >
+                        {loading ? 'Đang xử lý...' : dryRun ? 'Kiểm tra' : 'Tạo'}
+                    </ActionButton>
+                </div>
+                <CheckboxContainer>
+                    <input
+                        type="checkbox"
+                        id="dryRun"
+                        checked={dryRun}
+                        onChange={(e) => setDryRun(e.target.checked)}
+                    />
+                    <CheckboxLabel htmlFor="dryRun">Kiểm tra file</CheckboxLabel>
+                </CheckboxContainer>
+            </Container1>
+            <Container1>
+                <ImportTitle>Thông báo</ImportTitle>
+                {errorDescription && (
+                    <ErrorTitle>{errorDescription}</ErrorTitle>
+                )}
+                {errors.length > 0 && (
+                    <ErrorList>
+                        {errors.map((msg, index) => (
+                            <ErrorItem key={index}>{msg}</ErrorItem>
+                        ))}
+                    </ErrorList>
+                )}
+            </Container1>
         </ImportContainer>
     );
 };
