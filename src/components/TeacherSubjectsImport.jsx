@@ -155,10 +155,10 @@ const TeacherSubjectsImport = ({ token, onImportSuccess }) => {
             const result = await importTeacherSubjects(token, selectedFile, dryRun);
 
             if (result.success) {
-                toast.showToast(result.description);
+                toast.showToast(result.description || 'Thành công!', 'success');
                 setErrors([]);
                 setErrorDescription('');
-                setSelectedFile(null);
+
                 if (!dryRun) {
                     setSelectedFile(null);
                     if (fileInputRef.current) fileInputRef.current.value = '';
