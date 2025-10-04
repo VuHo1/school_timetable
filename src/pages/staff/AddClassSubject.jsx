@@ -178,9 +178,9 @@ const Td = styled.td`
   border: 1px solid #e2e8f0;
   text-align: center;
   background: ${props => {
-        if (props.fixed) return '#d1fae5'; // Light green for fixed
-        if (props.avoid) return '#fef3c7'; // Light yellow for avoid
-        return 'transparent'; // No color for unselected
+        if (props.fixed) return '#d1fae5';
+        if (props.avoid) return '#fef3c7';
+        return 'transparent';
     }};
   cursor: pointer;
   &:hover {
@@ -217,7 +217,7 @@ const AddClassSubject = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [activeTabIndex, setActiveTabIndex] = useState(0);
-    const [selectionMode, setSelectionMode] = useState('fixed'); // 'fixed' or 'avoid'
+    const [selectionMode, setSelectionMode] = useState('fixed');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -287,7 +287,7 @@ const AddClassSubject = () => {
                 subject.fixed_slot = subject.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === day));
             } else {
                 subject.fixed_slot.push({ time_slot_id: slotId, day_of_week: day });
-                // Remove from avoid if it exists there
+
                 subject.avoid_slot = subject.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === day));
             }
         } else if (selectionMode === 'avoid') {
@@ -295,7 +295,7 @@ const AddClassSubject = () => {
                 subject.avoid_slot = subject.avoid_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === day));
             } else {
                 subject.avoid_slot.push({ time_slot_id: slotId, day_of_week: day });
-                // Remove from fixed if it exists there
+
                 subject.fixed_slot = subject.fixed_slot.filter(s => !(s.time_slot_id === slotId && s.day_of_week === day));
             }
         }
@@ -318,13 +318,13 @@ const AddClassSubject = () => {
                 },
             ],
         });
-        setActiveTabIndex(formData.subjects.length); // Set focus to the new tab
+        setActiveTabIndex(formData.subjects.length);
     };
 
     const removeSubjectEntry = (index) => {
         const updatedSubjects = formData.subjects.filter((_, i) => i !== index);
         setFormData({ ...formData, subjects: updatedSubjects });
-        setActiveTabIndex(Math.max(0, Math.min(index, updatedSubjects.length - 1))); // Adjust active tab
+        setActiveTabIndex(Math.max(0, Math.min(index, updatedSubjects.length - 1)));
     };
 
     const handleSubmit = async (e) => {

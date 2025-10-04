@@ -424,7 +424,7 @@ const DetailItem = styled.div`
   }
 `;
 
-// Hàm debounce thủ công
+
 const debounce = (func, wait) => {
   let timeout;
   return (...args) => {
@@ -465,7 +465,7 @@ function RoomManagement() {
   });
   const actionMenuRef = useRef(null);
 
-  // Room type mapping
+
   const getRoomTypeName = useCallback((type) => {
     const typeMap = roomTypes.reduce((map, type) => {
       map[type.code_id] = type.caption;
@@ -474,7 +474,7 @@ function RoomManagement() {
     return typeMap[type] || type;
   }, [roomTypes]);
 
-  // Fetch room types
+
   const fetchRoomTypesList = useCallback(async () => {
     if (!user?.token) {
       toast.error('Vui lòng đăng nhập để tiếp tục.');
@@ -490,7 +490,7 @@ function RoomManagement() {
     }
   }, [user, navigate]);
 
-  // Fetch rooms
+
   const fetchRooms = useCallback(async () => {
     if (!user?.token) {
       toast.error('Vui lòng đăng nhập để tiếp tục.');
@@ -537,7 +537,7 @@ function RoomManagement() {
     }
   }, [user, navigate, logout, currentPage, searchTerm, typeFilter, statusFilter, sortField, sortOrder]);
 
-  // Create room
+
   const handleCreateRoom = useCallback(async (e) => {
     e.preventDefault();
     if (!user?.token) {
@@ -570,7 +570,7 @@ function RoomManagement() {
     }
   }, [user, navigate, createForm, fetchRooms]);
 
-  // Update room
+
   const handleUpdateRoom = useCallback(async (e) => {
     e.preventDefault();
     if (!user?.token) {
@@ -596,7 +596,7 @@ function RoomManagement() {
     }
   }, [user, navigate, updateForm, fetchRooms]);
 
-  // Toggle room status
+
   const handleToggleStatus = useCallback(async (room) => {
     if (!user?.token) {
       toast.error('Vui lòng đăng nhập để tiếp tục.');
@@ -627,7 +627,7 @@ function RoomManagement() {
     }
   }, [user, navigate, fetchRooms]);
 
-  // Delete room
+
   const handleDelete = useCallback(async (roomCode) => {
     if (!user?.token) {
       toast.error('Vui lòng đăng nhập để tiếp tục.');
@@ -682,7 +682,7 @@ function RoomManagement() {
     setOpenActionMenu(openActionMenu === roomId ? null : roomId);
   }, [openActionMenu]);
 
-  // Handle click outside to close action menu
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
@@ -693,7 +693,6 @@ function RoomManagement() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch data on mount and when dependencies change
   useEffect(() => {
     if (!user?.token) {
       toast.error('Vui lòng đăng nhập để tiếp tục.');

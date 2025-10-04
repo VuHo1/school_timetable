@@ -536,7 +536,7 @@ const UserCommand = () => {
 
     const handleSearchChange = (e) => {
         setSearchKeyword(e.target.value);
-        setCurrentPage(1); // Reset to page 1 on search change
+        setCurrentPage(1);
     };
 
     const handleCreateCommand = async (e) => {
@@ -555,7 +555,7 @@ const UserCommand = () => {
                 const updatedData = await fetchUserCommands(user.token);
                 setAllCommands(updatedData);
                 setNewCommand({ command_id: '', command_name: '', application: '' });
-                setCurrentPage(1); // Reset to page 1 after creating
+                setCurrentPage(1);
             } else {
                 toast.showToast(resultData.description, 'error');
             }
@@ -578,7 +578,7 @@ const UserCommand = () => {
                 setIsUpdateModalOpen(false);
                 const updatedData = await fetchUserCommands(user.token);
                 setAllCommands(updatedData);
-                setCurrentPage(1); // Reset to page 1 after updating
+                setCurrentPage(1);
             }
             else {
                 toast.showToast(resultData.description, 'error');
