@@ -939,6 +939,32 @@ function ReportPage() {
                   </div>
                 </div>
               )}
+
+              {report.report_name === "Giáo viên chưa có thời khóa biểu" && (
+                <div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <strong>Tổng số giáo viên chưa có thời khóa biểu:</strong> {report.report_data.total_missing}
+                  </div>
+                  <Table>
+                    <thead>
+                      <tr>
+                        <TableHeader>Tên đăng nhập</TableHeader>
+                        <TableHeader>Họ và tên</TableHeader>
+                        <TableHeader>Môn học</TableHeader>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.report_data.details && report.report_data.details.map((teacher, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell style={{ fontWeight: '600' }}>{teacher.user_name}</TableCell>
+                          <TableCell>{teacher.full_name}</TableCell>
+                          <TableCell>{teacher.subjects}</TableCell>
+                        </TableRow>
+                      ))}
+                    </tbody>
+                  </Table>
+                </div>
+              )}
             </ReportCardContent>
           )}
         </ReportCard>
